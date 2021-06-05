@@ -1,41 +1,37 @@
 use glfw::{Action, Context as _, Key, WindowEvent};
 use luminance::{
-    context::GraphicsContext as _, pipeline::PipelineState, render_state::RenderState, tess::Mode,
+    context::GraphicsContext as _, pipeline::PipelineState, render_state::RenderState,
+    shader::Uniform, tess::Mode,
 };
-use luminance_derive::{Semantics, Vertex};
+use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
-use std::time::Instant;
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
 const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
+
+#[derive(Debug, UniformInterface)]
+struct ShaderInterface {
+    #[uniform(unbound)]
+    color: Uniform<[f32; 3]>,
+}
 
 #[derive(Debug, Clone, Copy, Semantics)]
 pub enum VertexSemantics {
     #[sem(name = "position", repr = "[f32; 2]", wrapper = "VertexPosition")]
     Position,
-    #[sem(name = "color", repr = "[u8; 3]", wrapper = "VertexRGB")]
-    Color,
 }
 
 #[derive(Debug, Clone, Copy, Vertex)]
 #[vertex(sem = "VertexSemantics")]
 pub struct Vertex {
     position: VertexPosition,
-    #[vertex(normalized = "true")]
-    color: VertexRGB,
 }
 
 const VERTICES: [Vertex; 3] = [
-    Vertex::new(
-        VertexPosition::new([-0.5, -0.5]),
-        VertexRGB::new([255, 0, 0]),
-    ),
-    Vertex::new(
-        VertexPosition::new([0.5, -0.5]),
-        VertexRGB::new([0, 255, 0]),
-    ),
-    Vertex::new(VertexPosition::new([0., 0.5]), VertexRGB::new([0, 0, 255])),
+    Vertex::new(VertexPosition::new([-0.5, -0.5])),
+    Vertex::new(VertexPosition::new([0.5, -0.5])),
+    Vertex::new(VertexPosition::new([0., 0.5])),
 ];
 
 fn main() {
@@ -48,12 +44,11 @@ fn main() {
     )
     .unwrap();
 
-    let start_time = Instant::now();
     let back_buffer = surface.context.back_buffer().unwrap();
 
     let mut program = surface
         .context
-        .new_shader_program::<VertexSemantics, (), ()>()
+        .new_shader_program::<VertexSemantics, (), ShaderInterface>()
         .from_strings(VERTEX_SHADER, None, None, FRAGMENT_SHADER)
         .unwrap()
         .ignore_warnings();
@@ -66,6 +61,8 @@ fn main() {
         .build()
         .unwrap();
 
+    let mut color = <[f32; 3]>::default();
+
     'main: loop {
         surface.context.window.glfw.poll_events();
         for (_, event) in glfw::flush_messages(&surface.events_rx) {
@@ -74,21 +71,26 @@ fn main() {
                     break 'main
                 }
 
+                WindowEvent::Key(key, _, Action::Release, _) => match key {
+                    Key::R => color[0] = 1.0 - color[0],
+                    Key::G => color[1] = 1.0 - color[1],
+                    Key::B => color[2] = 1.0 - color[2],
+                    _ => {}
+                },
+
                 _ => {}
             }
         }
-
-        let time = start_time.elapsed().as_millis() as f32 * 1e-3;
-        let background_color = [time.cos(), time.sin(), 0.5, 1.0];
 
         let render = surface
             .context
             .new_pipeline_gate()
             .pipeline(
                 &back_buffer,
-                &PipelineState::default().set_clear_color(background_color),
+                &PipelineState::default(),
                 |_, mut shade_gate| {
-                    shade_gate.shade(&mut program, |_, _, mut render_gate| {
+                    shade_gate.shade(&mut program, |mut interface, uniforms, mut render_gate| {
+                        interface.set(&uniforms.color, color);
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
                             tess_gate.render(&triangle)
                         })

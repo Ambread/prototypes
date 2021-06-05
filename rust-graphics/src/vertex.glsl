@@ -1,5 +1,6 @@
+uniform vec3 color;
+
 in vec2 position;
-in vec3 color;
 
 out vec3 vertex_color;
 
