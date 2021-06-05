@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        "lib": ["esnext"],
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "module": "commonjs"
+    },
+    "include": ["**/*.ts"],
+    "exclude": ["node_modules"]
+}
