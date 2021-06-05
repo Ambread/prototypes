@@ -1,4 +1,4 @@
-use bf_test::{parse::parse, run::Memory, token::scan};
+use bf::{parse::parse, run::Memory, token::scan};
 use clap::{AppSettings, Clap, FromArgMatches, IntoApp};
 use std::{
     convert::TryInto,
