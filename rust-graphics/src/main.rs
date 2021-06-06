@@ -1,3 +1,4 @@
+use cgmath::{prelude::*, Vector2, Vector3};
 use glfw::{Action, Context as _, Key, WindowEvent};
 use luminance::{
     context::GraphicsContext as _, pipeline::PipelineState, render_state::RenderState,
@@ -14,6 +15,8 @@ const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
 struct ShaderInterface {
     #[uniform(unbound)]
     color: Uniform<[f32; 3]>,
+    #[uniform(unbound)]
+    view: Uniform<[f32; 2]>,
 }
 
 #[derive(Debug, Clone, Copy, Semantics)]
@@ -61,10 +64,16 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut color = <[f32; 3]>::default();
+    let mut color = Vector3::new(1.0, 1.0, 1.0);
+    let mut view = Vector2::new(0.0, 0.0);
+
+    const SPEED: f32 = 0.05;
 
     'main: loop {
         surface.context.window.glfw.poll_events();
+
+        let mut position = Vector2::new(0.0, 0.0);
+
         for (_, event) in glfw::flush_messages(&surface.events_rx) {
             match event {
                 WindowEvent::Close | WindowEvent::Key(Key::Escape, _, Action::Release, _) => {
@@ -72,14 +81,26 @@ fn main() {
                 }
 
                 WindowEvent::Key(key, _, Action::Release, _) => match key {
+                    // Color
                     Key::R => color[0] = 1.0 - color[0],
                     Key::G => color[1] = 1.0 - color[1],
                     Key::B => color[2] = 1.0 - color[2],
+
+                    // View
+                    Key::W => position.y += 1.0,
+                    Key::A => position.x -= 1.0,
+                    Key::S => position.y -= 1.0,
+                    Key::D => position.x += 1.0,
+
                     _ => {}
                 },
 
                 _ => {}
             }
+        }
+
+        if !position.is_zero() {
+            view += position.normalize() * SPEED;
         }
 
         let render = surface
@@ -90,7 +111,9 @@ fn main() {
                 &PipelineState::default(),
                 |_, mut shade_gate| {
                     shade_gate.shade(&mut program, |mut interface, uniforms, mut render_gate| {
-                        interface.set(&uniforms.color, color);
+                        interface.set(&uniforms.color, color.into());
+                        interface.set(&uniforms.view, view.into());
+
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
                             tess_gate.render(&triangle)
                         })
