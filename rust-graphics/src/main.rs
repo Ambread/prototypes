@@ -3,7 +3,7 @@ use glfw::{Action, Context as _, Key, WindowEvent};
 use luminance::{
     context::GraphicsContext as _,
     pipeline::{PipelineState, TextureBinding},
-    pixel::{Floating, R32F},
+    pixel::{Floating, R32F, RGB32F},
     render_state::RenderState,
     shader::Uniform,
     tess::Mode,
@@ -12,6 +12,7 @@ use luminance::{
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
+use noise::{NoiseFn, Perlin};
 use std::collections::HashSet;
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
@@ -73,10 +74,12 @@ fn main() {
         .build()
         .unwrap();
 
+    const SIZE: usize = 64;
+
     let mut texture = surface
         .context
-        .new_texture::<Dim2, R32F>(
-            [16, 16],
+        .new_texture::<Dim2, RGB32F>(
+            [SIZE as u32, SIZE as u32],
             0,
             Sampler {
                 mag_filter: MagFilter::Nearest,
@@ -85,15 +88,14 @@ fn main() {
         )
         .unwrap();
 
-    let mut texles = [0.0; 16 * 16];
+    let mut texles = [(0.0, 0.0, 0.0); SIZE * SIZE];
+    let noise = Perlin::new();
 
     for (i, texle) in texles.iter_mut().enumerate() {
-        let is_even_x = i % 2 == 0;
-        let is_even_y = (i / 16) % 2 == 0;
-        *texle = if is_even_x ^ is_even_y { 1.0 } else { 0.0 };
+        texle.0 = noise.get([(i as f64 % SIZE as f64), (i as f64 / SIZE as f64)]) as f32;
     }
 
-    texture.upload_raw(GenMipmaps::No, &texles).unwrap();
+    texture.upload(GenMipmaps::No, &texles).unwrap();
 
     let mut view = Vector2::new(0.0, 0.0);
 

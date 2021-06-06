@@ -12,6 +12,7 @@
         "Framebuffer",
         "Glfw",
         "Mipmaps",
+        "Perlin",
         "cgmath",
         "glsl",
         "repr",
