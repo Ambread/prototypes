@@ -33,10 +33,13 @@ pub struct Vertex {
     position: VertexPosition,
 }
 
-const VERTICES: [Vertex; 3] = [
-    Vertex::new(VertexPosition::new([-0.5, -0.5])),
-    Vertex::new(VertexPosition::new([0.5, -0.5])),
-    Vertex::new(VertexPosition::new([0., 0.5])),
+const VERTICES: [Vertex; 6] = [
+    Vertex::new(VertexPosition::new([1.0, 1.0])),
+    Vertex::new(VertexPosition::new([1.0, -1.0])),
+    Vertex::new(VertexPosition::new([-1.0, 1.0])),
+    Vertex::new(VertexPosition::new([-1.0, -1.0])),
+    Vertex::new(VertexPosition::new([-1.0, 1.0])),
+    Vertex::new(VertexPosition::new([1.0, -1.0])),
 ];
 
 fn main() {
@@ -58,7 +61,7 @@ fn main() {
         .unwrap()
         .ignore_warnings();
 
-    let triangle = surface
+    let quad = surface
         .context
         .new_tess()
         .set_vertices(&VERTICES[..])
@@ -129,7 +132,7 @@ fn main() {
                         interface.set(&uniforms.view, view.into());
 
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
-                            tess_gate.render(&triangle)
+                            tess_gate.render(&quad)
                         })
                     })
                 },
