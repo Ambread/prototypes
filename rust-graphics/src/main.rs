@@ -74,27 +74,6 @@ fn main() {
     const SPEED: f32 = 0.05;
 
     'main: loop {
-        {
-            let mut position = Vector2::new(0.0, 0.0);
-
-            if pressed_keys.contains(&Key::W) {
-                position.y += 1.0;
-            }
-            if pressed_keys.contains(&Key::A) {
-                position.x -= 1.0;
-            }
-            if pressed_keys.contains(&Key::S) {
-                position.y -= 1.0;
-            }
-            if pressed_keys.contains(&Key::D) {
-                position.x += 1.0;
-            }
-
-            if !position.is_zero() {
-                view += position.normalize() * SPEED;
-            }
-        }
-
         surface.context.window.glfw.poll_events();
         for (_, event) in glfw::flush_messages(&surface.events_rx) {
             match event {
@@ -114,6 +93,27 @@ fn main() {
                 }
 
                 _ => {}
+            }
+        }
+
+        {
+            let mut position = Vector2::new(0.0, 0.0);
+
+            if pressed_keys.contains(&Key::W) {
+                position.y += 1.0;
+            }
+            if pressed_keys.contains(&Key::A) {
+                position.x -= 1.0;
+            }
+            if pressed_keys.contains(&Key::S) {
+                position.y -= 1.0;
+            }
+            if pressed_keys.contains(&Key::D) {
+                position.x += 1.0;
+            }
+
+            if !position.is_zero() {
+                view += position.normalize() * SPEED;
             }
         }
 
