@@ -9,6 +9,7 @@
     "editor.semanticHighlighting.enabled": true,
     "files.eol": "\n",
     "cSpell.words": [
+        "Framebuffer",
         "Glfw",
         "Mipmaps",
         "cgmath",

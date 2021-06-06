@@ -7,7 +7,7 @@ use luminance::{
     render_state::RenderState,
     shader::Uniform,
     tess::Mode,
-    texture::{Dim2, GenMipmaps, Sampler},
+    texture::{Dim2, GenMipmaps, MagFilter, Sampler},
 };
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
@@ -56,7 +56,7 @@ fn main() {
     )
     .unwrap();
 
-    let back_buffer = surface.context.back_buffer().unwrap();
+    let mut back_buffer = surface.context.back_buffer().unwrap();
 
     let mut program = surface
         .context
@@ -75,13 +75,22 @@ fn main() {
 
     let mut texture = surface
         .context
-        .new_texture::<Dim2, R32F>([16, 16], 0, Sampler::default())
+        .new_texture::<Dim2, R32F>(
+            [16, 16],
+            0,
+            Sampler {
+                mag_filter: MagFilter::Nearest,
+                ..Default::default()
+            },
+        )
         .unwrap();
 
     let mut texles = [0.0; 16 * 16];
 
     for (i, texle) in texles.iter_mut().enumerate() {
-        *texle = i as f32 / 256.0;
+        let is_even_x = i % 2 == 0;
+        let is_even_y = (i / 16) % 2 == 0;
+        *texle = if is_even_x ^ is_even_y { 1.0 } else { 0.0 };
     }
 
     texture.upload_raw(GenMipmaps::No, &texles).unwrap();
@@ -105,6 +114,10 @@ fn main() {
                 }
                 WindowEvent::Key(key, _, Action::Release, _) => {
                     pressed_keys.remove(&key);
+                }
+
+                WindowEvent::FramebufferSize(..) => {
+                    back_buffer = surface.context.back_buffer().unwrap();
                 }
 
                 _ => {}
