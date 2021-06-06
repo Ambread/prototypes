@@ -1,14 +1,18 @@
-use std::collections::HashSet;
-
-use cgmath::{prelude::*, Vector2, Vector3};
+use cgmath::{prelude::*, Vector2};
 use glfw::{Action, Context as _, Key, WindowEvent};
 use luminance::{
-    context::GraphicsContext as _, pipeline::PipelineState, render_state::RenderState,
-    shader::Uniform, tess::Mode,
+    context::GraphicsContext as _,
+    pipeline::{PipelineState, TextureBinding},
+    pixel::{Floating, R32F},
+    render_state::RenderState,
+    shader::Uniform,
+    tess::Mode,
+    texture::{Dim2, GenMipmaps, Sampler},
 };
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
+use std::collections::HashSet;
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
 const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
@@ -16,9 +20,9 @@ const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
 #[derive(Debug, UniformInterface)]
 struct ShaderInterface {
     #[uniform(unbound)]
-    color: Uniform<[f32; 3]>,
-    #[uniform(unbound)]
     view: Uniform<[f32; 2]>,
+    #[uniform(unbound)]
+    texles: Uniform<TextureBinding<Dim2, Floating>>,
 }
 
 #[derive(Debug, Clone, Copy, Semantics)]
@@ -69,7 +73,19 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut color = Vector3::new(1.0, 1.0, 1.0);
+    let mut texture = surface
+        .context
+        .new_texture::<Dim2, R32F>([16, 16], 0, Sampler::default())
+        .unwrap();
+
+    let mut texles = [0.0; 16 * 16];
+
+    for (i, texle) in texles.iter_mut().enumerate() {
+        *texle = i as f32 / 256.0;
+    }
+
+    texture.upload_raw(GenMipmaps::No, &texles).unwrap();
+
     let mut view = Vector2::new(0.0, 0.0);
 
     let mut pressed_keys = HashSet::new();
@@ -83,10 +99,6 @@ fn main() {
                 WindowEvent::Close | WindowEvent::Key(Key::Escape, _, Action::Release, _) => {
                     break 'main
                 }
-
-                WindowEvent::Key(Key::R, _, Action::Release, _) => color.x = 1.0 - color.x,
-                WindowEvent::Key(Key::G, _, Action::Release, _) => color.y = 1.0 - color.y,
-                WindowEvent::Key(Key::B, _, Action::Release, _) => color.z = 1.0 - color.z,
 
                 WindowEvent::Key(key, _, Action::Press, _) => {
                     pressed_keys.insert(key);
@@ -126,10 +138,12 @@ fn main() {
             .pipeline(
                 &back_buffer,
                 &PipelineState::default(),
-                |_, mut shade_gate| {
+                |pipeline, mut shade_gate| {
+                    let bound_texture = pipeline.bind_texture(&mut texture).unwrap();
+
                     shade_gate.shade(&mut program, |mut interface, uniforms, mut render_gate| {
-                        interface.set(&uniforms.color, color.into());
                         interface.set(&uniforms.view, view.into());
+                        interface.set(&uniforms.texles, bound_texture.binding());
 
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
                             tess_gate.render(&quad)

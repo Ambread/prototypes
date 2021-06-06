@@ -10,7 +10,11 @@
     "files.eol": "\n",
     "cSpell.words": [
         "Glfw",
+        "Mipmaps",
+        "cgmath",
         "glsl",
-        "repr"
+        "repr",
+        "texle",
+        "texles"
     ]
 }
