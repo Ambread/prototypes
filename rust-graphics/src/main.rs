@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use cgmath::{prelude::*, Vector2, Vector3};
 use glfw::{Action, Context as _, Key, WindowEvent};
 use luminance::{
@@ -67,40 +69,52 @@ fn main() {
     let mut color = Vector3::new(1.0, 1.0, 1.0);
     let mut view = Vector2::new(0.0, 0.0);
 
+    let mut pressed_keys = HashSet::new();
+
     const SPEED: f32 = 0.05;
 
     'main: loop {
+        {
+            let mut position = Vector2::new(0.0, 0.0);
+
+            if pressed_keys.contains(&Key::W) {
+                position.y += 1.0;
+            }
+            if pressed_keys.contains(&Key::A) {
+                position.x -= 1.0;
+            }
+            if pressed_keys.contains(&Key::S) {
+                position.y -= 1.0;
+            }
+            if pressed_keys.contains(&Key::D) {
+                position.x += 1.0;
+            }
+
+            if !position.is_zero() {
+                view += position.normalize() * SPEED;
+            }
+        }
+
         surface.context.window.glfw.poll_events();
-
-        let mut position = Vector2::new(0.0, 0.0);
-
         for (_, event) in glfw::flush_messages(&surface.events_rx) {
             match event {
                 WindowEvent::Close | WindowEvent::Key(Key::Escape, _, Action::Release, _) => {
                     break 'main
                 }
 
-                WindowEvent::Key(key, _, Action::Release, _) => match key {
-                    // Color
-                    Key::R => color[0] = 1.0 - color[0],
-                    Key::G => color[1] = 1.0 - color[1],
-                    Key::B => color[2] = 1.0 - color[2],
+                WindowEvent::Key(Key::R, _, Action::Release, _) => color.x = 1.0 - color.x,
+                WindowEvent::Key(Key::G, _, Action::Release, _) => color.y = 1.0 - color.y,
+                WindowEvent::Key(Key::B, _, Action::Release, _) => color.z = 1.0 - color.z,
 
-                    // View
-                    Key::W => position.y += 1.0,
-                    Key::A => position.x -= 1.0,
-                    Key::S => position.y -= 1.0,
-                    Key::D => position.x += 1.0,
-
-                    _ => {}
-                },
+                WindowEvent::Key(key, _, Action::Press, _) => {
+                    pressed_keys.insert(key);
+                }
+                WindowEvent::Key(key, _, Action::Release, _) => {
+                    pressed_keys.remove(&key);
+                }
 
                 _ => {}
             }
-        }
-
-        if !position.is_zero() {
-            view += position.normalize() * SPEED;
         }
 
         let render = surface
