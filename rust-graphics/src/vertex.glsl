@@ -1,5 +1,4 @@
 uniform vec2 view;
-uniform sampler2D texture;
 
 in vec2 position;
 

@@ -75,7 +75,7 @@ fn main() {
         .build()
         .unwrap();
 
-    const SIZE: usize = 64;
+    const SIZE: usize = 128;
 
     let mut texture = surface
         .context
@@ -97,10 +97,10 @@ fn main() {
     );
 
     for (i, texle) in texles.iter_mut().enumerate() {
-        let i = i as f64;
-        let size = SIZE as f64;
-
-        let i = [(i % size), (i / size)];
+        let i = [
+            (i % SIZE) as f64 / SIZE as f64,
+            (i / SIZE) as f64 / SIZE as f64,
+        ];
 
         texle.0 = noise.0.get(i) as f32;
         texle.1 = noise.1.get(i) as f32;
