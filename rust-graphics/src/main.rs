@@ -3,7 +3,7 @@ use glfw::{Action, Context as _, Key, WindowEvent};
 use luminance::{
     context::GraphicsContext as _,
     pipeline::{PipelineState, TextureBinding},
-    pixel::{Floating, R32F, RGB32F},
+    pixel::{Floating, RGB32F},
     render_state::RenderState,
     shader::Uniform,
     tess::Mode,
@@ -12,7 +12,8 @@ use luminance::{
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
-use noise::{NoiseFn, Perlin};
+use noise::{NoiseFn, Perlin, Seedable};
+use rand::random;
 use std::collections::HashSet;
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
@@ -89,10 +90,21 @@ fn main() {
         .unwrap();
 
     let mut texles = [(0.0, 0.0, 0.0); SIZE * SIZE];
-    let noise = Perlin::new();
+    let noise = (
+        Perlin::new().set_seed(random()),
+        Perlin::new().set_seed(random()),
+        Perlin::new().set_seed(random()),
+    );
 
     for (i, texle) in texles.iter_mut().enumerate() {
-        texle.0 = noise.get([(i as f64 % SIZE as f64), (i as f64 / SIZE as f64)]) as f32;
+        let i = i as f64;
+        let size = SIZE as f64;
+
+        let i = [(i % size), (i / size)];
+
+        texle.0 = noise.0.get(i) as f32;
+        texle.1 = noise.1.get(i) as f32;
+        texle.2 = noise.2.get(i) as f32;
     }
 
     texture.upload(GenMipmaps::No, &texles).unwrap();

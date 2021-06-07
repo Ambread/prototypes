@@ -13,6 +13,7 @@
         "Glfw",
         "Mipmaps",
         "Perlin",
+        "Seedable",
         "cgmath",
         "glsl",
         "repr",
