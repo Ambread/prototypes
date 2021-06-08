@@ -624,6 +624,7 @@ dependencies = [
  "anyhow",
  "cgmath",
  "glfw",
+ "image",
  "luminance",
  "luminance-derive",
  "luminance-glfw",

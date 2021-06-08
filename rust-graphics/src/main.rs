@@ -6,7 +6,7 @@ use glfw::{Action, Context as _, Key, WindowEvent};
 use luminance::{
     context::GraphicsContext as _,
     pipeline::{PipelineState, TextureBinding},
-    pixel::{Floating, RGB32F},
+    pixel::{NormRGB8UI, NormUnsigned},
     render_state::RenderState,
     shader::Uniform,
     tess::Mode,
@@ -15,8 +15,6 @@ use luminance::{
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
-use noise::{NoiseFn, Perlin, Seedable};
-use rand::random;
 use std::collections::HashSet;
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
@@ -27,7 +25,7 @@ struct ShaderInterface {
     #[uniform(unbound)]
     view: Uniform<[f32; 2]>,
     #[uniform(unbound)]
-    texles: Uniform<TextureBinding<Dim2Array, Floating>>,
+    texles: Uniform<TextureBinding<Dim2Array, NormUnsigned>>,
     #[uniform(unbound)]
     current: Uniform<u32>,
 }
@@ -53,30 +51,7 @@ const VERTICES: [Vertex; 6] = [
     Vertex::new(VertexPosition::new([1.0, -1.0])),
 ];
 
-const TEXTURE_SIZE: usize = 64;
-const TEXTURE_COUNT: usize = 8;
-
-fn fill_texles() -> [(f32, f32, f32); TEXTURE_SIZE * TEXTURE_SIZE * TEXTURE_COUNT] {
-    let mut texles = [(0.0, 0.0, 0.0); TEXTURE_SIZE * TEXTURE_SIZE * TEXTURE_COUNT];
-    let noise = (
-        Perlin::new().set_seed(random()),
-        Perlin::new().set_seed(random()),
-        Perlin::new().set_seed(random()),
-    );
-
-    for (i, texle) in texles.iter_mut().enumerate() {
-        let i = [
-            (i % TEXTURE_SIZE) as f64 / TEXTURE_SIZE as f64,
-            (i / TEXTURE_SIZE) as f64 / TEXTURE_SIZE as f64,
-        ];
-
-        texle.0 = noise.0.get(i) as f32;
-        texle.1 = noise.1.get(i) as f32;
-        texle.2 = noise.2.get(i) as f32;
-    }
-
-    texles
-}
+const TEXTURE_COUNT: usize = 1;
 
 fn main() -> Result<()> {
     let mut surface = GlfwSurface::new_gl33(
@@ -102,9 +77,14 @@ fn main() -> Result<()> {
         .set_mode(Mode::Triangle)
         .build()?;
 
-    let mut texture = surface.context.new_texture::<Dim2Array, RGB32F>(
+    let texles = image::open("assets/pallet.png")?.flipv().to_rgb8();
+
+    let mut texture = surface.context.new_texture::<Dim2Array, NormRGB8UI>(
         (
-            [TEXTURE_SIZE as u32, TEXTURE_SIZE as u32],
+            {
+                let (width, height) = texles.dimensions();
+                [width, height]
+            },
             TEXTURE_COUNT as u32,
         ),
         0,
@@ -114,7 +94,7 @@ fn main() -> Result<()> {
         },
     )?;
 
-    texture.upload(GenMipmaps::No, &fill_texles())?;
+    texture.upload_raw(GenMipmaps::No, &texles.into_raw())?;
 
     let mut view = Vector2::new(0.0, 0.0);
 
