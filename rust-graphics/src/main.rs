@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use anyhow::Result;
 use cgmath::{prelude::*, Vector2};
@@ -10,7 +10,7 @@ use luminance::{
     render_state::RenderState,
     shader::Uniform,
     tess::Mode,
-    texture::{Dim2, GenMipmaps, MagFilter, Sampler},
+    texture::{Dim2Array, GenMipmaps, MagFilter, Sampler},
 };
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
@@ -27,7 +27,9 @@ struct ShaderInterface {
     #[uniform(unbound)]
     view: Uniform<[f32; 2]>,
     #[uniform(unbound)]
-    texles: Uniform<TextureBinding<Dim2, Floating>>,
+    texles: Uniform<TextureBinding<Dim2Array, Floating>>,
+    #[uniform(unbound)]
+    current: Uniform<u32>,
 }
 
 #[derive(Debug, Clone, Copy, Semantics)]
@@ -51,10 +53,11 @@ const VERTICES: [Vertex; 6] = [
     Vertex::new(VertexPosition::new([1.0, -1.0])),
 ];
 
-const TEXTURE_SIZE: usize = 128;
+const TEXTURE_SIZE: usize = 64;
+const TEXTURE_COUNT: usize = 8;
 
-fn fill_texles() -> [(f32, f32, f32); TEXTURE_SIZE * TEXTURE_SIZE] {
-    let mut texles = [(0.0, 0.0, 0.0); TEXTURE_SIZE * TEXTURE_SIZE];
+fn fill_texles() -> [(f32, f32, f32); TEXTURE_SIZE * TEXTURE_SIZE * TEXTURE_COUNT] {
+    let mut texles = [(0.0, 0.0, 0.0); TEXTURE_SIZE * TEXTURE_SIZE * TEXTURE_COUNT];
     let noise = (
         Perlin::new().set_seed(random()),
         Perlin::new().set_seed(random()),
@@ -99,8 +102,11 @@ fn main() -> Result<()> {
         .set_mode(Mode::Triangle)
         .build()?;
 
-    let mut texture = surface.context.new_texture::<Dim2, RGB32F>(
-        [TEXTURE_SIZE as u32, TEXTURE_SIZE as u32],
+    let mut texture = surface.context.new_texture::<Dim2Array, RGB32F>(
+        (
+            [TEXTURE_SIZE as u32, TEXTURE_SIZE as u32],
+            TEXTURE_COUNT as u32,
+        ),
         0,
         Sampler {
             mag_filter: MagFilter::Nearest,
@@ -114,6 +120,8 @@ fn main() -> Result<()> {
 
     let mut pressed_keys = HashSet::new();
 
+    let mut current_texture = 0;
+
     const SPEED: f32 = 0.05;
 
     'main: loop {
@@ -124,12 +132,18 @@ fn main() -> Result<()> {
                     break 'main
                 }
 
-                WindowEvent::Key(Key::Space, _, Action::Release, _) => {
-                    texture.upload(GenMipmaps::No, &fill_texles())?
+                WindowEvent::Key(Key::R, _, Action::Press, _) => {
+                    view = Vector2::new(0.0, 0.0);
                 }
 
-                WindowEvent::Key(Key::R, _, Action::Release, _) => {
-                    view = Vector2::new(0.0, 0.0);
+                WindowEvent::Key(Key::Left, _, Action::Press, _) if current_texture != 0 => {
+                    current_texture -= 1;
+                }
+
+                WindowEvent::Key(Key::Right, _, Action::Release, _)
+                    if current_texture != TEXTURE_COUNT as u32 =>
+                {
+                    current_texture += 1;
                 }
 
                 WindowEvent::Key(key, _, Action::Press, _) => {
@@ -180,6 +194,7 @@ fn main() -> Result<()> {
                     shade_gate.shade(&mut program, |mut interface, uniforms, mut render_gate| {
                         interface.set(&uniforms.view, view.into());
                         interface.set(&uniforms.texles, bound_texture.binding());
+                        interface.set(&uniforms.current, current_texture);
 
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
                             tess_gate.render(&quad)
