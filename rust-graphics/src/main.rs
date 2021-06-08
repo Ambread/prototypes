@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use anyhow::Result;
 use cgmath::{prelude::*, Vector2};
 use glfw::{Action, Context as _, Key, WindowEvent};
@@ -124,6 +126,10 @@ fn main() -> Result<()> {
 
                 WindowEvent::Key(Key::Space, _, Action::Release, _) => {
                     texture.upload(GenMipmaps::No, &fill_texles())?
+                }
+
+                WindowEvent::Key(Key::R, _, Action::Release, _) => {
+                    view = Vector2::new(0.0, 0.0);
                 }
 
                 WindowEvent::Key(key, _, Action::Press, _) => {
