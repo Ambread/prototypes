@@ -48,9 +48,33 @@ const VERTICES: [Vertex; 6] = [
     Vertex::new(VertexPosition::new([1.0, -1.0])),
 ];
 
+const TEXTURE_SIZE: usize = 128;
+
+fn fill_texles() -> [(f32, f32, f32); TEXTURE_SIZE * TEXTURE_SIZE] {
+    let mut texles = [(0.0, 0.0, 0.0); TEXTURE_SIZE * TEXTURE_SIZE];
+    let noise = (
+        Perlin::new().set_seed(random()),
+        Perlin::new().set_seed(random()),
+        Perlin::new().set_seed(random()),
+    );
+
+    for (i, texle) in texles.iter_mut().enumerate() {
+        let i = [
+            (i % TEXTURE_SIZE) as f64 / TEXTURE_SIZE as f64,
+            (i / TEXTURE_SIZE) as f64 / TEXTURE_SIZE as f64,
+        ];
+
+        texle.0 = noise.0.get(i) as f32;
+        texle.1 = noise.1.get(i) as f32;
+        texle.2 = noise.2.get(i) as f32;
+    }
+
+    texles
+}
+
 fn main() {
     let mut surface = GlfwSurface::new_gl33(
-        "Tile Test",
+        "Rust Graphics Test",
         WindowOpt::default().set_dim(WindowDim::Windowed {
             width: 960,
             height: 540,
@@ -75,12 +99,10 @@ fn main() {
         .build()
         .unwrap();
 
-    const SIZE: usize = 128;
-
     let mut texture = surface
         .context
         .new_texture::<Dim2, RGB32F>(
-            [SIZE as u32, SIZE as u32],
+            [TEXTURE_SIZE as u32, TEXTURE_SIZE as u32],
             0,
             Sampler {
                 mag_filter: MagFilter::Nearest,
@@ -89,25 +111,7 @@ fn main() {
         )
         .unwrap();
 
-    let mut texles = [(0.0, 0.0, 0.0); SIZE * SIZE];
-    let noise = (
-        Perlin::new().set_seed(random()),
-        Perlin::new().set_seed(random()),
-        Perlin::new().set_seed(random()),
-    );
-
-    for (i, texle) in texles.iter_mut().enumerate() {
-        let i = [
-            (i % SIZE) as f64 / SIZE as f64,
-            (i / SIZE) as f64 / SIZE as f64,
-        ];
-
-        texle.0 = noise.0.get(i) as f32;
-        texle.1 = noise.1.get(i) as f32;
-        texle.2 = noise.2.get(i) as f32;
-    }
-
-    texture.upload(GenMipmaps::No, &texles).unwrap();
+    texture.upload(GenMipmaps::No, &fill_texles()).unwrap();
 
     let mut view = Vector2::new(0.0, 0.0);
 
@@ -121,6 +125,10 @@ fn main() {
             match event {
                 WindowEvent::Close | WindowEvent::Key(Key::Escape, _, Action::Release, _) => {
                     break 'main
+                }
+
+                WindowEvent::Key(Key::Space, _, Action::Release, _) => {
+                    texture.upload(GenMipmaps::No, &fill_texles()).unwrap()
                 }
 
                 WindowEvent::Key(key, _, Action::Press, _) => {
