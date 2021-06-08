@@ -1,3 +1,4 @@
+use anyhow::Result;
 use cgmath::{prelude::*, Vector2};
 use glfw::{Action, Context as _, Key, WindowEvent};
 use luminance::{
@@ -72,23 +73,21 @@ fn fill_texles() -> [(f32, f32, f32); TEXTURE_SIZE * TEXTURE_SIZE] {
     texles
 }
 
-fn main() {
+fn main() -> Result<()> {
     let mut surface = GlfwSurface::new_gl33(
         "Rust Graphics Test",
         WindowOpt::default().set_dim(WindowDim::Windowed {
             width: 960,
             height: 540,
         }),
-    )
-    .unwrap();
+    )?;
 
-    let mut back_buffer = surface.context.back_buffer().unwrap();
+    let mut back_buffer = surface.context.back_buffer()?;
 
     let mut program = surface
         .context
         .new_shader_program::<VertexSemantics, (), ShaderInterface>()
-        .from_strings(VERTEX_SHADER, None, None, FRAGMENT_SHADER)
-        .unwrap()
+        .from_strings(VERTEX_SHADER, None, None, FRAGMENT_SHADER)?
         .ignore_warnings();
 
     let quad = surface
@@ -96,22 +95,18 @@ fn main() {
         .new_tess()
         .set_vertices(&VERTICES[..])
         .set_mode(Mode::Triangle)
-        .build()
-        .unwrap();
+        .build()?;
 
-    let mut texture = surface
-        .context
-        .new_texture::<Dim2, RGB32F>(
-            [TEXTURE_SIZE as u32, TEXTURE_SIZE as u32],
-            0,
-            Sampler {
-                mag_filter: MagFilter::Nearest,
-                ..Default::default()
-            },
-        )
-        .unwrap();
+    let mut texture = surface.context.new_texture::<Dim2, RGB32F>(
+        [TEXTURE_SIZE as u32, TEXTURE_SIZE as u32],
+        0,
+        Sampler {
+            mag_filter: MagFilter::Nearest,
+            ..Default::default()
+        },
+    )?;
 
-    texture.upload(GenMipmaps::No, &fill_texles()).unwrap();
+    texture.upload(GenMipmaps::No, &fill_texles())?;
 
     let mut view = Vector2::new(0.0, 0.0);
 
@@ -128,7 +123,7 @@ fn main() {
                 }
 
                 WindowEvent::Key(Key::Space, _, Action::Release, _) => {
-                    texture.upload(GenMipmaps::No, &fill_texles()).unwrap()
+                    texture.upload(GenMipmaps::No, &fill_texles())?
                 }
 
                 WindowEvent::Key(key, _, Action::Press, _) => {
@@ -139,7 +134,7 @@ fn main() {
                 }
 
                 WindowEvent::FramebufferSize(..) => {
-                    back_buffer = surface.context.back_buffer().unwrap();
+                    back_buffer = surface.context.back_buffer()?;
                 }
 
                 _ => {}
@@ -174,7 +169,7 @@ fn main() {
                 &back_buffer,
                 &PipelineState::default(),
                 |pipeline, mut shade_gate| {
-                    let bound_texture = pipeline.bind_texture(&mut texture).unwrap();
+                    let bound_texture = pipeline.bind_texture(&mut texture)?;
 
                     shade_gate.shade(&mut program, |mut interface, uniforms, mut render_gate| {
                         interface.set(&uniforms.view, view.into());
@@ -194,4 +189,6 @@ fn main() {
             break 'main;
         }
     }
+
+    Ok(())
 }
