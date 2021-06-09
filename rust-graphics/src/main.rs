@@ -7,15 +7,17 @@ use image::GenericImageView;
 use luminance::{
     context::GraphicsContext as _,
     pipeline::{PipelineState, TextureBinding},
-    pixel::{NormRGB8UI, NormUnsigned},
+    pixel::{NormRGB8UI, NormUnsigned, Unsigned, R8UI},
     render_state::RenderState,
     shader::Uniform,
     tess::Mode,
-    texture::{Dim2Array, GenMipmaps, MagFilter, Sampler},
+    texture::{Dim2, Dim2Array, GenMipmaps, MagFilter, Sampler},
 };
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
+use noise::{NoiseFn, Perlin, Seedable};
+use rand::random;
 use std::collections::HashSet;
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
@@ -28,7 +30,7 @@ struct ShaderInterface {
     #[uniform(unbound)]
     texles: Uniform<TextureBinding<Dim2Array, NormUnsigned>>,
     #[uniform(unbound)]
-    current: Uniform<u32>,
+    world: Uniform<TextureBinding<Dim2, Unsigned>>,
 }
 
 #[derive(Debug, Clone, Copy, Semantics)]
@@ -110,11 +112,41 @@ fn main() -> Result<()> {
 
     texture.upload_raw(GenMipmaps::No, &texles)?;
 
+    const WORLD_SIZE: usize = 16;
+
+    let mut world = surface.context.new_texture::<Dim2, R8UI>(
+        [WORLD_SIZE as u32, WORLD_SIZE as u32],
+        0,
+        Sampler {
+            mag_filter: MagFilter::Nearest,
+            ..Default::default()
+        },
+    )?;
+
+    let world_noise = Perlin::new().set_seed(random());
+    let mut tiles = [0; WORLD_SIZE * WORLD_SIZE];
+
+    for (i, tile) in tiles.iter_mut().enumerate() {
+        let i = [
+            (i % WORLD_SIZE) as f64 / WORLD_SIZE as f64,
+            (i / WORLD_SIZE) as f64 / WORLD_SIZE as f64,
+        ];
+
+        *tile = if world_noise.get(i) > 0.5 { 0 } else { 2 };
+    }
+
+    for t in tiles.windows(WORLD_SIZE) {
+        for t in t.iter() {
+            print!("{}", t);
+        }
+        println!();
+    }
+
+    world.upload(GenMipmaps::No, &tiles)?;
+
     let mut view = Vector2::new(0.0, 0.0);
 
     let mut pressed_keys = HashSet::new();
-
-    let mut current_texture = 0;
 
     const SPEED: f32 = 0.05;
 
@@ -128,16 +160,6 @@ fn main() -> Result<()> {
 
                 WindowEvent::Key(Key::R, _, Action::Press, _) => {
                     view = Vector2::new(0.0, 0.0);
-                }
-
-                WindowEvent::Key(Key::Left, _, Action::Press, _) if current_texture != 0 => {
-                    current_texture -= 1;
-                }
-
-                WindowEvent::Key(Key::Right, _, Action::Release, _)
-                    if current_texture != TEXTURE_COUNT =>
-                {
-                    current_texture += 1;
                 }
 
                 WindowEvent::Key(key, _, Action::Press, _) => {
@@ -184,11 +206,12 @@ fn main() -> Result<()> {
                 &PipelineState::default(),
                 |pipeline, mut shade_gate| {
                     let bound_texture = pipeline.bind_texture(&mut texture)?;
+                    let bound_world = pipeline.bind_texture(&mut world)?;
 
                     shade_gate.shade(&mut program, |mut interface, uniforms, mut render_gate| {
                         interface.set(&uniforms.view, view.into());
                         interface.set(&uniforms.texles, bound_texture.binding());
-                        interface.set(&uniforms.current, current_texture);
+                        interface.set(&uniforms.world, bound_world.binding());
 
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
                             tess_gate.render(&quad)
