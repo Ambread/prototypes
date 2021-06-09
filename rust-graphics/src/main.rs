@@ -3,6 +3,7 @@
 use anyhow::Result;
 use cgmath::{prelude::*, Vector2};
 use glfw::{Action, Context as _, Key, WindowEvent};
+use image::GenericImageView;
 use luminance::{
     context::GraphicsContext as _,
     pipeline::{PipelineState, TextureBinding},
@@ -51,8 +52,6 @@ const VERTICES: [Vertex; 6] = [
     Vertex::new(VertexPosition::new([1.0, -1.0])),
 ];
 
-const TEXTURE_COUNT: usize = 1;
-
 fn main() -> Result<()> {
     let mut surface = GlfwSurface::new_gl33(
         "Rust Graphics Test",
@@ -77,16 +76,11 @@ fn main() -> Result<()> {
         .set_mode(Mode::Triangle)
         .build()?;
 
-    let texles = image::open("assets/pallet.png")?.flipv().to_rgb8();
+    const TEXTURE_SIZE: u32 = 16;
+    const TEXTURE_COUNT: u32 = 3;
 
     let mut texture = surface.context.new_texture::<Dim2Array, NormRGB8UI>(
-        (
-            {
-                let (width, height) = texles.dimensions();
-                [width, height]
-            },
-            TEXTURE_COUNT as u32,
-        ),
+        ([TEXTURE_SIZE, TEXTURE_SIZE], TEXTURE_COUNT),
         0,
         Sampler {
             mag_filter: MagFilter::Nearest,
@@ -94,7 +88,27 @@ fn main() -> Result<()> {
         },
     )?;
 
-    texture.upload_raw(GenMipmaps::No, &texles.into_raw())?;
+    let atlas = image::open("assets/pallet.png")?.to_rgb8();
+    let (atlas_width, atlas_height) = atlas.dimensions();
+
+    let texles: Vec<_> = (0..atlas_height)
+        .step_by(TEXTURE_SIZE as usize)
+        .flat_map(|y| {
+            (0..atlas_width)
+                .step_by(TEXTURE_SIZE as usize)
+                .map(move |x| (x, y))
+        })
+        .take(TEXTURE_COUNT as usize)
+        .flat_map(|(x, y)| {
+            atlas
+                .view(x, y, TEXTURE_SIZE, TEXTURE_SIZE)
+                .to_image()
+                .into_raw()
+                .into_iter()
+        })
+        .collect();
+
+    texture.upload_raw(GenMipmaps::No, &texles)?;
 
     let mut view = Vector2::new(0.0, 0.0);
 
@@ -121,7 +135,7 @@ fn main() -> Result<()> {
                 }
 
                 WindowEvent::Key(Key::Right, _, Action::Release, _)
-                    if current_texture != TEXTURE_COUNT as u32 =>
+                    if current_texture != TEXTURE_COUNT =>
                 {
                     current_texture += 1;
                 }
