@@ -1,16 +1,16 @@
 uniform sampler2DArray texles;
-uniform sampler2D tiles;
+
+uniform usampler2D world;
+uniform uint world_size;
 
 in vec2 vertex_uv;
 
 out vec4 fragment_color;
 
 void main() {
-    vec4 tile = texture(tiles, vertex_uv);
+    uint tile = texture(world, vertex_uv).r;
 
-    if (tile.r == 0) {
-        fragment_color = vec4(0.0, 1.0, 0.0, 0.0);
-    } else {
-        fragment_color = vec4(0.0, 0.0, 1.0, 0.0);
-    }
+    vec2 local_uv = fract(vertex_uv * vec2(world_size));
+
+    fragment_color = texture(texles, vec3(local_uv, tile));
 }

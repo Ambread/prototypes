@@ -31,6 +31,8 @@ struct ShaderInterface {
     texles: Uniform<TextureBinding<Dim2Array, NormUnsigned>>,
     #[uniform(unbound)]
     world: Uniform<TextureBinding<Dim2, Unsigned>>,
+    #[uniform(unbound)]
+    world_size: Uniform<u32>,
 }
 
 #[derive(Debug, Clone, Copy, Semantics)]
@@ -83,7 +85,7 @@ fn main() -> Result<()> {
 
     let mut texture = surface.context.new_texture::<Dim2Array, NormRGB8UI>(
         ([TEXTURE_SIZE, TEXTURE_SIZE], TEXTURE_COUNT),
-        0,
+        2,
         Sampler {
             mag_filter: MagFilter::Nearest,
             ..Default::default()
@@ -110,9 +112,9 @@ fn main() -> Result<()> {
         })
         .collect();
 
-    texture.upload_raw(GenMipmaps::No, &texles)?;
+    texture.upload_raw(GenMipmaps::Yes, &texles)?;
 
-    const WORLD_SIZE: usize = 16;
+    const WORLD_SIZE: usize = 64;
 
     let mut world = surface.context.new_texture::<Dim2, R8UI>(
         [WORLD_SIZE as u32, WORLD_SIZE as u32],
@@ -132,14 +134,7 @@ fn main() -> Result<()> {
             (i / WORLD_SIZE) as f64 / WORLD_SIZE as f64,
         ];
 
-        *tile = if world_noise.get(i) > 0.5 { 0 } else { 2 };
-    }
-
-    for t in tiles.windows(WORLD_SIZE) {
-        for t in t.iter() {
-            print!("{}", t);
-        }
-        println!();
+        *tile = (world_noise.get(i) * TEXTURE_COUNT as f64).trunc() as u8;
     }
 
     world.upload(GenMipmaps::No, &tiles)?;
@@ -212,6 +207,7 @@ fn main() -> Result<()> {
                         interface.set(&uniforms.view, view.into());
                         interface.set(&uniforms.texles, bound_texture.binding());
                         interface.set(&uniforms.world, bound_world.binding());
+                        interface.set(&uniforms.world_size, WORLD_SIZE as u32);
 
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
                             tess_gate.render(&quad)
