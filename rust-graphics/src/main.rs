@@ -18,7 +18,7 @@ use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
 use noise::{NoiseFn, Perlin, Seedable};
 use rand::random;
-use std::collections::HashSet;
+use std::{collections::HashSet, path::Path};
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
 const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
@@ -56,6 +56,49 @@ const VERTICES: [Vertex; 6] = [
     Vertex::new(VertexPosition::new([1.0, -1.0])),
 ];
 
+const WORLD_SIZE: usize = 64;
+
+fn generate_world(noise_scale: f64) -> [u8; WORLD_SIZE * WORLD_SIZE] {
+    let world_noise = Perlin::new().set_seed(random());
+    let mut tiles = [0; WORLD_SIZE * WORLD_SIZE];
+
+    for (i, tile) in tiles.iter_mut().enumerate() {
+        let i = [
+            (i % WORLD_SIZE) as f64 / noise_scale,
+            (i / WORLD_SIZE) as f64 / noise_scale,
+        ];
+
+        *tile = (world_noise.get(i) * TEXTURE_COUNT as f64).trunc() as u8;
+    }
+
+    tiles
+}
+
+const TEXTURE_SIZE: u32 = 16;
+const TEXTURE_COUNT: u32 = 3;
+
+fn parse_atlas<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
+    let atlas = image::open(path)?.to_rgb8();
+    let (atlas_width, atlas_height) = atlas.dimensions();
+
+    Ok((0..atlas_height)
+        .step_by(TEXTURE_SIZE as usize)
+        .flat_map(|y| {
+            (0..atlas_width)
+                .step_by(TEXTURE_SIZE as usize)
+                .map(move |x| (x, y))
+        })
+        .take(TEXTURE_COUNT as usize)
+        .flat_map(|(x, y)| {
+            atlas
+                .view(x, y, TEXTURE_SIZE, TEXTURE_SIZE)
+                .to_image()
+                .into_raw()
+                .into_iter()
+        })
+        .collect())
+}
+
 fn main() -> Result<()> {
     let mut surface = GlfwSurface::new_gl33(
         "Rust Graphics Test",
@@ -80,9 +123,6 @@ fn main() -> Result<()> {
         .set_mode(Mode::Triangle)
         .build()?;
 
-    const TEXTURE_SIZE: u32 = 16;
-    const TEXTURE_COUNT: u32 = 3;
-
     let mut texture = surface.context.new_texture::<Dim2Array, NormRGB8UI>(
         ([TEXTURE_SIZE, TEXTURE_SIZE], TEXTURE_COUNT),
         2,
@@ -92,29 +132,10 @@ fn main() -> Result<()> {
         },
     )?;
 
-    let atlas = image::open("assets/pallet.png")?.to_rgb8();
-    let (atlas_width, atlas_height) = atlas.dimensions();
+    texture.upload_raw(GenMipmaps::Yes, &parse_atlas("assets/pallet.png")?)?;
 
-    let texles: Vec<_> = (0..atlas_height)
-        .step_by(TEXTURE_SIZE as usize)
-        .flat_map(|y| {
-            (0..atlas_width)
-                .step_by(TEXTURE_SIZE as usize)
-                .map(move |x| (x, y))
-        })
-        .take(TEXTURE_COUNT as usize)
-        .flat_map(|(x, y)| {
-            atlas
-                .view(x, y, TEXTURE_SIZE, TEXTURE_SIZE)
-                .to_image()
-                .into_raw()
-                .into_iter()
-        })
-        .collect();
-
-    texture.upload_raw(GenMipmaps::Yes, &texles)?;
-
-    const WORLD_SIZE: usize = 64;
+    let mut noise_scale: f64 = 1.0;
+    println!("noise_scale = {}", noise_scale);
 
     let mut world = surface.context.new_texture::<Dim2, R8UI>(
         [WORLD_SIZE as u32, WORLD_SIZE as u32],
@@ -125,19 +146,7 @@ fn main() -> Result<()> {
         },
     )?;
 
-    let world_noise = Perlin::new().set_seed(random());
-    let mut tiles = [0; WORLD_SIZE * WORLD_SIZE];
-
-    for (i, tile) in tiles.iter_mut().enumerate() {
-        let i = [
-            (i % WORLD_SIZE) as f64 / WORLD_SIZE as f64,
-            (i / WORLD_SIZE) as f64 / WORLD_SIZE as f64,
-        ];
-
-        *tile = (world_noise.get(i) * TEXTURE_COUNT as f64).trunc() as u8;
-    }
-
-    world.upload(GenMipmaps::No, &tiles)?;
+    world.upload(GenMipmaps::No, &generate_world(noise_scale))?;
 
     let mut view = Vector2::new(0.0, 0.0);
 
@@ -155,6 +164,24 @@ fn main() -> Result<()> {
 
                 WindowEvent::Key(Key::R, _, Action::Press, _) => {
                     view = Vector2::new(0.0, 0.0);
+                }
+
+                WindowEvent::Key(Key::Space, _, Action::Press, _) => {
+                    world.upload(GenMipmaps::No, &generate_world(noise_scale))?;
+                }
+
+                WindowEvent::Key(Key::Left, _, Action::Press, _) => {
+                    noise_scale /= 2.0;
+                    println!("noise_scale = {}", noise_scale);
+
+                    world.upload(GenMipmaps::No, &generate_world(noise_scale))?;
+                }
+
+                WindowEvent::Key(Key::Right, _, Action::Release, _) => {
+                    noise_scale *= 2.0;
+                    println!("noise_scale = {}", noise_scale);
+
+                    world.upload(GenMipmaps::No, &generate_world(noise_scale))?;
                 }
 
                 WindowEvent::Key(key, _, Action::Press, _) => {
