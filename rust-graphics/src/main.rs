@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use anyhow::Result;
-use cgmath::{prelude::*, Vector2};
+use cgmath::Vector2;
 use glfw::{Action, Context as _, Key, WindowEvent};
 use image::GenericImageView;
 use luminance::{
@@ -18,15 +18,13 @@ use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
 use noise::{NoiseFn, Perlin, Seedable};
 use rand::random;
-use std::{collections::HashSet, path::Path};
+use std::{collections::HashMap, path::Path};
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
 const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
 
 #[derive(Debug, UniformInterface)]
 struct ShaderInterface {
-    #[uniform(unbound)]
-    view: Uniform<[f32; 2]>,
     #[uniform(unbound)]
     texles: Uniform<TextureBinding<Dim2Array, NormUnsigned>>,
     #[uniform(unbound)]
@@ -56,22 +54,37 @@ const VERTICES: [Vertex; 6] = [
     Vertex::new(VertexPosition::new([1.0, -1.0])),
 ];
 
-const WORLD_SIZE: usize = 64;
+#[derive(Debug, Clone)]
+struct World {
+    chunks: HashMap<Vector2<isize>, Chunk>,
+}
 
-fn generate_world(noise_scale: f64) -> [u8; WORLD_SIZE * WORLD_SIZE] {
-    let world_noise = Perlin::new().set_seed(random());
-    let mut tiles = [0; WORLD_SIZE * WORLD_SIZE];
+#[derive(Debug, Clone)]
+struct Chunk {
+    tiles: [u8; Self::SIZE * Self::SIZE],
+    position: Vector2<isize>,
+}
 
-    for (i, tile) in tiles.iter_mut().enumerate() {
-        let i = [
-            (i % WORLD_SIZE) as f64 / noise_scale,
-            (i / WORLD_SIZE) as f64 / noise_scale,
-        ];
+impl Chunk {
+    const SIZE: usize = 32;
 
-        *tile = (world_noise.get(i) * TEXTURE_COUNT as f64).trunc() as u8;
+    fn new(position: Vector2<isize>) -> Self {
+        Self {
+            position,
+            tiles: [0; Self::SIZE * Self::SIZE],
+        }
     }
 
-    tiles
+    fn generate(&mut self, noise: &Perlin, scale: f64) {
+        for (i, tile) in self.tiles.iter_mut().enumerate() {
+            let i = [
+                ((i % Self::SIZE) as isize + self.position.x * Self::SIZE as isize) as f64 / scale,
+                ((i / Self::SIZE) as isize + self.position.y * Self::SIZE as isize) as f64 / scale,
+            ];
+
+            *tile = (noise.get(i) * TEXTURE_COUNT as f64).trunc() as u8;
+        }
+    }
 }
 
 const TEXTURE_SIZE: u32 = 16;
@@ -134,11 +147,8 @@ fn main() -> Result<()> {
 
     texture.upload_raw(GenMipmaps::Yes, &parse_atlas("assets/pallet.png")?)?;
 
-    let mut noise_scale: f64 = 1.0;
-    println!("noise_scale = {}", noise_scale);
-
     let mut world = surface.context.new_texture::<Dim2, R8UI>(
-        [WORLD_SIZE as u32, WORLD_SIZE as u32],
+        [Chunk::SIZE as u32, Chunk::SIZE as u32],
         0,
         Sampler {
             mag_filter: MagFilter::Nearest,
@@ -146,13 +156,14 @@ fn main() -> Result<()> {
         },
     )?;
 
-    world.upload(GenMipmaps::No, &generate_world(noise_scale))?;
+    let mut chunk = Chunk::new(Vector2::new(0, 0));
+    let mut chunk_noise = Perlin::new().set_seed(random());
 
-    let mut view = Vector2::new(0.0, 0.0);
+    let mut noise_scale: f64 = 2.0;
+    println!("noise_scale = {}", noise_scale);
 
-    let mut pressed_keys = HashSet::new();
-
-    const SPEED: f32 = 0.05;
+    chunk.generate(&chunk_noise, noise_scale);
+    world.upload(GenMipmaps::No, &chunk.tiles)?;
 
     'main: loop {
         surface.context.window.glfw.poll_events();
@@ -162,33 +173,29 @@ fn main() -> Result<()> {
                     break 'main
                 }
 
-                WindowEvent::Key(Key::R, _, Action::Press, _) => {
-                    view = Vector2::new(0.0, 0.0);
-                }
-
-                WindowEvent::Key(Key::Space, _, Action::Press, _) => {
-                    world.upload(GenMipmaps::No, &generate_world(noise_scale))?;
-                }
-
-                WindowEvent::Key(Key::Left, _, Action::Press, _) => {
-                    noise_scale /= 2.0;
-                    println!("noise_scale = {}", noise_scale);
-
-                    world.upload(GenMipmaps::No, &generate_world(noise_scale))?;
-                }
-
-                WindowEvent::Key(Key::Right, _, Action::Release, _) => {
-                    noise_scale *= 2.0;
-                    println!("noise_scale = {}", noise_scale);
-
-                    world.upload(GenMipmaps::No, &generate_world(noise_scale))?;
-                }
-
                 WindowEvent::Key(key, _, Action::Press, _) => {
-                    pressed_keys.insert(key);
-                }
-                WindowEvent::Key(key, _, Action::Release, _) => {
-                    pressed_keys.remove(&key);
+                    match key {
+                        Key::W => chunk.position.y += 1,
+                        Key::A => chunk.position.x -= 1,
+                        Key::S => chunk.position.y -= 1,
+                        Key::D => chunk.position.x += 1,
+
+                        Key::Space => chunk_noise = chunk_noise.set_seed(random()),
+
+                        Key::Q => {
+                            noise_scale /= 2.0;
+                            noise_scale = noise_scale.max(2.0);
+                            println!("noise_scale = {}", noise_scale);
+                        }
+                        Key::E => {
+                            noise_scale *= 2.0;
+                            println!("noise_scale = {}", noise_scale);
+                        }
+                        _ => {}
+                    }
+
+                    chunk.generate(&chunk_noise, noise_scale);
+                    world.upload(GenMipmaps::No, &chunk.tiles)?;
                 }
 
                 WindowEvent::FramebufferSize(..) => {
@@ -196,27 +203,6 @@ fn main() -> Result<()> {
                 }
 
                 _ => {}
-            }
-        }
-
-        {
-            let mut position = Vector2::new(0.0, 0.0);
-
-            if pressed_keys.contains(&Key::W) {
-                position.y += 1.0;
-            }
-            if pressed_keys.contains(&Key::A) {
-                position.x -= 1.0;
-            }
-            if pressed_keys.contains(&Key::S) {
-                position.y -= 1.0;
-            }
-            if pressed_keys.contains(&Key::D) {
-                position.x += 1.0;
-            }
-
-            if !position.is_zero() {
-                view += position.normalize() * SPEED;
             }
         }
 
@@ -231,10 +217,9 @@ fn main() -> Result<()> {
                     let bound_world = pipeline.bind_texture(&mut world)?;
 
                     shade_gate.shade(&mut program, |mut interface, uniforms, mut render_gate| {
-                        interface.set(&uniforms.view, view.into());
                         interface.set(&uniforms.texles, bound_texture.binding());
                         interface.set(&uniforms.world, bound_world.binding());
-                        interface.set(&uniforms.world_size, WORLD_SIZE as u32);
+                        interface.set(&uniforms.world_size, Chunk::SIZE as u32);
 
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
                             tess_gate.render(&quad)
