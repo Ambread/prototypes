@@ -1,0 +1,20 @@
+export { Boolean };
+
+enum Boolean(True, False) {
+
+    func if<R>(self: Self, body: block() -> R) -> Optional<R> {
+        match(self) {
+            True -> Some(body()),
+            False -> Nothing,
+        }
+    };
+
+    func while(self: block() -> Self, body: block() -> Unit) -> Unit {
+        loop {
+            match(self) {
+                True -> body(),
+                False -> return,
+            };
+        };
+    };
+};

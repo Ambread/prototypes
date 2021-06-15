@@ -1,0 +1,9 @@
+export { From, into };
+
+trait From<T> {
+    func from(other: T) -> Self;
+};
+
+func into<T, R: From<T>>(other: T) -> R {
+    R.from(other)
+};

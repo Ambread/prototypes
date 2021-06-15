@@ -1,0 +1,43 @@
+export { Optional, default_none, default_some };
+
+enum Optional<T>(Some(T), Nothing) -> From<T> {
+
+    func else(self: Self, body: block() -> T) -> T {
+        match(self) {
+            Some(value) -> value,
+            Nothing -> body(),
+        }
+    };
+
+    func while_some(self: block() -> Self, body: block(value: T) -> Unit) -> Unit {
+        loop {
+            match(self) {
+                Some(value) -> body(value),
+                Nothing -> return,
+            };
+        };
+    };
+
+    func else_with_error<E>(self: Self, body: block() -> E) -> Result<T, E> {
+        match(self) {
+            Some(value) -> Okay(value),
+            Nothing -> Error(body()),
+        }
+    };
+
+    func from(other: T) -> Self {
+        Some(other)
+    };
+};
+
+module default_none<T> -> Optional<T> with<Default> {
+    func default() {
+        Nothing
+    };
+};
+
+module default_some<T: Default> -> Optional<T> with<Default> {
+    func default() {
+        Some(T default())
+    };
+};

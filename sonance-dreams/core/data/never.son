@@ -1,0 +1,9 @@
+export { Never };
+
+enum Never();
+
+@tail_call
+func loop(body: block() -> Unit) -> Never {
+    body();
+    loop(body)
+};

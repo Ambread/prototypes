@@ -1,0 +1,6 @@
+export { Unit };
+
+struct Unit() -> Default {
+
+    func default() { () };
+};
