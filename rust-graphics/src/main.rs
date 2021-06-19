@@ -11,7 +11,7 @@ use luminance::{
     render_state::RenderState,
     shader::Uniform,
     tess::Mode,
-    texture::{Dim2, Dim2Array, GenMipmaps, MagFilter, Sampler},
+    texture::{Dim2, Dim2Array, GenMipmaps, MagFilter, MinFilter, Sampler},
 };
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
@@ -59,7 +59,7 @@ struct World {
     chunks: HashMap<Vector2<isize>, Chunk>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 struct Chunk {
     tiles: [u8; Self::SIZE * Self::SIZE],
     position: Vector2<isize>,
@@ -84,6 +84,19 @@ impl Chunk {
 
             *tile = (noise.get(i) * TEXTURE_COUNT as f64).trunc() as u8;
         }
+    }
+}
+
+impl std::fmt::Debug for Chunk {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, tiles) in self.tiles.chunks(Chunk::SIZE).enumerate() {
+            write!(f, "{}  ", i)?;
+            for tile in tiles {
+                write!(f, "{}", tile)?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
     }
 }
 
@@ -152,6 +165,7 @@ fn main() -> Result<()> {
         0,
         Sampler {
             mag_filter: MagFilter::Nearest,
+            min_filter: MinFilter::Nearest,
             ..Default::default()
         },
     )?;
@@ -191,6 +205,9 @@ fn main() -> Result<()> {
                             noise_scale *= 2.0;
                             println!("noise_scale = {}", noise_scale);
                         }
+
+                        Key::P => println!("{:?}", chunk),
+
                         _ => {}
                     }
 
