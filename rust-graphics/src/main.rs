@@ -67,6 +67,7 @@ struct Chunk {
 
 impl Chunk {
     const SIZE: usize = 32;
+    const INVERT: bool = false;
 
     fn new(position: Vector2<isize>) -> Self {
         Self {
@@ -82,7 +83,12 @@ impl Chunk {
                 ((i / Self::SIZE) as isize + self.position.y * Self::SIZE as isize) as f64 / scale,
             ];
 
-            *tile = (noise.get(i) * TEXTURE_COUNT as f64).trunc() as u8;
+            *tile = ((noise.get(i) * (TEXTURE_COUNT + 1) as f64).trunc() as u8)
+                .min(TEXTURE_COUNT as u8);
+
+            if Self::INVERT {
+                *tile = TEXTURE_COUNT as u8 - *tile;
+            }
         }
     }
 }
