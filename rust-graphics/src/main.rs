@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+pub mod pack;
+
 use anyhow::Result;
 use cgmath::Vector2;
 use glfw::{Action, Context as _, Key, WindowEvent};
