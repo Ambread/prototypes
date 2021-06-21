@@ -2,7 +2,7 @@ use anyhow::Result;
 use cgmath::Vector2;
 use image::{GenericImageView, RgbImage};
 use serde::{Deserialize, Serialize};
-use std::{fs, path::Path};
+use std::{collections::HashMap, fs, path::Path};
 
 #[derive(Debug, Clone)]
 pub struct Assets {
@@ -15,7 +15,7 @@ impl Assets {
     pub fn from_path(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
 
-        let tile_data = fs::read_to_string(dbg!(path.join("tiles.json")))?;
+        let tile_data = fs::read_to_string(path.join("tiles.json"))?;
         let tile_sprites = image::open(path.join("tiles.png"))?;
         let world_data = fs::read_to_string(path.join("world.json"))?;
 
@@ -53,13 +53,12 @@ impl Assets {
 pub struct Tiles {
     pub texture_size: Vector2<usize>,
     pub texture_count: usize,
-    pub tiles: Vec<Tile>,
+    pub tiles: HashMap<String, Tile>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tile {
-    pub name: String,
-    pub sprite: usize,
+    pub sprite: u8,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

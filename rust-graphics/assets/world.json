@@ -1,7 +1,7 @@
 {
     "type": "noise",
     "seed": 0,
-    "scale": 2,
+    "scale": 8,
     "tiles": [
         "grass",
         "sand",

@@ -93,7 +93,12 @@ impl Chunk {
 
     fn generate_noise(&mut self, gen: &NoiseWorldGenerator, assets: &Assets) {
         let noise = Perlin::new().set_seed(gen.seed);
-        let tile_count = gen.tiles.len();
+        let tiles = gen
+            .tiles
+            .iter()
+            .map(|it| assets.tile_data.tiles.get(it))
+            .collect::<Option<Vec<_>>>()
+            .unwrap();
 
         for (i, tile) in self.tiles.iter_mut().enumerate() {
             let i = [
@@ -103,10 +108,21 @@ impl Chunk {
                     / gen.scale,
             ];
 
-            *tile = ((noise.get(i) * (tile_count + 1) as f64).trunc() as u8).min(tile_count as u8);
+            // Get noise value for position
+            let output = noise.get(i);
+
+            // Map from `-1.0..1.0` to `0..tile.len()`
+            let output = output * tiles.len() as f64;
+            let output = output.trunc() as usize;
+            let output = output.min(tiles.len() - 1);
+
+            // Retrieve the sprite index for the tile
+            let output = tiles[output].sprite;
+
+            *tile = output as u8;
 
             if Self::INVERT {
-                *tile = tile_count as u8 - *tile;
+                *tile = tiles.len() as u8 - *tile;
             }
         }
     }

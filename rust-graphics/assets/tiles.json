@@ -4,18 +4,15 @@
         "y": 16
     },
     "texture_count": 3,
-    "tiles": [
-        {
-            "name": "grass",
+    "tiles": {
+        "grass": {
             "sprite": 0
         },
-        {
-            "name": "sand",
+        "sand": {
             "sprite": 1
         },
-        {
-            "name": "water",
+        "water": {
             "sprite": 2
         }
-    ]
+    }
 }
