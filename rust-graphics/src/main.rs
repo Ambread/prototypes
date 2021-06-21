@@ -8,28 +8,19 @@ use anyhow::Result;
 use assets::Assets;
 use cgmath::Vector2;
 use chunk::Chunk;
-use glfw::{Action, Context as _, Key, WindowEvent};
-use luminance::{
-    context::GraphicsContext as _,
-    framebuffer::Framebuffer,
-    pipeline::{PipelineState, TextureBinding},
-    pixel::{NormRGB8UI, NormUnsigned, Unsigned, R8UI},
-    render_state::RenderState,
-    shader::{Program, Uniform},
-    tess::{Interleaved, Mode, Tess},
-    texture::{Dim2, Dim2Array, GenMipmaps, MagFilter, MinFilter, Sampler, Texture},
-};
-use luminance_derive::{Semantics, UniformInterface, Vertex};
-use luminance_gl::gl33::GL33;
+use glfw::{Action, Key, WindowEvent};
+use luminance::texture::GenMipmaps;
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
+use renderer::Renderer;
 use std::env::current_dir;
 
 struct Main {
-    assets: Assets,
-    surface: GlfwSurface,
-    chunk: Chunk,
-    should_quit: bool,
+    pub assets: Assets,
+    pub surface: GlfwSurface,
+    pub renderer: Renderer,
+    pub chunk: Chunk,
+    pub should_quit: bool,
 }
 
 impl Main {
@@ -44,11 +35,14 @@ impl Main {
             }),
         )?;
 
+        let renderer = Renderer::new(&mut surface, &assets)?;
+
         let chunk = Chunk::new(Vector2::new(0, 0));
 
         let mut this = Self {
             assets,
             surface,
+            renderer,
             chunk,
             should_quit: false,
         };
@@ -61,7 +55,8 @@ impl Main {
     fn generate(&mut self) -> Result<()> {
         self.chunk.generate(&self.assets)?;
 
-        self.world_texture
+        self.renderer
+            .world_texture
             .upload(GenMipmaps::No, self.chunk.tiles())?;
 
         Ok(())
@@ -97,7 +92,7 @@ impl Main {
                 }
 
                 WindowEvent::FramebufferSize(..) => {
-                    self.back_buffer = self.surface.context.back_buffer()?;
+                    self.renderer.back_buffer = self.surface.context.back_buffer()?;
                 }
 
                 _ => {}
@@ -110,6 +105,10 @@ impl Main {
 
         Ok(())
     }
+
+    fn render(&mut self) -> Result<()> {
+        self.renderer.render(&mut self.surface)
+    }
 }
 
 fn main() -> Result<()> {
@@ -119,9 +118,11 @@ fn main() -> Result<()> {
         main.handle_events()?;
 
         if main.should_quit {
-            return Ok(());
+            break;
         }
 
         main.render()?;
     }
+
+    return dbg!(Ok(()));
 }

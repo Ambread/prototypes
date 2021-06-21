@@ -13,7 +13,6 @@ use luminance::{
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_gl::gl33::GL33;
 use luminance_glfw::GlfwSurface;
-use luminance_windowing::{WindowDim, WindowOpt};
 
 use crate::{assets::Assets, chunk::Chunk};
 
@@ -21,24 +20,15 @@ const VERTEX_SHADER: &str = include_str!("vertex.glsl");
 const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
 
 pub struct Renderer {
-    surface: GlfwSurface,
-    back_buffer: Framebuffer<GL33, Dim2, (), ()>,
+    pub back_buffer: Framebuffer<GL33, Dim2, (), ()>,
     program: Program<GL33, VertexSemantics, (), ShaderInterface>,
     quad: Tess<GL33, Vertex, (), (), Interleaved>,
     tile_texture: Texture<GL33, Dim2Array, NormRGB8UI>,
-    world_texture: Texture<GL33, Dim2, R8UI>,
+    pub world_texture: Texture<GL33, Dim2, R8UI>,
 }
 
 impl Renderer {
-    pub fn new(assets: Assets) -> Result<Self> {
-        let mut surface = GlfwSurface::new_gl33(
-            "Rust Graphics Test",
-            WindowOpt::default().set_dim(WindowDim::Windowed {
-                width: 768,
-                height: 768,
-            }),
-        )?;
-
+    pub fn new(surface: &mut GlfwSurface, assets: &Assets) -> Result<Self> {
         let back_buffer = surface.context.back_buffer()?;
 
         let program = surface
@@ -79,7 +69,6 @@ impl Renderer {
         )?;
 
         Ok(Self {
-            surface,
             back_buffer,
             program,
             quad,
@@ -88,9 +77,8 @@ impl Renderer {
         })
     }
 
-    pub fn render(&mut self) -> Result<()> {
+    pub fn render(&mut self, surface: &mut GlfwSurface) -> Result<()> {
         let Self {
-            surface,
             program,
             quad,
             tile_texture,
@@ -122,7 +110,7 @@ impl Renderer {
             .assume()
             .into_result()?;
 
-        self.surface.context.window.swap_buffers();
+        surface.context.window.swap_buffers();
 
         Ok(())
     }
