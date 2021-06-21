@@ -3,16 +3,25 @@
         "x": 16,
         "y": 16
     },
-    "texture_count": 3,
+    "texture_count": 16,
     "tiles": {
         "grass": {
-            "sprite": 0
+            "sprites": [
+                0,
+                8
+            ]
         },
         "sand": {
-            "sprite": 1
+            "sprites": [
+                1,
+                9
+            ]
         },
         "water": {
-            "sprite": 2
+            "sprites": [
+                2,
+                10
+            ]
         }
     }
 }

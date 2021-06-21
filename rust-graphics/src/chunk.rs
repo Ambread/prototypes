@@ -1,6 +1,7 @@
 use crate::assets::{Assets, FlatWorldGenerator, NoiseWorldGenerator, WorldGenerator};
 use cgmath::Vector2;
 use noise::{NoiseFn, Perlin, Seedable};
+use rand::{prelude::SliceRandom, thread_rng};
 
 #[derive(Clone)]
 pub struct Chunk {
@@ -31,14 +32,21 @@ impl Chunk {
     }
 
     fn generate_flat(&mut self, gen: &FlatWorldGenerator, assets: &Assets) {
-        // Retrieve the sprite index for the tile
-        let tile = assets.tile_data.tiles.get(&gen.tile).unwrap();
+        let mut rng = thread_rng();
 
-        // Set the entire array to it
-        self.tiles = [tile.sprite; Self::SIZE * Self::SIZE];
+        // Retrieve the data for the tile
+        let flat_tile = assets.tile_data.tiles.get(&gen.tile).unwrap();
+
+        // For every tile
+        for tile in self.tiles.iter_mut() {
+            // Pick a random sprite
+            *tile = *flat_tile.sprites.choose(&mut rng).unwrap();
+        }
     }
 
     fn generate_noise(&mut self, gen: &NoiseWorldGenerator, assets: &Assets) {
+        let mut rng = thread_rng();
+
         // Create noise from seed
         let noise = Perlin::new().set_seed(gen.seed);
 
@@ -70,11 +78,11 @@ impl Chunk {
             let output = output.trunc() as usize;
             let output = output.min(tiles.len() - 1);
 
-            // Retrieve the sprite index for the tile
-            let output = tiles[output].sprite;
+            // Retrieve one of the tile's sprites
+            let output = tiles[output].sprites.choose(&mut rng).unwrap();
 
             // Update buffer with new sprite id
-            *tile = output as u8;
+            *tile = *output;
         }
     }
 }
@@ -93,6 +101,8 @@ impl std::fmt::Debug for Chunk {
             // Newline
             writeln!(f)?;
         }
-        Ok(())
+
+        // Print position last so don't have to scroll up
+        writeln!(f, "({}, {})", self.position.x, self.position.y)
     }
 }

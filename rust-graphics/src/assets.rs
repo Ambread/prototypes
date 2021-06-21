@@ -58,7 +58,7 @@ pub struct Tiles {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tile {
-    pub sprite: u8,
+    pub sprites: Vec<u8>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
