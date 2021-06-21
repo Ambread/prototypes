@@ -1,6 +1,6 @@
 use anyhow::Result;
 use cgmath::Vector2;
-use image::{GenericImageView, RgbImage};
+use image::{imageops::flip_vertical, GenericImageView, RgbImage};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::Path};
 
@@ -39,11 +39,13 @@ impl Assets {
             .flat_map(|y| (0..atlas_width).step_by(texture_width).map(move |x| (x, y)))
             .take(tile_data.texture_count)
             .flat_map(|(x, y)| {
-                atlas
-                    .view(x, y, texture_width as u32, texture_height as u32)
-                    .to_image()
-                    .into_raw()
-                    .into_iter()
+                flip_vertical(
+                    &atlas
+                        .view(x, y, texture_width as u32, texture_height as u32)
+                        .to_image(),
+                )
+                .into_raw()
+                .into_iter()
             })
             .collect()
     }

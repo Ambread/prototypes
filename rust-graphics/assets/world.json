@@ -1,7 +1,7 @@
 {
     "type": "noise",
     "seed": 0,
-    "scale": 32,
+    "scale": 8,
     "tiles": [
         {
             "name": "rock",
