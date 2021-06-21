@@ -1,10 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 pub mod assets;
+pub mod chunk;
 
 use anyhow::Result;
-use assets::{FlatWorldGenerator, NoiseWorldGenerator};
 use cgmath::Vector2;
+use chunk::Chunk;
 use glfw::{Action, Context as _, Key, WindowEvent};
 use luminance::{
     context::GraphicsContext as _,
@@ -18,11 +19,9 @@ use luminance::{
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
-use noise::{NoiseFn, Perlin, Seedable};
-use rand::random;
-use std::{collections::HashMap, env::current_dir};
+use std::env::current_dir;
 
-use crate::assets::Assets;
+use assets::Assets;
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
 const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
@@ -57,89 +56,6 @@ const VERTICES: [Vertex; 6] = [
     Vertex::new(VertexPosition::new([-1.0, 1.0])),
     Vertex::new(VertexPosition::new([1.0, -1.0])),
 ];
-
-#[derive(Debug, Clone)]
-struct World {
-    chunks: HashMap<Vector2<isize>, Chunk>,
-}
-
-#[derive(Clone)]
-struct Chunk {
-    tiles: [u8; Self::SIZE * Self::SIZE],
-    position: Vector2<isize>,
-}
-
-impl Chunk {
-    const SIZE: usize = 32;
-    const INVERT: bool = false;
-
-    fn new(position: Vector2<isize>) -> Self {
-        Self {
-            position,
-            tiles: [0; Self::SIZE * Self::SIZE],
-        }
-    }
-
-    fn generate(&mut self, assets: &Assets) {
-        use assets::WorldGenerator::*;
-
-        match &assets.world_data {
-            Flat(_) => todo!(),
-            Noise(gen) => self.generate_noise(gen, assets),
-        }
-    }
-
-    fn generate_flat(&mut self, gen: &FlatWorldGenerator, assets: &Assets) {}
-
-    fn generate_noise(&mut self, gen: &NoiseWorldGenerator, assets: &Assets) {
-        let noise = Perlin::new().set_seed(gen.seed);
-        let tiles = gen
-            .tiles
-            .iter()
-            .map(|it| assets.tile_data.tiles.get(it))
-            .collect::<Option<Vec<_>>>()
-            .unwrap();
-
-        for (i, tile) in self.tiles.iter_mut().enumerate() {
-            let i = [
-                ((i % Self::SIZE) as isize + self.position.x * Self::SIZE as isize) as f64
-                    / gen.scale,
-                ((i / Self::SIZE) as isize + self.position.y * Self::SIZE as isize) as f64
-                    / gen.scale,
-            ];
-
-            // Get noise value for position
-            let output = noise.get(i);
-
-            // Map from `-1.0..1.0` to `0..tile.len()`
-            let output = output * tiles.len() as f64;
-            let output = output.trunc() as usize;
-            let output = output.min(tiles.len() - 1);
-
-            // Retrieve the sprite index for the tile
-            let output = tiles[output].sprite;
-
-            *tile = output as u8;
-
-            if Self::INVERT {
-                *tile = tiles.len() as u8 - *tile;
-            }
-        }
-    }
-}
-
-impl std::fmt::Debug for Chunk {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (i, tiles) in self.tiles.chunks(Chunk::SIZE).enumerate() {
-            write!(f, "{}  ", i)?;
-            for tile in tiles {
-                write!(f, "{}", tile)?;
-            }
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-}
 
 fn main() -> Result<()> {
     let assets = Assets::from_path(current_dir()?.join("assets"))?;
@@ -192,10 +108,9 @@ fn main() -> Result<()> {
     )?;
 
     let mut chunk = Chunk::new(Vector2::new(0, 0));
-    let mut chunk_noise = Perlin::new().set_seed(random());
 
     chunk.generate(&assets);
-    world.upload(GenMipmaps::No, &chunk.tiles)?;
+    world.upload(GenMipmaps::No, chunk.tiles())?;
 
     'main: loop {
         surface.context.window.glfw.poll_events();
@@ -212,15 +127,13 @@ fn main() -> Result<()> {
                         Key::S => chunk.position.y -= 1,
                         Key::D => chunk.position.x += 1,
 
-                        Key::Space => chunk_noise = chunk_noise.set_seed(random()),
-
                         Key::P => println!("{:?}", chunk),
 
                         _ => {}
                     }
 
                     chunk.generate(&assets);
-                    world.upload(GenMipmaps::No, &chunk.tiles)?;
+                    world.upload(GenMipmaps::No, chunk.tiles())?;
                 }
 
                 WindowEvent::FramebufferSize(..) => {
