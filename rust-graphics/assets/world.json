@@ -1,11 +1,19 @@
 {
     "type": "noise",
     "seed": 0,
-    "scale": 8,
+    "scale": 32,
     "tiles": [
         {
+            "name": "rock",
+            "bias": 1
+        },
+        {
+            "name": "stone",
+            "bias": 1
+        },
+        {
             "name": "grass",
-            "bias": 4
+            "bias": 1
         },
         {
             "name": "sand",
