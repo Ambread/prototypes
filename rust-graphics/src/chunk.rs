@@ -11,7 +11,6 @@ pub struct Chunk {
 
 impl Chunk {
     pub const SIZE: usize = 32;
-    const INVERT: bool = false;
 
     pub fn new(position: Vector2<isize>) -> Self {
         Self {
@@ -26,15 +25,24 @@ impl Chunk {
 
     pub fn generate(&mut self, assets: &Assets) {
         match &assets.world_data {
-            WorldGenerator::Flat(_) => todo!(),
+            WorldGenerator::Flat(gen) => self.generate_flat(gen, assets),
             WorldGenerator::Noise(gen) => self.generate_noise(gen, assets),
         }
     }
 
-    fn generate_flat(&mut self, gen: &FlatWorldGenerator, assets: &Assets) {}
+    fn generate_flat(&mut self, gen: &FlatWorldGenerator, assets: &Assets) {
+        // Retrieve the sprite index for the tile
+        let tile = assets.tile_data.tiles.get(&gen.tile).unwrap();
+
+        // Set the entire array to it
+        self.tiles = [tile.sprite; Self::SIZE * Self::SIZE];
+    }
 
     fn generate_noise(&mut self, gen: &NoiseWorldGenerator, assets: &Assets) {
+        // Create noise from seed
         let noise = Perlin::new().set_seed(gen.seed);
+
+        // Map each tile id to their data
         let tiles = gen
             .tiles
             .iter()
@@ -42,16 +50,20 @@ impl Chunk {
             .collect::<Option<Vec<_>>>()
             .unwrap();
 
-        for (i, tile) in self.tiles.iter_mut().enumerate() {
-            let i = [
-                ((i % Self::SIZE) as isize + self.position.x * Self::SIZE as isize) as f64
-                    / gen.scale,
-                ((i / Self::SIZE) as isize + self.position.y * Self::SIZE as isize) as f64
-                    / gen.scale,
-            ];
+        // For every tile
+        for (index, tile) in self.tiles.iter_mut().enumerate() {
+            // Map chunk index into (X, Y) pair
+            let index = Vector2::new(index % Self::SIZE, index / Self::SIZE);
+
+            // Relate to global grid
+            let index = index.cast().unwrap() + self.position * Self::SIZE as isize;
+
+            // Scale by world gen settings
+            let index = index.cast().unwrap() / gen.scale;
 
             // Get noise value for position
-            let output = noise.get(i);
+            let index: [f64; 2] = index.into();
+            let output = noise.get(index);
 
             // Map from `-1.0..1.0` to `0..tile.len()`
             let output = output * tiles.len() as f64;
@@ -61,11 +73,8 @@ impl Chunk {
             // Retrieve the sprite index for the tile
             let output = tiles[output].sprite;
 
+            // Update buffer with new sprite id
             *tile = output as u8;
-
-            if Self::INVERT {
-                *tile = tiles.len() as u8 - *tile;
-            }
         }
     }
 }
@@ -73,10 +82,15 @@ impl Chunk {
 impl std::fmt::Debug for Chunk {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, tiles) in self.tiles.chunks(Chunk::SIZE).enumerate() {
+            // Write current index as sidebar
             write!(f, "{}  ", i)?;
+
+            // Write all sprite ids in row
             for tile in tiles {
                 write!(f, "{}", tile)?;
             }
+
+            // Newline
             writeln!(f)?;
         }
         Ok(())
