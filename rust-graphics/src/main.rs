@@ -63,8 +63,8 @@ fn main() -> Result<()> {
     let mut surface = GlfwSurface::new_gl33(
         "Rust Graphics Test",
         WindowOpt::default().set_dim(WindowDim::Windowed {
-            width: 960,
-            height: 540,
+            width: 768,
+            height: 768,
         }),
     )?;
 

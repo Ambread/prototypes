@@ -3,8 +3,17 @@
     "seed": 0,
     "scale": 8,
     "tiles": [
-        "grass",
-        "sand",
-        "water"
+        {
+            "name": "grass",
+            "bias": 4
+        },
+        {
+            "name": "sand",
+            "bias": 1
+        },
+        {
+            "name": "water",
+            "bias": 1
+        }
     ]
 }

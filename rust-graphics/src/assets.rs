@@ -77,5 +77,11 @@ pub struct FlatWorldGenerator {
 pub struct NoiseWorldGenerator {
     pub seed: u32,
     pub scale: f64,
-    pub tiles: Vec<String>,
+    pub tiles: Vec<NoiseTileEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NoiseTileEntry {
+    pub name: String,
+    pub bias: usize,
 }

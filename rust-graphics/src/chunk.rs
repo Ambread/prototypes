@@ -3,6 +3,7 @@ use anyhow::Result;
 use cgmath::Vector2;
 use noise::{NoiseFn, Perlin, Seedable};
 use rand::{prelude::SliceRandom, thread_rng};
+use std::iter;
 
 #[derive(Clone)]
 pub struct Chunk {
@@ -57,7 +58,10 @@ impl Chunk {
         let tiles = gen
             .tiles
             .iter()
-            .map(|it| assets.tile_data.tiles.get(it))
+            .flat_map(|it| {
+                let tile = assets.tile_data.tiles.get(&it.name);
+                iter::repeat(tile).take(it.bias)
+            })
             .collect::<Option<Vec<_>>>()
             .unwrap();
 
@@ -77,6 +81,7 @@ impl Chunk {
             let output = noise.get(index);
 
             // Map from `-1.0..1.0` to `0..tile.len()`
+            let output = output * 0.5 + 0.5;
             let output = output * tiles.len() as f64;
             let output = output.trunc() as usize;
             let output = output.min(tiles.len() - 1);
