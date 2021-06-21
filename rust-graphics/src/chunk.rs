@@ -1,4 +1,5 @@
 use crate::assets::{Assets, FlatWorldGenerator, NoiseWorldGenerator, WorldGenerator};
+use anyhow::Result;
 use cgmath::Vector2;
 use noise::{NoiseFn, Perlin, Seedable};
 use rand::{prelude::SliceRandom, thread_rng};
@@ -24,14 +25,14 @@ impl Chunk {
         &self.tiles
     }
 
-    pub fn generate(&mut self, assets: &Assets) {
+    pub fn generate(&mut self, assets: &Assets) -> Result<()> {
         match &assets.world_data {
             WorldGenerator::Flat(gen) => self.generate_flat(gen, assets),
             WorldGenerator::Noise(gen) => self.generate_noise(gen, assets),
         }
     }
 
-    fn generate_flat(&mut self, gen: &FlatWorldGenerator, assets: &Assets) {
+    fn generate_flat(&mut self, gen: &FlatWorldGenerator, assets: &Assets) -> Result<()> {
         let mut rng = thread_rng();
 
         // Retrieve the data for the tile
@@ -42,9 +43,11 @@ impl Chunk {
             // Pick a random sprite
             *tile = *flat_tile.sprites.choose(&mut rng).unwrap();
         }
+
+        Ok(())
     }
 
-    fn generate_noise(&mut self, gen: &NoiseWorldGenerator, assets: &Assets) {
+    fn generate_noise(&mut self, gen: &NoiseWorldGenerator, assets: &Assets) -> Result<()> {
         let mut rng = thread_rng();
 
         // Create noise from seed
@@ -84,6 +87,8 @@ impl Chunk {
             // Update buffer with new sprite id
             *tile = *output;
         }
+
+        Ok(())
     }
 }
 

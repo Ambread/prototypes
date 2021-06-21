@@ -109,7 +109,7 @@ fn main() -> Result<()> {
 
     let mut chunk = Chunk::new(Vector2::new(0, 0));
 
-    chunk.generate(&assets);
+    chunk.generate(&assets)?;
     world.upload(GenMipmaps::No, chunk.tiles())?;
 
     'main: loop {
@@ -132,8 +132,10 @@ fn main() -> Result<()> {
                         _ => {}
                     }
 
-                    chunk.generate(&assets);
-                    world.upload(GenMipmaps::No, chunk.tiles())?;
+                    if let Key::W | Key::A | Key::S | Key::D = key {
+                        chunk.generate(&assets)?;
+                        world.upload(GenMipmaps::No, chunk.tiles())?;
+                    }
                 }
 
                 WindowEvent::FramebufferSize(..) => {
