@@ -1,0 +1,10 @@
+{
+    "type": "noise",
+    "seed": 0,
+    "scale": 2,
+    "tiles": [
+        "grass",
+        "sand",
+        "water"
+    ]
+}

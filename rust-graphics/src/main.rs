@@ -1,11 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-pub mod pack;
+pub mod assets;
 
 use anyhow::Result;
+use assets::{FlatWorldGenerator, NoiseWorldGenerator};
 use cgmath::Vector2;
 use glfw::{Action, Context as _, Key, WindowEvent};
-use image::GenericImageView;
 use luminance::{
     context::GraphicsContext as _,
     pipeline::{PipelineState, TextureBinding},
@@ -20,7 +20,9 @@ use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
 use noise::{NoiseFn, Perlin, Seedable};
 use rand::random;
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, env::current_dir};
+
+use crate::assets::Assets;
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
 const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
@@ -78,18 +80,33 @@ impl Chunk {
         }
     }
 
-    fn generate(&mut self, noise: &Perlin, scale: f64) {
+    fn generate(&mut self, assets: &Assets) {
+        use assets::WorldGenerator::*;
+
+        match &assets.world_data {
+            Flat(_) => todo!(),
+            Noise(gen) => self.generate_noise(gen, assets),
+        }
+    }
+
+    fn generate_flat(&mut self, gen: &FlatWorldGenerator, assets: &Assets) {}
+
+    fn generate_noise(&mut self, gen: &NoiseWorldGenerator, assets: &Assets) {
+        let noise = Perlin::new().set_seed(gen.seed);
+        let tile_count = gen.tiles.len();
+
         for (i, tile) in self.tiles.iter_mut().enumerate() {
             let i = [
-                ((i % Self::SIZE) as isize + self.position.x * Self::SIZE as isize) as f64 / scale,
-                ((i / Self::SIZE) as isize + self.position.y * Self::SIZE as isize) as f64 / scale,
+                ((i % Self::SIZE) as isize + self.position.x * Self::SIZE as isize) as f64
+                    / gen.scale,
+                ((i / Self::SIZE) as isize + self.position.y * Self::SIZE as isize) as f64
+                    / gen.scale,
             ];
 
-            *tile = ((noise.get(i) * (TEXTURE_COUNT + 1) as f64).trunc() as u8)
-                .min(TEXTURE_COUNT as u8);
+            *tile = ((noise.get(i) * (tile_count + 1) as f64).trunc() as u8).min(tile_count as u8);
 
             if Self::INVERT {
-                *tile = TEXTURE_COUNT as u8 - *tile;
+                *tile = tile_count as u8 - *tile;
             }
         }
     }
@@ -108,32 +125,9 @@ impl std::fmt::Debug for Chunk {
     }
 }
 
-const TEXTURE_SIZE: u32 = 16;
-const TEXTURE_COUNT: u32 = 3;
-
-fn parse_atlas<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
-    let atlas = image::open(path)?.to_rgb8();
-    let (atlas_width, atlas_height) = atlas.dimensions();
-
-    Ok((0..atlas_height)
-        .step_by(TEXTURE_SIZE as usize)
-        .flat_map(|y| {
-            (0..atlas_width)
-                .step_by(TEXTURE_SIZE as usize)
-                .map(move |x| (x, y))
-        })
-        .take(TEXTURE_COUNT as usize)
-        .flat_map(|(x, y)| {
-            atlas
-                .view(x, y, TEXTURE_SIZE, TEXTURE_SIZE)
-                .to_image()
-                .into_raw()
-                .into_iter()
-        })
-        .collect())
-}
-
 fn main() -> Result<()> {
+    let assets = Assets::from_path(current_dir()?.join("assets"))?;
+
     let mut surface = GlfwSurface::new_gl33(
         "Rust Graphics Test",
         WindowOpt::default().set_dim(WindowDim::Windowed {
@@ -158,7 +152,10 @@ fn main() -> Result<()> {
         .build()?;
 
     let mut texture = surface.context.new_texture::<Dim2Array, NormRGB8UI>(
-        ([TEXTURE_SIZE, TEXTURE_SIZE], TEXTURE_COUNT),
+        (
+            assets.tile_data.texture_size.cast().unwrap().into(),
+            assets.tile_data.texture_count as u32,
+        ),
         2,
         Sampler {
             mag_filter: MagFilter::Nearest,
@@ -166,7 +163,7 @@ fn main() -> Result<()> {
         },
     )?;
 
-    texture.upload_raw(GenMipmaps::Yes, &parse_atlas("assets/pallet.png")?)?;
+    texture.upload_raw(GenMipmaps::Yes, &assets.tile_sprites)?;
 
     let mut world = surface.context.new_texture::<Dim2, R8UI>(
         [Chunk::SIZE as u32, Chunk::SIZE as u32],
@@ -181,10 +178,7 @@ fn main() -> Result<()> {
     let mut chunk = Chunk::new(Vector2::new(0, 0));
     let mut chunk_noise = Perlin::new().set_seed(random());
 
-    let mut noise_scale: f64 = 2.0;
-    println!("noise_scale = {}", noise_scale);
-
-    chunk.generate(&chunk_noise, noise_scale);
+    chunk.generate(&assets);
     world.upload(GenMipmaps::No, &chunk.tiles)?;
 
     'main: loop {
@@ -204,22 +198,12 @@ fn main() -> Result<()> {
 
                         Key::Space => chunk_noise = chunk_noise.set_seed(random()),
 
-                        Key::Q => {
-                            noise_scale /= 2.0;
-                            noise_scale = noise_scale.max(2.0);
-                            println!("noise_scale = {}", noise_scale);
-                        }
-                        Key::E => {
-                            noise_scale *= 2.0;
-                            println!("noise_scale = {}", noise_scale);
-                        }
-
                         Key::P => println!("{:?}", chunk),
 
                         _ => {}
                     }
 
-                    chunk.generate(&chunk_noise, noise_scale);
+                    chunk.generate(&assets);
                     world.upload(GenMipmaps::No, &chunk.tiles)?;
                 }
 

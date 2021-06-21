@@ -1,0 +1,21 @@
+{
+    "texture_size": {
+        "x": 16,
+        "y": 16
+    },
+    "texture_count": 3,
+    "tiles": [
+        {
+            "name": "grass",
+            "sprite": 0
+        },
+        {
+            "name": "sand",
+            "sprite": 1
+        },
+        {
+            "name": "water",
+            "sprite": 2
+        }
+    ]
+}
