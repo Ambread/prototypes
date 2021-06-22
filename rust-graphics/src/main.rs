@@ -57,15 +57,6 @@ impl Main {
             }),
         )?;
 
-        // TODO: Add proper resizing logic
-        // For now just lock it
-        surface.context.window.set_size_limits(
-            Some(window_size.x),
-            Some(window_size.x),
-            Some(window_size.x),
-            Some(window_size.x),
-        );
-
         let renderer = Renderer::new(&mut surface, &assets)?;
 
         let chunk = Chunk::new(Vector2::new(0, 0));
@@ -176,7 +167,11 @@ impl Main {
                     return Ok(true);
                 }
 
-                WindowEvent::FramebufferSize(..) => should_refresh_back_buffer = true,
+                WindowEvent::FramebufferSize(x, y) => {
+                    should_refresh_back_buffer = true;
+                    self.window_size.x = x as u32;
+                    self.window_size.y = y as u32;
+                }
 
                 _ => {}
             }
