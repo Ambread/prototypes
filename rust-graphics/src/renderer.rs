@@ -48,20 +48,7 @@ impl Renderer {
             .build()?;
 
         // Texture array for all the tile sprites
-        let mut tile_texture = surface.context.new_texture::<Dim2Array, NormRGB8UI>(
-            (
-                assets.tile_data.texture_size.cast().unwrap().into(),
-                assets.tile_data.texture_count as u32,
-            ),
-            2,
-            Sampler {
-                mag_filter: MagFilter::Nearest,
-                ..Default::default()
-            },
-        )?;
-
-        // Upload the texture array
-        tile_texture.upload_raw(GenMipmaps::Yes, &assets.tile_sprites)?;
+        let tile_texture = Self::create_tile_textures(surface, assets)?;
 
         // Texture to hold the tiles of the world
         let world_texture = surface.context.new_texture::<Dim2, R8UI>(
@@ -84,7 +71,10 @@ impl Renderer {
         })
     }
 
-    pub fn reload_assets(&mut self, surface: &mut GlfwSurface, assets: &Assets) -> Result<()> {
+    pub fn create_tile_textures(
+        surface: &mut GlfwSurface,
+        assets: &Assets,
+    ) -> Result<Texture<GL33, Dim2Array, NormRGB8UI>> {
         // Texture array for all the tile sprites
         let mut tile_texture = surface.context.new_texture::<Dim2Array, NormRGB8UI>(
             (
@@ -101,6 +91,11 @@ impl Renderer {
         // Upload the texture array
         tile_texture.upload_raw(GenMipmaps::Yes, &assets.tile_sprites)?;
 
+        Ok(tile_texture)
+    }
+
+    pub fn reload_assets(&mut self, surface: &mut GlfwSurface, assets: &Assets) -> Result<()> {
+        self.tile_texture = Self::create_tile_textures(surface, assets)?;
         Ok(())
     }
 

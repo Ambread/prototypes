@@ -26,7 +26,7 @@ struct Main {
 
 impl Main {
     fn new() -> Result<Self> {
-        let assets = Assets::from_path(current_dir()?.join("assets"))?;
+        let assets = Self::load_assets()?;
 
         let mut surface = GlfwSurface::new_gl33(
             "Rust Graphics Test",
@@ -52,8 +52,12 @@ impl Main {
         Ok(this)
     }
 
+    fn load_assets() -> Result<Assets> {
+        Assets::from_path(current_dir()?.join("assets"))
+    }
+
     fn reload(&mut self) -> Result<()> {
-        self.assets = Assets::from_path(current_dir()?.join("assets"))?;
+        self.assets = Self::load_assets()?;
 
         self.renderer
             .reload_assets(&mut self.surface, &self.assets)?;
