@@ -33,6 +33,7 @@ fn main() -> Result<()> {
 
 struct Main {
     assets: Assets,
+    window_size: Vector2<u32>,
     renderer: Renderer,
     chunk: Chunk,
     input: Input,
@@ -43,28 +44,26 @@ struct Main {
 }
 
 impl Main {
-    pub const WINDOW_SIZE: u32 = 768;
-
     fn new() -> Result<Self> {
         let assets = Self::load_assets()?;
 
-        const WINDOW_SIZE: u32 = 768;
+        let window_size = Vector2::new(768, 768);
 
         let mut surface = GlfwSurface::new_gl33(
             "Rust Graphics Test",
             WindowOpt::default().set_dim(WindowDim::Windowed {
-                width: WINDOW_SIZE,
-                height: WINDOW_SIZE,
+                width: window_size.x,
+                height: window_size.y,
             }),
         )?;
 
         // TODO: Add proper resizing logic
         // For now just lock it
         surface.context.window.set_size_limits(
-            Some(WINDOW_SIZE),
-            Some(WINDOW_SIZE),
-            Some(WINDOW_SIZE),
-            Some(WINDOW_SIZE),
+            Some(window_size.x),
+            Some(window_size.x),
+            Some(window_size.x),
+            Some(window_size.x),
         );
 
         let renderer = Renderer::new(&mut surface, &assets)?;
@@ -75,6 +74,7 @@ impl Main {
 
         let mut this = Self {
             assets,
+            window_size,
             renderer,
             chunk,
             input,
@@ -152,10 +152,16 @@ impl Main {
     }
 
     fn current_tile(&self) -> Option<Vector2<usize>> {
-        self.input
-            .mouse_position()
-            .map(|it| it * (Chunk::SIZE as f64 / Self::WINDOW_SIZE as f64))
-            .map(|it| it.map(|it| it.trunc()).cast().unwrap())
+        Some(
+            (*self.input.mouse_position())?
+                .zip(self.window_size, |it, window_size| {
+                    it * (Chunk::SIZE as f64 / window_size as f64)
+                })
+                .map(|it| it.trunc())
+                .cast()?
+                // QUARK: Clicking on the very edge can go out of bounds, so cap it here
+                .map(|it: usize| it.min(Chunk::SIZE - 1)),
+        )
     }
 
     fn handle_events(&mut self) -> Result<bool> {
@@ -175,7 +181,7 @@ impl Main {
                 _ => {}
             }
 
-            self.input.handle(&event);
+            self.input.handle(&event, self.window_size);
         }
 
         if should_refresh_back_buffer {
