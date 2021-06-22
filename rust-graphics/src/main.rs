@@ -2,6 +2,7 @@
 
 pub mod assets;
 pub mod chunk;
+pub mod input;
 pub mod render;
 
 use anyhow::Result;
@@ -9,15 +10,32 @@ use assets::Assets;
 use cgmath::Vector2;
 use chunk::Chunk;
 use glfw::{Action, Key, WindowEvent};
+use input::Input;
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
 use render::Renderer;
 use std::env::current_dir;
 
+fn main() -> Result<()> {
+    let mut main = Main::new()?;
+
+    loop {
+        let should_quit = main.handle_events()?;
+
+        if should_quit {
+            return Ok(());
+        }
+
+        main.handle_input()?;
+        main.render()?;
+    }
+}
+
 struct Main {
     assets: Assets,
     renderer: Renderer,
     chunk: Chunk,
+    input: Input,
 
     // LIBRARY BUG: `surface` must drop after `renderer` to prevent segfault
     // https://github.com/phaazon/luminance-rs/issues/304
@@ -40,10 +58,13 @@ impl Main {
 
         let chunk = Chunk::new(Vector2::new(0, 0));
 
+        let input = Input::new();
+
         let mut this = Self {
             assets,
             renderer,
             chunk,
+            input,
             surface,
         };
 
@@ -72,12 +93,39 @@ impl Main {
         Ok(())
     }
 
+    fn handle_input(&mut self) -> Result<()> {
+        if self.input.has_pressed(Key::Space) {
+            self.reload()?;
+        }
+
+        if self.input.has_pressed(Key::P) {
+            println!("Pos = {:?}", self.chunk.position);
+        }
+        if self.input.has_pressed(Key::O) {
+            println!("{:?}", self.chunk);
+        }
+
+        if self.input.has_pressed(Key::W) {
+            self.chunk.position.y += 1;
+            self.generate()?;
+        } else if self.input.has_pressed(Key::A) {
+            self.chunk.position.x -= 1;
+            self.generate()?;
+        } else if self.input.has_pressed(Key::S) {
+            self.chunk.position.y -= 1;
+            self.generate()?;
+        } else if self.input.has_pressed(Key::D) {
+            self.chunk.position.x += 1;
+            self.generate()?;
+        }
+
+        Ok(())
+    }
+
     fn handle_events(&mut self) -> Result<bool> {
         self.surface.context.window.glfw.poll_events();
 
         // HACK: Can't borrow self inside the loop so use flags and do things afterwards
-        let mut should_regenerate = false;
-        let mut should_reload = false;
         let mut should_refresh_back_buffer = false;
 
         for (_, event) in glfw::flush_messages(&self.surface.events_rx) {
@@ -86,37 +134,12 @@ impl Main {
                     return Ok(true);
                 }
 
-                WindowEvent::Key(key, _, Action::Press, _) => {
-                    match key {
-                        Key::W => self.chunk.position.y += 1,
-                        Key::A => self.chunk.position.x -= 1,
-                        Key::S => self.chunk.position.y -= 1,
-                        Key::D => self.chunk.position.x += 1,
-
-                        Key::P => println!("{:?}", self.chunk),
-
-                        Key::Space => should_reload = true,
-
-                        _ => {}
-                    }
-
-                    if let Key::W | Key::A | Key::S | Key::D = key {
-                        should_regenerate = true;
-                    }
-                }
-
                 WindowEvent::FramebufferSize(..) => should_refresh_back_buffer = true,
 
                 _ => {}
             }
-        }
 
-        if should_regenerate {
-            self.generate()?;
-        }
-
-        if should_reload {
-            self.reload()?;
+            self.input.handle(&event);
         }
 
         if should_refresh_back_buffer {
@@ -128,19 +151,5 @@ impl Main {
 
     fn render(&mut self) -> Result<()> {
         self.renderer.render(&mut self.surface)
-    }
-}
-
-fn main() -> Result<()> {
-    let mut main = Main::new()?;
-
-    loop {
-        let should_quit = main.handle_events()?;
-
-        if should_quit {
-            return Ok(());
-        }
-
-        main.render()?;
     }
 }
