@@ -52,6 +52,14 @@ impl Main {
         Ok(this)
     }
 
+    fn reload(&mut self) -> Result<()> {
+        self.assets = Assets::from_path(current_dir()?.join("assets"))?;
+
+        self.renderer
+            .reload_assets(&mut self.surface, &self.assets)?;
+        self.generate()
+    }
+
     fn generate(&mut self) -> Result<()> {
         self.chunk.generate(&self.assets)?;
 
@@ -65,6 +73,7 @@ impl Main {
 
         // HACK: Can't borrow self inside the loop so use flags and do things afterwards
         let mut should_regenerate = false;
+        let mut should_reload = false;
         let mut should_refresh_back_buffer = false;
 
         for (_, event) in glfw::flush_messages(&self.surface.events_rx) {
@@ -82,6 +91,8 @@ impl Main {
 
                         Key::P => println!("{:?}", self.chunk),
 
+                        Key::Space => should_reload = true,
+
                         _ => {}
                     }
 
@@ -98,6 +109,10 @@ impl Main {
 
         if should_regenerate {
             self.generate()?;
+        }
+
+        if should_reload {
+            self.reload()?;
         }
 
         if should_refresh_back_buffer {

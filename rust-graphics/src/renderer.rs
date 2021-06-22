@@ -84,6 +84,26 @@ impl Renderer {
         })
     }
 
+    pub fn reload_assets(&mut self, surface: &mut GlfwSurface, assets: &Assets) -> Result<()> {
+        // Texture array for all the tile sprites
+        let mut tile_texture = surface.context.new_texture::<Dim2Array, NormRGB8UI>(
+            (
+                assets.tile_data.texture_size.cast().unwrap().into(),
+                assets.tile_data.texture_count as u32,
+            ),
+            2,
+            Sampler {
+                mag_filter: MagFilter::Nearest,
+                ..Default::default()
+            },
+        )?;
+
+        // Upload the texture array
+        tile_texture.upload_raw(GenMipmaps::Yes, &assets.tile_sprites)?;
+
+        Ok(())
+    }
+
     // Needed when the screen is resized
     pub fn refresh_back_buffer(&mut self, surface: &mut GlfwSurface) -> Result<()> {
         self.back_buffer = surface.context.back_buffer()?;
