@@ -26,6 +26,21 @@ impl Chunk {
         &self.tiles
     }
 
+    pub fn set_tile(&mut self, position: Vector2<usize>, name: &str, assets: &Assets) {
+        let mut rng = thread_rng();
+
+        // Retrieve the data for the tile
+        let tile = assets.tile_data.tiles.get(name).unwrap();
+
+        // Y index, starts from wrong corner so do some math
+        let index = Chunk::SIZE - 1 - position.y;
+        // Account for X index
+        let index = index * Chunk::SIZE + position.x;
+
+        // Pick a random sprite
+        self.tiles[index] = *tile.sprites.choose(&mut rng).unwrap();
+    }
+
     pub fn generate(&mut self, assets: &Assets) -> Result<()> {
         match &assets.world_data {
             WorldGenerator::Flat(gen) => self.generate_flat(gen, assets),

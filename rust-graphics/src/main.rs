@@ -43,6 +43,8 @@ struct Main {
 }
 
 impl Main {
+    const WINDOW_SIZE: u32 = 768;
+
     fn new() -> Result<Self> {
         let assets = Self::load_assets()?;
 
@@ -130,11 +132,29 @@ impl Main {
             self.generate()?;
         }
 
-        if self.input.was_mouse_pressed(MouseButtonLeft) || self.input.was_key_pressed(Key::L) {
+        if self.input.was_key_pressed(Key::L) {
             println!("Mouse = {:?}", self.input.mouse_position());
         }
 
+        if self.input.was_key_pressed(Key::K) {
+            println!("Current = {:?}", self.current_tile());
+        }
+
+        if self.input.is_mouse_held(MouseButtonLeft) {
+            if let Some(current_tile) = self.current_tile() {
+                self.chunk.set_tile(current_tile, "water", &self.assets);
+                self.renderer.upload_world_texture(self.chunk.tiles())?;
+            }
+        }
+
         Ok(())
+    }
+
+    fn current_tile(&self) -> Option<Vector2<usize>> {
+        self.input
+            .mouse_position()
+            .map(|it| it * (Chunk::SIZE as f64 / Self::WINDOW_SIZE as f64))
+            .map(|it| it.map(|it| it.trunc()).cast().unwrap())
     }
 
     fn handle_events(&mut self) -> Result<bool> {
