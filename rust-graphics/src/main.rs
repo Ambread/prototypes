@@ -17,10 +17,13 @@ use std::env::current_dir;
 
 struct Main {
     pub assets: Assets,
-    pub surface: GlfwSurface,
     pub renderer: Renderer,
     pub chunk: Chunk,
     pub should_quit: bool,
+
+    // LIBRARY BUG: `surface` must drop after `renderer` to prevent segfault
+    // https://github.com/phaazon/luminance-rs/issues/304
+    pub surface: GlfwSurface,
 }
 
 impl Main {
