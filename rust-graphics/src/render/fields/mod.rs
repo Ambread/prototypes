@@ -1,7 +1,10 @@
 mod quad;
 mod texture;
 
-use super::{uniforms::ShaderInterface, FRAGMENT_SHADER, VERTEX_SHADER};
+use super::{
+    shader::{FRAGMENT_SHADER, VERTEX_SHADER},
+    uniforms::ShaderInterface,
+};
 use luminance::{
     context::GraphicsContext,
     framebuffer::{Framebuffer, FramebufferError},

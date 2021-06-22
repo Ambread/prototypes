@@ -1,4 +1,5 @@
 mod fields;
+mod shader;
 mod uniforms;
 
 use crate::{assets::Assets, chunk::Chunk};
@@ -15,10 +16,6 @@ use self::fields::{
     create_back_buffer, create_program, create_quad, create_tile_texture, create_world_texture,
     BackBuffer, Program, TileTexture, WorldTexture,
 };
-
-// Just include the shaders as static string
-const VERTEX_SHADER: &str = include_str!("vertex.glsl");
-const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
 
 pub struct Renderer {
     back_buffer: BackBuffer,
