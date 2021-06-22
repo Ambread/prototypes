@@ -9,21 +9,19 @@ use assets::Assets;
 use cgmath::Vector2;
 use chunk::Chunk;
 use glfw::{Action, Key, WindowEvent};
-use luminance::texture::GenMipmaps;
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
 use renderer::Renderer;
 use std::env::current_dir;
 
 struct Main {
-    pub assets: Assets,
-    pub renderer: Renderer,
-    pub chunk: Chunk,
-    pub should_quit: bool,
+    assets: Assets,
+    renderer: Renderer,
+    chunk: Chunk,
 
     // LIBRARY BUG: `surface` must drop after `renderer` to prevent segfault
     // https://github.com/phaazon/luminance-rs/issues/304
-    pub surface: GlfwSurface,
+    surface: GlfwSurface,
 }
 
 impl Main {
@@ -44,10 +42,9 @@ impl Main {
 
         let mut this = Self {
             assets,
-            surface,
             renderer,
             chunk,
-            should_quit: false,
+            surface,
         };
 
         this.generate()?;
@@ -58,23 +55,22 @@ impl Main {
     fn generate(&mut self) -> Result<()> {
         self.chunk.generate(&self.assets)?;
 
-        self.renderer
-            .world_texture
-            .upload(GenMipmaps::No, self.chunk.tiles())?;
+        self.renderer.upload_world_texture(self.chunk.tiles())?;
 
         Ok(())
     }
 
-    fn handle_events(&mut self) -> Result<()> {
+    fn handle_events(&mut self) -> Result<bool> {
         self.surface.context.window.glfw.poll_events();
 
+        // HACK: Can't borrow self inside the loop so use flags and do things afterwards
         let mut should_regenerate = false;
+        let mut should_refresh_back_buffer = false;
 
         for (_, event) in glfw::flush_messages(&self.surface.events_rx) {
             match event {
                 WindowEvent::Close | WindowEvent::Key(Key::Escape, _, Action::Release, _) => {
-                    self.should_quit = true;
-                    return Ok(());
+                    return Ok(true);
                 }
 
                 WindowEvent::Key(key, _, Action::Press, _) => {
@@ -94,9 +90,7 @@ impl Main {
                     }
                 }
 
-                WindowEvent::FramebufferSize(..) => {
-                    self.renderer.back_buffer = self.surface.context.back_buffer()?;
-                }
+                WindowEvent::FramebufferSize(..) => should_refresh_back_buffer = true,
 
                 _ => {}
             }
@@ -106,7 +100,11 @@ impl Main {
             self.generate()?;
         }
 
-        Ok(())
+        if should_refresh_back_buffer {
+            self.renderer.refresh_back_buffer(&mut self.surface)?;
+        }
+
+        Ok(false)
     }
 
     fn render(&mut self) -> Result<()> {
@@ -118,14 +116,12 @@ fn main() -> Result<()> {
     let mut main = Main::new()?;
 
     loop {
-        main.handle_events()?;
+        let should_quit = main.handle_events()?;
 
-        if main.should_quit {
-            break;
+        if should_quit {
+            return Ok(());
         }
 
         main.render()?;
     }
-
-    return dbg!(Ok(()));
 }

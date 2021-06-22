@@ -1,3 +1,5 @@
+use std::u8;
+
 use anyhow::Result;
 use glfw::Context as _;
 use luminance::{
@@ -10,7 +12,7 @@ use luminance::{
     tess::{Interleaved, Mode, Tess},
     texture::{Dim2, Dim2Array, GenMipmaps, MagFilter, MinFilter, Sampler, Texture},
 };
-use luminance_derive::{Semantics, UniformInterface, Vertex};
+use luminance_derive::{UniformInterface, Vertex};
 use luminance_gl::gl33::GL33;
 use luminance_glfw::GlfwSurface;
 
@@ -20,11 +22,11 @@ const VERTEX_SHADER: &str = include_str!("vertex.glsl");
 const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
 
 pub struct Renderer {
-    pub back_buffer: Framebuffer<GL33, Dim2, (), ()>,
+    back_buffer: Framebuffer<GL33, Dim2, (), ()>,
     program: Program<GL33, VertexSemantics, (), ShaderInterface>,
     quad: Tess<GL33, Vertex, (), (), Interleaved>,
     tile_texture: Texture<GL33, Dim2Array, NormRGB8UI>,
-    pub world_texture: Texture<GL33, Dim2, R8UI>,
+    world_texture: Texture<GL33, Dim2, R8UI>,
 }
 
 impl Renderer {
@@ -77,7 +79,21 @@ impl Renderer {
         })
     }
 
+    // Needed when the screen is resized
+    pub fn refresh_back_buffer(&mut self, surface: &mut GlfwSurface) -> Result<()> {
+        self.back_buffer = surface.context.back_buffer()?;
+        Ok(())
+    }
+
+    // How `Renderer` accepts `Chunk`'s tiles
+    pub fn upload_world_texture(&mut self, tiles: &[u8]) -> Result<()> {
+        self.world_texture.upload(GenMipmaps::No, tiles)?;
+        Ok(())
+    }
+
     pub fn render(&mut self, surface: &mut GlfwSurface) -> Result<()> {
+        // HACK: Borrowing issues, so just split to begin with
+        // Rust somehow likes this better
         let Self {
             program,
             quad,
@@ -97,8 +113,8 @@ impl Renderer {
                     let bound_world = pipeline.bind_texture(world_texture)?;
 
                     shade_gate.shade(program, |mut interface, uniforms, mut render_gate| {
-                        interface.set(&uniforms.texles, bound_texture.binding());
-                        interface.set(&uniforms.world, bound_world.binding());
+                        interface.set(&uniforms.tile_texture, bound_texture.binding());
+                        interface.set(&uniforms.world_texture, bound_world.binding());
                         interface.set(&uniforms.world_size, Chunk::SIZE as u32);
 
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
@@ -119,22 +135,29 @@ impl Renderer {
 #[derive(Debug, UniformInterface)]
 struct ShaderInterface {
     #[uniform(unbound)]
-    texles: Uniform<TextureBinding<Dim2Array, NormUnsigned>>,
+    tile_texture: Uniform<TextureBinding<Dim2Array, NormUnsigned>>,
     #[uniform(unbound)]
-    world: Uniform<TextureBinding<Dim2, Unsigned>>,
+    world_texture: Uniform<TextureBinding<Dim2, Unsigned>>,
     #[uniform(unbound)]
     world_size: Uniform<u32>,
 }
 
-#[derive(Debug, Clone, Copy, Semantics)]
-pub enum VertexSemantics {
-    #[sem(name = "position", repr = "[f32; 2]", wrapper = "VertexPosition")]
-    Position,
+// HACK: The `Semantics` derive macro insists on it being public when we don't want it public
+// Wrap it in a module to actually keep them private
+mod vertex_semantics {
+    use luminance_derive::Semantics;
+
+    #[derive(Debug, Clone, Copy, Semantics)]
+    pub enum VertexSemantics {
+        #[sem(name = "position", repr = "[f32; 2]", wrapper = "VertexPosition")]
+        Position,
+    }
 }
+use vertex_semantics::*;
 
 #[derive(Debug, Clone, Copy, Vertex)]
 #[vertex(sem = "VertexSemantics")]
-pub struct Vertex {
+struct Vertex {
     position: VertexPosition,
 }
 
