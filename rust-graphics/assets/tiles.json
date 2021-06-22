@@ -4,6 +4,7 @@
         "y": 16
     },
     "texture_count": 48,
+    "cursor": "sand",
     "tiles": {
         "grass": {
             "sprites": [

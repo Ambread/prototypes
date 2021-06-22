@@ -142,7 +142,8 @@ impl Main {
 
         if self.input.is_mouse_held(MouseButtonLeft) {
             if let Some(current_tile) = self.current_tile() {
-                self.chunk.set_tile(current_tile, "water", &self.assets);
+                self.chunk
+                    .set_tile(current_tile, &self.assets.tile_data.cursor, &self.assets);
                 self.renderer.upload_world_texture(self.chunk.tiles())?;
             }
         }

@@ -55,6 +55,7 @@ impl Assets {
 pub struct Tiles {
     pub texture_size: Vector2<usize>,
     pub texture_count: usize,
+    pub cursor: String,
     pub tiles: HashMap<String, Tile>,
 }
 
