@@ -50,7 +50,7 @@ impl Main {
         let window_size = Vector2::new(768, 768);
 
         let mut surface = GlfwSurface::new_gl33(
-            "Rust Graphics Test",
+            "Tile Test",
             WindowOpt::default().set_dim(WindowDim::Windowed {
                 width: window_size.x,
                 height: window_size.y,

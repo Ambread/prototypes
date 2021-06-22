@@ -627,25 +627,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-graphics"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cgmath",
- "glfw",
- "image",
- "luminance",
- "luminance-derive",
- "luminance-gl",
- "luminance-glfw",
- "luminance-windowing",
- "noise",
- "rand 0.8.3",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -729,6 +710,25 @@ dependencies = [
  "jpeg-decoder",
  "miniz_oxide 0.4.4",
  "weezl",
+]
+
+[[package]]
+name = "tile-test"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cgmath",
+ "glfw",
+ "image",
+ "luminance",
+ "luminance-derive",
+ "luminance-gl",
+ "luminance-glfw",
+ "luminance-windowing",
+ "noise",
+ "rand 0.8.3",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

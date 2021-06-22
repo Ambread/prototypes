@@ -1,5 +1,5 @@
 [package]
-name = "rust-graphics"
+name = "tile-test"
 version = "0.1.0"
 authors = ["jamesBeeProg <jamesBeeProg@gmail.com>"]
 edition = "2018"
