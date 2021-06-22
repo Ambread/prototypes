@@ -43,7 +43,7 @@ struct Main {
 }
 
 impl Main {
-    const WINDOW_SIZE: u32 = 768;
+    pub const WINDOW_SIZE: u32 = 768;
 
     fn new() -> Result<Self> {
         let assets = Self::load_assets()?;

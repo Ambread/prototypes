@@ -1,3 +1,4 @@
+use crate::Main;
 use cgmath::Vector2;
 use glfw::{Action, Key, MouseButton, WindowEvent};
 use std::collections::HashSet;
@@ -32,10 +33,6 @@ impl Input {
                 self.mouse_position = Some(Vector2::new(*x, *y));
             }
 
-            WindowEvent::CursorEnter(false) => {
-                self.mouse_position = None;
-            }
-
             WindowEvent::MouseButton(button, Action::Press, _) => {
                 self.mouse_held.insert(*button);
                 self.mouse_pressed.insert(*button);
@@ -46,6 +43,20 @@ impl Input {
             }
 
             _ => {}
+        }
+
+        let mouse_outside = self
+            .mouse_position
+            .map(|it| {
+                it.x > Main::WINDOW_SIZE as f64
+                    || it.x < 0.0
+                    || it.y > Main::WINDOW_SIZE as f64
+                    || it.y < 0.0
+            })
+            .unwrap_or(false);
+
+        if mouse_outside {
+            self.mouse_position = None;
         }
     }
 
