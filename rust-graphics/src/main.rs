@@ -2,7 +2,7 @@
 
 pub mod assets;
 pub mod chunk;
-pub mod renderer;
+pub mod render;
 
 use anyhow::Result;
 use assets::Assets;
@@ -11,7 +11,7 @@ use chunk::Chunk;
 use glfw::{Action, Key, WindowEvent};
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
-use renderer::Renderer;
+use render::Renderer;
 use std::env::current_dir;
 
 struct Main {
