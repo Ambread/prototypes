@@ -9,7 +9,7 @@ use anyhow::Result;
 use assets::Assets;
 use cgmath::Vector2;
 use chunk::Chunk;
-use glfw::{Action, Key, WindowEvent};
+use glfw::{Action, Key, MouseButtonLeft, WindowEvent};
 use input::Input;
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
@@ -46,13 +46,24 @@ impl Main {
     fn new() -> Result<Self> {
         let assets = Self::load_assets()?;
 
+        const WINDOW_SIZE: u32 = 768;
+
         let mut surface = GlfwSurface::new_gl33(
             "Rust Graphics Test",
             WindowOpt::default().set_dim(WindowDim::Windowed {
-                width: 768,
-                height: 768,
+                width: WINDOW_SIZE,
+                height: WINDOW_SIZE,
             }),
         )?;
+
+        // TODO: Add proper resizing logic
+        // For now just lock it
+        surface.context.window.set_size_limits(
+            Some(WINDOW_SIZE),
+            Some(WINDOW_SIZE),
+            Some(WINDOW_SIZE),
+            Some(WINDOW_SIZE),
+        );
 
         let renderer = Renderer::new(&mut surface, &assets)?;
 
@@ -94,29 +105,33 @@ impl Main {
     }
 
     fn handle_input(&mut self) -> Result<()> {
-        if self.input.has_pressed(Key::Space) {
+        if self.input.was_key_pressed(Key::Space) {
             self.reload()?;
         }
 
-        if self.input.has_pressed(Key::P) {
-            println!("Pos = {:?}", self.chunk.position);
+        if self.input.was_key_pressed(Key::P) {
+            println!("Chunk = {:?}", self.chunk.position);
         }
-        if self.input.has_pressed(Key::O) {
+        if self.input.was_key_pressed(Key::O) {
             println!("{:?}", self.chunk);
         }
 
-        if self.input.has_pressed(Key::W) {
+        if self.input.was_key_pressed(Key::W) {
             self.chunk.position.y += 1;
             self.generate()?;
-        } else if self.input.has_pressed(Key::A) {
+        } else if self.input.was_key_pressed(Key::A) {
             self.chunk.position.x -= 1;
             self.generate()?;
-        } else if self.input.has_pressed(Key::S) {
+        } else if self.input.was_key_pressed(Key::S) {
             self.chunk.position.y -= 1;
             self.generate()?;
-        } else if self.input.has_pressed(Key::D) {
+        } else if self.input.was_key_pressed(Key::D) {
             self.chunk.position.x += 1;
             self.generate()?;
+        }
+
+        if self.input.was_mouse_pressed(MouseButtonLeft) || self.input.was_key_pressed(Key::L) {
+            println!("Mouse = {:?}", self.input.mouse_position());
         }
 
         Ok(())
