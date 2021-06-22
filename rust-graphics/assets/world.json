@@ -1,4 +1,27 @@
 {
-    "type": "flat",
-    "tile": "sand"
+    "type": "noise",
+    "seed": 0,
+    "scale": 32,
+    "tiles": [
+        {
+            "name": "rock",
+            "bias": 1
+        },
+        {
+            "name": "stone",
+            "bias": 1
+        },
+        {
+            "name": "grass",
+            "bias": 1
+        },
+        {
+            "name": "sand",
+            "bias": 1
+        },
+        {
+            "name": "water",
+            "bias": 1
+        }
+    ]
 }
