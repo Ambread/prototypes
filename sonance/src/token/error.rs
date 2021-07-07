@@ -1,10 +1,11 @@
+use std::num::ParseIntError;
 use crate::error::Span;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ScanError {
     InvalidToken { position: usize },
     // TODO: Rust doesn't allow you to inspect the cause yet
-    InvalidInteger { span: Span },
+    InvalidInteger { source: ParseIntError,span: Span },
     UnterminatedCharacterEof { start: usize },
     EmptyCharacter { span: Span },
     CharacterExpectedClosing { actual: char, span: Span },
@@ -23,8 +24,8 @@ impl From<ScanError> for crate::error::Citation {
                     },
                     None,
                 ),
-            ScanError::InvalidInteger { span } => {
-                Citation::error("Invalid integer literal".to_owned()).span(span, None)
+            ScanError::InvalidInteger { source, span } => {
+                Citation::error("Invalid integer literal".to_owned()).span(span, Some(source.to_string()))
             }
             ScanError::UnterminatedCharacterEof { start } => {
                 Citation::error("Rest of character literal expected, found end of file".to_owned())

@@ -116,8 +116,8 @@ impl<'src> Scanner<'src> {
             self.source[head.0..=last.0]
                 .parse()
                 .map(TokenKind::Integer)
-                .map(|kind| Token { span, kind })
-                .map_err(|_| ScanError::InvalidInteger { span }),
+                .map(|kind| Token::new(kind, span))
+                .map_err(|source| ScanError::InvalidInteger { source, span }),
         )
     }
 
