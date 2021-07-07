@@ -48,7 +48,7 @@ impl Input {
             .mouse_position
             .map(|it| {
                 it.zip(window_size, |it, window_size| {
-                    it > window_size as f64 || it < 0.0
+                    (0.0..window_size as f64).contains(&it)
                 })
             })
             .map(|it| it.x || it.y)
