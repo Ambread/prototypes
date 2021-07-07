@@ -7,3 +7,5 @@ cargo run
 cd dev
 
 gcc driver.c output.o
+
+./a.out
