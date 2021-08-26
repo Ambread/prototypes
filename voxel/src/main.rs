@@ -1,7 +1,8 @@
-use std::collections::HashSet;
+pub mod camera;
 
 use anyhow::Result;
-use cgmath::{perspective, prelude::*, Deg, Matrix4, Vector2, Vector3};
+use camera::Camera;
+use cgmath::{Vector2, Vector3};
 use glfw::{Action, Context, Key, WindowEvent};
 use luminance::{
     context::GraphicsContext as _, pipeline::PipelineState, render_state::RenderState,
@@ -10,6 +11,7 @@ use luminance::{
 use luminance_derive::{Semantics, UniformInterface, Vertex};
 use luminance_glfw::GlfwSurface;
 use luminance_windowing::{WindowDim, WindowOpt};
+use std::collections::HashSet;
 
 const VERTEX_SHADER: &str = include_str!("vertex.glsl");
 const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
@@ -45,7 +47,7 @@ const COLORS: &[VertexRGB] = &[
     VertexRGB::new([255, 0, 255]),
 ];
 
-const VERTICES: &[Vertex] = &[
+const VERTICES: [Vertex; 36] = [
     // Face 1
     Vertex::new(VertexPosition::new([-0.5, -0.5, -0.5]), COLORS[0]),
     Vertex::new(VertexPosition::new([-0.5, 0.5, -0.5]), COLORS[0]),
@@ -105,9 +107,28 @@ fn main() -> Result<()> {
     let events = surface.events_rx;
     let mut back_buffer = context.back_buffer()?;
 
-    let triangle = context
+    const CHUNK_SIZE: u8 = 10;
+
+    let vertices: Vec<_> = (0..CHUNK_SIZE)
+        .flat_map(|x| {
+            (0..CHUNK_SIZE).flat_map(move |y| {
+                (0..CHUNK_SIZE)
+                    .map(move |z| Vector3::new(x as f32 * 2.0, y as f32 * 2.0, z as f32 * 2.0))
+            })
+        })
+        .flat_map(|i| {
+            std::array::IntoIter::new(VERTICES).map(move |mut it| {
+                it.position.repr[0] += i.x;
+                it.position.repr[1] += i.y;
+                it.position.repr[2] += i.z;
+                it
+            })
+        })
+        .collect();
+
+    let tess = context
         .new_tess()
-        .set_vertices(VERTICES)
+        .set_vertices(vertices)
         .set_mode(Mode::Triangle)
         .build()?;
 
@@ -116,9 +137,7 @@ fn main() -> Result<()> {
         .from_strings(VERTEX_SHADER, None, None, FRAGMENT_SHADER)?
         .ignore_warnings();
 
-    let mut projection = Matrix4::from([[0.0; 4]; 4]);
-
-    let mut has_rotated = true;
+    let mut camera = Camera::new();
     let mut pressed_keys = HashSet::new();
 
     loop {
@@ -147,69 +166,7 @@ fn main() -> Result<()> {
             }
         }
 
-        {
-            let mut position = Vector3::new(0.0, 0.0, 0.0);
-
-            if pressed_keys.contains(&Key::W) {
-                position.z += 1.0;
-            }
-            if pressed_keys.contains(&Key::A) {
-                position.x += 1.0;
-            }
-            if pressed_keys.contains(&Key::S) {
-                position.z -= 1.0;
-            }
-            if pressed_keys.contains(&Key::D) {
-                position.x -= 1.0;
-            }
-            if pressed_keys.contains(&Key::Space) {
-                position.y -= 1.0;
-            }
-            if pressed_keys.contains(&Key::LeftShift) {
-                position.y += 1.0;
-            }
-
-            const MOVE_SPEED: f32 = 0.05;
-
-            if !position.is_zero() {
-                if has_rotated {
-                    has_rotated = false;
-                    projection = perspective(
-                        Deg(90.0),
-                        window_size.x as f32 / window_size.y as f32,
-                        0.1,
-                        10.0,
-                    );
-                }
-
-                projection =
-                    projection * Matrix4::from_translation(position.normalize() * MOVE_SPEED);
-            }
-
-            let mut rotation = Vector2::new(0.0, 0.0);
-            if pressed_keys.contains(&Key::Up) {
-                rotation.x += 1.0;
-            }
-            if pressed_keys.contains(&Key::Left) {
-                rotation.y += 1.0;
-            }
-            if pressed_keys.contains(&Key::Down) {
-                rotation.x -= 1.0;
-            }
-            if pressed_keys.contains(&Key::Right) {
-                rotation.y -= 1.0;
-            }
-
-            const ROTATE_SPEED: f32 = 1.0;
-
-            if !rotation.is_zero() {
-                has_rotated = true;
-
-                projection = projection
-                    * Matrix4::from_angle_x(Deg(rotation.x * ROTATE_SPEED))
-                    * Matrix4::from_angle_y(Deg(rotation.y * ROTATE_SPEED));
-            }
-        }
+        camera.update(&pressed_keys);
 
         context
             .new_pipeline_gate()
@@ -218,10 +175,13 @@ fn main() -> Result<()> {
                 &PipelineState::default(),
                 |_, mut shade_gate| {
                     shade_gate.shade(&mut program, |mut interface, uniforms, mut render_gate| {
-                        interface.set(&uniforms.projection, projection.into());
+                        interface.set(
+                            &uniforms.projection,
+                            camera.get_projection(&window_size).into(),
+                        );
 
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
-                            tess_gate.render(&triangle)
+                            tess_gate.render(&tess)
                         })
                     })
                 },
