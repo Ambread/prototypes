@@ -108,6 +108,7 @@ fn main() -> Result<()> {
     let mut back_buffer = context.back_buffer()?;
 
     const CHUNK_SIZE: u8 = 10;
+    const SKY_BOX_SIZE: f32 = 40.0;
 
     let vertices: Vec<_> = (0..CHUNK_SIZE)
         .flat_map(|x| {
@@ -124,6 +125,12 @@ fn main() -> Result<()> {
                 it
             })
         })
+        .chain(std::array::IntoIter::new(VERTICES).map(move |mut it| {
+            it.position.repr[0] *= SKY_BOX_SIZE;
+            it.position.repr[1] *= SKY_BOX_SIZE;
+            it.position.repr[2] *= SKY_BOX_SIZE;
+            it
+        }))
         .collect();
 
     let tess = context
