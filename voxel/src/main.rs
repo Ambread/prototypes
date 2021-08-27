@@ -2,8 +2,9 @@ pub mod camera;
 
 use anyhow::Result;
 use camera::Camera;
-use cgmath::{Vector2, Vector3};
+use cgmath::{vec3, Vector2, Vector3};
 use glfw::{Action, Context, Key, WindowEvent};
+use itertools::iproduct;
 use luminance::{
     context::GraphicsContext as _, pipeline::PipelineState, render_state::RenderState,
     shader::Uniform, tess::Mode,
@@ -38,58 +39,58 @@ pub struct Vertex {
     color: VertexRGB,
 }
 
-const COLORS: &[VertexRGB] = &[
-    VertexRGB::new([255, 0, 0]),
-    VertexRGB::new([0, 255, 0]),
-    VertexRGB::new([0, 0, 255]),
-    VertexRGB::new([255, 255, 0]),
-    VertexRGB::new([0, 255, 255]),
-    VertexRGB::new([255, 0, 255]),
+const COLORS: [Vector3<u8>; 6] = [
+    vec3(255, 0, 0),
+    vec3(0, 255, 0),
+    vec3(0, 0, 255),
+    vec3(255, 255, 0),
+    vec3(0, 255, 255),
+    vec3(255, 0, 255),
 ];
 
-const VERTICES: [Vertex; 36] = [
+const CUBE: [Vector3<f32>; 36] = [
     // Face 1
-    Vertex::new(VertexPosition::new([-0.5, -0.5, -0.5]), COLORS[0]),
-    Vertex::new(VertexPosition::new([-0.5, 0.5, -0.5]), COLORS[0]),
-    Vertex::new(VertexPosition::new([0.5, -0.5, -0.5]), COLORS[0]),
-    Vertex::new(VertexPosition::new([-0.5, 0.5, -0.5]), COLORS[0]),
-    Vertex::new(VertexPosition::new([0.5, 0.5, -0.5]), COLORS[0]),
-    Vertex::new(VertexPosition::new([0.5, -0.5, -0.5]), COLORS[0]),
+    vec3(-0.5, -0.5, -0.5),
+    vec3(-0.5, 0.5, -0.5),
+    vec3(0.5, -0.5, -0.5),
+    vec3(-0.5, 0.5, -0.5),
+    vec3(0.5, 0.5, -0.5),
+    vec3(0.5, -0.5, -0.5),
     // Face 2
-    Vertex::new(VertexPosition::new([-0.5, -0.5, 0.5]), COLORS[1]),
-    Vertex::new(VertexPosition::new([0.5, -0.5, 0.5]), COLORS[1]),
-    Vertex::new(VertexPosition::new([-0.5, 0.5, 0.5]), COLORS[1]),
-    Vertex::new(VertexPosition::new([-0.5, 0.5, 0.5]), COLORS[1]),
-    Vertex::new(VertexPosition::new([0.5, -0.5, 0.5]), COLORS[1]),
-    Vertex::new(VertexPosition::new([0.5, 0.5, 0.5]), COLORS[1]),
+    vec3(-0.5, -0.5, 0.5),
+    vec3(0.5, -0.5, 0.5),
+    vec3(-0.5, 0.5, 0.5),
+    vec3(-0.5, 0.5, 0.5),
+    vec3(0.5, -0.5, 0.5),
+    vec3(0.5, 0.5, 0.5),
     // Face 3
-    Vertex::new(VertexPosition::new([-0.5, 0.5, -0.5]), COLORS[2]),
-    Vertex::new(VertexPosition::new([-0.5, 0.5, 0.5]), COLORS[2]),
-    Vertex::new(VertexPosition::new([0.5, 0.5, -0.5]), COLORS[2]),
-    Vertex::new(VertexPosition::new([-0.5, 0.5, 0.5]), COLORS[2]),
-    Vertex::new(VertexPosition::new([0.5, 0.5, 0.5]), COLORS[2]),
-    Vertex::new(VertexPosition::new([0.5, 0.5, -0.5]), COLORS[2]),
+    vec3(-0.5, 0.5, -0.5),
+    vec3(-0.5, 0.5, 0.5),
+    vec3(0.5, 0.5, -0.5),
+    vec3(-0.5, 0.5, 0.5),
+    vec3(0.5, 0.5, 0.5),
+    vec3(0.5, 0.5, -0.5),
     // Face 4
-    Vertex::new(VertexPosition::new([-0.5, -0.5, -0.5]), COLORS[3]),
-    Vertex::new(VertexPosition::new([0.5, -0.5, -0.5]), COLORS[3]),
-    Vertex::new(VertexPosition::new([-0.5, -0.5, 0.5]), COLORS[3]),
-    Vertex::new(VertexPosition::new([-0.5, -0.5, 0.5]), COLORS[3]),
-    Vertex::new(VertexPosition::new([0.5, -0.5, -0.5]), COLORS[3]),
-    Vertex::new(VertexPosition::new([0.5, -0.5, 0.5]), COLORS[3]),
+    vec3(-0.5, -0.5, -0.5),
+    vec3(0.5, -0.5, -0.5),
+    vec3(-0.5, -0.5, 0.5),
+    vec3(-0.5, -0.5, 0.5),
+    vec3(0.5, -0.5, -0.5),
+    vec3(0.5, -0.5, 0.5),
     // Face 5
-    Vertex::new(VertexPosition::new([-0.5, -0.5, -0.5]), COLORS[4]),
-    Vertex::new(VertexPosition::new([-0.5, -0.5, 0.5]), COLORS[4]),
-    Vertex::new(VertexPosition::new([-0.5, 0.5, -0.5]), COLORS[4]),
-    Vertex::new(VertexPosition::new([-0.5, -0.5, 0.5]), COLORS[4]),
-    Vertex::new(VertexPosition::new([-0.5, 0.5, 0.5]), COLORS[4]),
-    Vertex::new(VertexPosition::new([-0.5, 0.5, -0.5]), COLORS[4]),
+    vec3(-0.5, -0.5, -0.5),
+    vec3(-0.5, -0.5, 0.5),
+    vec3(-0.5, 0.5, -0.5),
+    vec3(-0.5, -0.5, 0.5),
+    vec3(-0.5, 0.5, 0.5),
+    vec3(-0.5, 0.5, -0.5),
     // Face 6
-    Vertex::new(VertexPosition::new([0.5, -0.5, -0.5]), COLORS[5]),
-    Vertex::new(VertexPosition::new([0.5, 0.5, -0.5]), COLORS[5]),
-    Vertex::new(VertexPosition::new([0.5, -0.5, 0.5]), COLORS[5]),
-    Vertex::new(VertexPosition::new([0.5, -0.5, 0.5]), COLORS[5]),
-    Vertex::new(VertexPosition::new([0.5, 0.5, -0.5]), COLORS[5]),
-    Vertex::new(VertexPosition::new([0.5, 0.5, 0.5]), COLORS[5]),
+    vec3(0.5, -0.5, -0.5),
+    vec3(0.5, 0.5, -0.5),
+    vec3(0.5, -0.5, 0.5),
+    vec3(0.5, -0.5, 0.5),
+    vec3(0.5, 0.5, -0.5),
+    vec3(0.5, 0.5, 0.5),
 ];
 
 fn main() -> Result<()> {
@@ -108,30 +109,34 @@ fn main() -> Result<()> {
     let mut back_buffer = context.back_buffer()?;
 
     const CHUNK_SIZE: u8 = 10;
+    const CHUNK_SPREAD: f32 = 2.0;
     const SKY_BOX_SIZE: f32 = 40.0;
 
-    let vertices: Vec<_> = (0..CHUNK_SIZE)
-        .flat_map(|x| {
-            (0..CHUNK_SIZE).flat_map(move |y| {
-                (0..CHUNK_SIZE)
-                    .map(move |z| Vector3::new(x as f32 * 2.0, y as f32 * 2.0, z as f32 * 2.0))
-            })
+    // For all points in a (CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE) grid
+    let vertices = iproduct!(0..CHUNK_SIZE, 0..CHUNK_SIZE, 0..CHUNK_SIZE)
+        // Cast position to floats and apply chunk spread
+        .map(|position| Vector3::from(position).cast().unwrap() * CHUNK_SPREAD)
+        // For each point, create a cube using the const cube vertices and offset it to said point
+        .flat_map(|offset| IntoIterator::into_iter(CUBE).map(move |position| position + offset))
+        // Add an additional cube as the sky box
+        .chain(IntoIterator::into_iter(CUBE).map(|position| position * SKY_BOX_SIZE))
+        // Pair each triangle with a color
+        .zip(
+            IntoIterator::into_iter(COLORS)
+                // Each face has 6 triangles which all will be the same color
+                .flat_map(|color| std::iter::repeat(color).take(6))
+                // Repeat for all cubes
+                .cycle(),
+        )
+        // Turn the positions and colors into vertices for the tesselation to handle
+        .map(|(position, color)| {
+            Vertex::new(
+                VertexPosition::new(position.into()),
+                VertexRGB::new(color.into()),
+            )
         })
-        .flat_map(|i| {
-            std::array::IntoIter::new(VERTICES).map(move |mut it| {
-                it.position.repr[0] += i.x;
-                it.position.repr[1] += i.y;
-                it.position.repr[2] += i.z;
-                it
-            })
-        })
-        .chain(std::array::IntoIter::new(VERTICES).map(move |mut it| {
-            it.position.repr[0] *= SKY_BOX_SIZE;
-            it.position.repr[1] *= SKY_BOX_SIZE;
-            it.position.repr[2] *= SKY_BOX_SIZE;
-            it
-        }))
-        .collect();
+        // Collect into a vec so we can pass to tesselation
+        .collect::<Vec<_>>();
 
     let tess = context
         .new_tess()
