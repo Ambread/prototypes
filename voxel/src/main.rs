@@ -3,7 +3,7 @@ pub mod camera;
 use anyhow::Result;
 use camera::Camera;
 use cgmath::{vec3, Vector2, Vector3};
-use glfw::{Action, Context, Key, WindowEvent};
+use glfw::{Action, Context, CursorMode, Key, WindowEvent};
 use itertools::iproduct;
 use luminance::{
     context::GraphicsContext as _, pipeline::PipelineState, render_state::RenderState,
@@ -151,8 +151,12 @@ fn main() -> Result<()> {
 
     let mut camera = Camera::new();
     let mut pressed_keys = HashSet::new();
+    let mut cursor_position;
+    context.window.set_cursor_mode(CursorMode::Hidden);
 
     loop {
+        cursor_position = Vector2::new(0.0, 0.0);
+
         context.window.glfw.poll_events();
 
         for (_, event) in glfw::flush_messages(&events) {
@@ -174,11 +178,22 @@ fn main() -> Result<()> {
                     pressed_keys.remove(&key);
                 }
 
+                WindowEvent::CursorPos(x, y) => {
+                    let window_center = window_size.cast().unwrap().map(|it: f64| it / 2.0);
+
+                    cursor_position.x = -(window_center.x - x);
+                    cursor_position.y = -(window_center.y - y);
+
+                    context
+                        .window
+                        .set_cursor_pos(window_center.x, window_center.y);
+                }
+
                 _ => {}
             }
         }
 
-        camera.update(&pressed_keys);
+        camera.update(&cursor_position, &pressed_keys);
 
         context
             .new_pipeline_gate()

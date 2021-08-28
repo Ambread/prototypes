@@ -8,5 +8,14 @@
   "files.trimTrailingWhitespace": true,
   "editor.semanticHighlighting.enabled": true,
   "files.eol": "\n",
-  "cSpell.words": ["Glfw", "cgmath", "repr"]
+  "cSpell.words": [
+    "Framebuffer",
+    "Glfw",
+    "cgmath",
+    "consts",
+    "glsl",
+    "iproduct",
+    "itertools",
+    "repr"
+]
 }

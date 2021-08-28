@@ -16,34 +16,33 @@ impl Camera {
         }
     }
 
-    const MOVE_SPEED: f32 = 0.05;
-    const ROTATE_SPEED: Rad<f32> = Rad(std::f32::consts::PI / 64.0);
+    const MOVE_SPEED: f32 = 0.1;
+    // Ratio of mouse movement to rads, I just found a number that works
+    const ROTATE_SENSITIVITY: f64 = 1000.0;
+    // Prevent from going past "all the way up/down" as to not flip camera
     const VERTICAL_ROTATE_LIMIT: Rad<f32> = Rad(std::f32::consts::FRAC_PI_2);
 
-    pub fn update(&mut self, pressed_keys: &HashSet<Key>) {
+    pub fn update(&mut self, cursor_position: &Vector2<f64>, pressed_keys: &HashSet<Key>) {
         if pressed_keys.contains(&Key::R) {
             *self = Self::new();
         }
 
-        self.update_rotate(pressed_keys);
+        self.update_rotate(cursor_position);
         self.update_movement(pressed_keys);
     }
 
-    fn update_rotate(&mut self, pressed_keys: &HashSet<Key>) {
-        if pressed_keys.contains(&Key::Up) {
-            self.rotation.x -= Self::ROTATE_SPEED;
-        }
-        if pressed_keys.contains(&Key::Down) {
-            self.rotation.x += Self::ROTATE_SPEED;
-        }
+    fn update_rotate(&mut self, cursor_position: &Vector2<f64>) {
+        // Map cursor_position to Rads, arbitrarily using magic constant
+        let cursor_position = cursor_position.map(|it| {
+            let it = it / Self::ROTATE_SENSITIVITY;
+            Rad(it as f32)
+        });
 
-        if pressed_keys.contains(&Key::Left) {
-            self.rotation.y -= Self::ROTATE_SPEED;
-        }
-        if pressed_keys.contains(&Key::Right) {
-            self.rotation.y += Self::ROTATE_SPEED;
-        }
+        // Yes the components are swapped for some reason
+        self.rotation.x += cursor_position.y;
+        self.rotation.y += cursor_position.x;
 
+        // Apply VERTICAL_ROTATE_LIMIT, needs ceremony due to Rad
         self.rotation.x = Rad(self.rotation.x.0.clamp(
             -Self::VERTICAL_ROTATE_LIMIT.0,
             Self::VERTICAL_ROTATE_LIMIT.0,
@@ -51,8 +50,13 @@ impl Camera {
     }
 
     fn update_movement(&mut self, pressed_keys: &HashSet<Key>) {
+        // We need a temp movement vector to normalize it later, to prevent diagonals going faster
         let mut movement = Vector3::new(0.0, 0.0, 0.0);
 
+        // I can't explain these, I just flipped things until it worked
+        // There's likely some fancy vector math I can't grasp
+
+        // Forwards and backwards
         if pressed_keys.contains(&Key::W) {
             movement.z += self.rotation.y.cos();
             movement.x -= self.rotation.y.sin();
@@ -62,6 +66,7 @@ impl Camera {
             movement.x += self.rotation.y.sin();
         }
 
+        // Left and right
         if pressed_keys.contains(&Key::A) {
             movement.z += self.rotation.y.sin();
             movement.x += self.rotation.y.cos();
@@ -71,6 +76,7 @@ impl Camera {
             movement.x -= self.rotation.y.cos();
         }
 
+        // Up and down, yeah this one is simple
         if pressed_keys.contains(&Key::Space) {
             movement.y -= 1.0;
         }
@@ -78,6 +84,7 @@ impl Camera {
             movement.y += 1.0;
         }
 
+        // Normalizing a zero vector breaks everything
         if !movement.is_zero() {
             self.position += movement.normalize() * Self::MOVE_SPEED;
         }
