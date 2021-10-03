@@ -77,13 +77,41 @@ impl<T, const S: usize> FromJIterator<T> for [T; S] {
 #[cfg(test)]
 #[test]
 fn array_test() {
-    assert_eq!(repeat(1).collect(), [1, 1, 1]);
+    assert_eq!(repeat(1).collect::<[i32; 3]>(), [1, 1, 1]);
     assert_eq!(
         unfold(0, |acc| {
             let acc = acc + 1;
             (acc, acc)
         })
-        .collect(),
+        .collect::<[i32; 4]>(),
         [1, 2, 3, 4]
+    );
+}
+
+impl<T> FromJIterator<Option<T>> for Vec<T> {
+    fn from_iter<I>(mut iter: I) -> Self
+    where
+        I: JIterator<Item = Option<T>>,
+    {
+        let mut vec = Vec::new();
+        while let Some(item) = iter.next() {
+            vec.push(item)
+        }
+        vec
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn array_test() {
+    assert_eq!(repeat(1).take(3).collect(), vec![1, 1, 1]);
+    assert_eq!(
+        unfold(0, |acc| {
+            let acc = acc + 1;
+            (acc, acc)
+        })
+        .take(4)
+        .collect(),
+        vec![1, 2, 3, 4]
     );
 }
