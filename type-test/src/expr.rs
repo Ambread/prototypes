@@ -1,4 +1,8 @@
-use crate::{builder, ty::Ty, Context, Substitutions};
+use crate::{
+    builder,
+    data::{Context, Substitutions},
+    ty::Ty,
+};
 
 #[derive(Debug, Clone)]
 pub enum Expr {

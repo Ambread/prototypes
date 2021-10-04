@@ -1,4 +1,4 @@
-use crate::{builder, Substitutions};
+use crate::{builder, data::Substitutions};
 
 #[derive(Debug, Clone)]
 pub enum Ty {
@@ -17,7 +17,7 @@ impl Ty {
     pub(crate) fn substitute(self, subs: &Substitutions) -> Ty {
         match self {
             Ty::Named(_) => self,
-            Ty::Variable(ref name) => subs.0.get(name).cloned().unwrap_or(self),
+            Ty::Variable(ref name) => subs.get(name).cloned().unwrap_or(self),
             Ty::Func(func_ty) => {
                 builder::ty_func(func_ty.from.substitute(subs), func_ty.to.substitute(subs))
             }
@@ -46,9 +46,7 @@ impl Ty {
         } else if self.contains_variable(&id) {
             panic!("Type contains self reference")
         } else {
-            let mut subs = Substitutions::default();
-            subs.0.insert(id, self);
-            subs
+            Substitutions::of(id, self)
         }
     }
 

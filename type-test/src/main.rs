@@ -1,4 +1,4 @@
-use type_test::{builder::*, Context};
+use type_test::{builder::*, data::Context};
 
 fn main() {
     let mut context = Context::new(
