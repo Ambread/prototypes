@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    ops::{Add, AddAssign},
+};
 
 fn main() {
     let mut env = HashMap::new();
@@ -65,10 +68,20 @@ enum Ty {
     Func { from: Box<Ty>, to: Box<Ty> },
 }
 
+impl Ty {
+    fn contains(&self, name: &str) -> bool {
+        match self {
+            Ty::Named(_) => false,
+            Ty::Variable(var_name) => var_name == name,
+            Ty::Func { from, to } => from.contains(name) || to.contains(name),
+        }
+    }
+}
+
 fn infer(expr: Expression, ctx: &mut Context) -> (Ty, Substitutions) {
     match expr {
-        Expression::Number(_) => (Ty::Named("Number".to_string()), HashMap::new()),
-        Expression::Variable(name) => (ctx.get(&name), HashMap::new()),
+        Expression::Number(_) => (Ty::Named("Number".to_string()), Substitutions::default()),
+        Expression::Variable(name) => (ctx.get(&name), Substitutions::default()),
         Expression::Func { param, body } => {
             let param_ty = ctx.new_ty_variable();
             let mut ctx = ctx.add(param, param_ty.clone());
@@ -84,26 +97,26 @@ fn infer(expr: Expression, ctx: &mut Context) -> (Ty, Substitutions) {
             )
         }
         Expression::Call { func, arg } => {
-            let (func_ty, subs1) = infer(*func, ctx);
-            let (arg_ty, subs2) = infer(*arg, &mut apply_subs_to_context(&subs1, ctx));
+            let (func_ty, mut subs) = infer(*func, ctx);
+            let (arg_ty, new_subs) = infer(*arg, &mut apply_subs_to_context(&subs, ctx));
 
             let new_var = ctx.new_ty_variable();
-            let subs3 = compose_subs(subs1, subs2);
-            let subs4 = unify(
+            subs += new_subs;
+
+            let new_subs = unify(
                 Ty::Func {
                     from: Box::new(arg_ty.clone()),
                     to: Box::new(new_var),
                 },
                 func_ty.clone(),
             );
-
-            let func_ty = apply_subs_to_ty(&subs4, func_ty);
-            let subs5 = compose_subs(subs3, subs4);
+            let func_ty = apply_subs_to_ty(&new_subs, func_ty);
+            subs += new_subs;
 
             if let Ty::Func { from, to } = func_ty {
-                let subs6 = unify(apply_subs_to_ty(&subs5, *from), arg_ty);
-                let subs7 = compose_subs(subs5, subs6);
-                (apply_subs_to_ty(&subs7, *to), subs7)
+                subs += unify(apply_subs_to_ty(&subs, *from), arg_ty);
+
+                (apply_subs_to_ty(&subs, *to), subs)
             } else {
                 unreachable!()
             }
@@ -114,23 +127,23 @@ fn infer(expr: Expression, ctx: &mut Context) -> (Ty, Substitutions) {
             false_branch,
         } => {
             let (condition_ty, subs0) = infer(*condition, ctx);
-            let subs1 = unify(condition_ty, Ty::Named("Bool".to_string()));
+            let mut subs = unify(condition_ty, Ty::Named("Bool".to_string()));
 
-            let mut ctx1 = apply_subs_to_context(&compose_subs(subs0, subs1.clone()), ctx);
-            let (true_branch_ty, subs2) = infer(*true_branch, &mut ctx1);
-            let subs3 = compose_subs(subs1, subs2.clone());
+            let mut ctx1 = apply_subs_to_context(&(subs0 + subs.clone()), ctx);
+            let (true_branch_ty, new_subs) = infer(*true_branch, &mut ctx1);
+            subs += new_subs.clone();
 
-            let mut ctx2 = apply_subs_to_context(&subs2, &ctx1);
-            let (false_branch_ty, subs4) = infer(*false_branch, &mut ctx2);
-            let subs5 = compose_subs(subs3, subs4);
+            let mut ctx2 = apply_subs_to_context(&new_subs, &ctx1);
+            let (false_branch_ty, new_subs) = infer(*false_branch, &mut ctx2);
+            subs += new_subs;
 
-            let true_branch_ty = apply_subs_to_ty(&subs5, true_branch_ty);
-            let false_branch_ty = apply_subs_to_ty(&subs5, false_branch_ty);
+            let true_branch_ty = apply_subs_to_ty(&subs, true_branch_ty);
+            let false_branch_ty = apply_subs_to_ty(&subs, false_branch_ty);
 
-            let subs6 = unify(true_branch_ty.clone(), false_branch_ty);
-            let subs7 = compose_subs(subs5, subs6.clone());
+            let new_subs = unify(true_branch_ty.clone(), false_branch_ty);
+            subs += new_subs.clone();
 
-            (apply_subs_to_ty(&subs6, true_branch_ty), subs7)
+            (apply_subs_to_ty(&new_subs, true_branch_ty), subs)
         }
     }
 }
@@ -163,12 +176,28 @@ impl Context {
     }
 }
 
-type Substitutions = HashMap<String, Ty>;
+#[derive(Debug, Clone, Default)]
+struct Substitutions(HashMap<String, Ty>);
+
+impl Add for Substitutions {
+    type Output = Self;
+
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self.0.extend(rhs.0.into_iter());
+        self
+    }
+}
+
+impl AddAssign for Substitutions {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0.extend(rhs.0.into_iter())
+    }
+}
 
 fn apply_subs_to_ty(subs: &Substitutions, ty: Ty) -> Ty {
     match ty {
         Ty::Named(_) => ty,
-        Ty::Variable(ref name) => subs.get(name).cloned().unwrap_or(ty),
+        Ty::Variable(ref name) => subs.0.get(name).cloned().unwrap_or(ty),
         Ty::Func { from, to } => Ty::Func {
             from: Box::new(apply_subs_to_ty(subs, *from)),
             to: Box::new(apply_subs_to_ty(subs, *to)),
@@ -178,7 +207,7 @@ fn apply_subs_to_ty(subs: &Substitutions, ty: Ty) -> Ty {
 
 fn unify(x: Ty, y: Ty) -> Substitutions {
     match (x, y) {
-        (Ty::Named(x), Ty::Named(y)) if x == y => HashMap::new(),
+        (Ty::Named(x), Ty::Named(y)) if x == y => Substitutions::default(),
         (Ty::Variable(x), y) => var_bind(x, y),
         (x, Ty::Variable(y)) => var_bind(y, x),
         (
@@ -191,40 +220,28 @@ fn unify(x: Ty, y: Ty) -> Substitutions {
                 to: y_to,
             },
         ) => {
-            let subs1 = unify(*x_from, *y_from);
-            let subs2 = unify(
-                apply_subs_to_ty(&subs1, *x_to),
-                apply_subs_to_ty(&subs1, *y_to),
+            let mut subs = unify(*x_from, *y_from);
+
+            subs += unify(
+                apply_subs_to_ty(&subs, *x_to),
+                apply_subs_to_ty(&subs, *y_to),
             );
 
-            compose_subs(subs1, subs2)
+            subs
         }
         _ => panic!("Type mismatch"),
     }
 }
 
-fn compose_subs(mut x: Substitutions, y: Substitutions) -> Substitutions {
-    x.extend(y.into_iter());
-    x
-}
-
 fn var_bind(name: String, ty: Ty) -> Substitutions {
     if matches!(ty, Ty::Variable(ref ty_name) if *ty_name == name) {
-        HashMap::new()
-    } else if contains(&ty, &name) {
+        Substitutions::default()
+    } else if ty.contains(&name) {
         panic!("Type contains self reference")
     } else {
-        let mut subs = HashMap::new();
-        subs.insert(name, ty);
+        let mut subs = Substitutions::default();
+        subs.0.insert(name, ty);
         subs
-    }
-}
-
-fn contains(ty: &Ty, name: &str) -> bool {
-    match ty {
-        Ty::Named(_) => false,
-        Ty::Variable(var_name) => var_name == name,
-        Ty::Func { from, to } => contains(from, name) || contains(to, name),
     }
 }
 
