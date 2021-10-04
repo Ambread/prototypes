@@ -1,4 +1,8 @@
-use crate::{builder, data::Substitutions};
+use crate::{
+    builder,
+    data::Substitutions,
+    error::{Error, Result},
+};
 
 #[derive(Debug, Clone)]
 pub enum Ty {
@@ -24,29 +28,29 @@ impl Ty {
         }
     }
 
-    pub(crate) fn unify(self, other: Ty) -> Substitutions {
+    pub(crate) fn unify(self, other: Ty) -> Result<Substitutions> {
         match (self, other) {
-            (Ty::Named(x), Ty::Named(y)) if x == y => Substitutions::default(),
+            (Ty::Named(x), Ty::Named(y)) if x == y => Ok(Substitutions::default()),
             (Ty::Variable(id), ty) => ty.bind_variable(id),
             (ty, Ty::Variable(id)) => ty.bind_variable(id),
             (Ty::Func(x), Ty::Func(y)) => {
-                let mut subs = x.from.unify(y.from);
+                let mut subs = x.from.unify(y.from)?;
 
-                subs += x.to.substitute(&subs).unify(y.to.substitute(&subs));
+                subs += x.to.substitute(&subs).unify(y.to.substitute(&subs))?;
 
-                subs
+                Ok(subs)
             }
-            _ => panic!("Type mismatch"),
+            (found, expected) => Err(Error::TypeMismatch { expected, found }),
         }
     }
 
-    fn bind_variable(self, id: String) -> Substitutions {
+    fn bind_variable(self, id: String) -> Result<Substitutions> {
         if matches!(self, Ty::Variable(ref var_id) if *var_id == id) {
-            Substitutions::default()
+            Ok(Substitutions::default())
         } else if self.contains_variable(&id) {
-            panic!("Type contains self reference")
+            Err(Error::SelfReference)
         } else {
-            Substitutions::of(id, self)
+            Ok(Substitutions::of(id, self))
         }
     }
 
