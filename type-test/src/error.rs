@@ -10,4 +10,6 @@ pub enum Error {
     TypeMismatch { expected: Ty, found: Ty },
     #[error("Type contains self reference")]
     SelfReference,
+    #[error("Unbound type variable")]
+    UnboundTypeVariable,
 }

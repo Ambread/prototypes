@@ -63,4 +63,12 @@ impl Ty {
             }
         }
     }
+
+    pub fn try_into_func(self) -> Result<Box<FuncTy>, Self> {
+        if let Self::Func(func) = self {
+            Ok(func)
+        } else {
+            Err(self)
+        }
+    }
 }

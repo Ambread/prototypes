@@ -1,6 +1,9 @@
 use std::{collections::HashMap, ops::AddAssign};
 
-use crate::ty::Ty;
+use crate::{
+    error::{Error, Result},
+    ty::Ty,
+};
 
 #[derive(Debug, Clone, Default)]
 pub struct Context {
@@ -13,8 +16,8 @@ impl Context {
         Self { env, next: 0 }
     }
 
-    pub fn get(&self, name: &str) -> Ty {
-        self.env.get(name).expect("Unbound type variable").clone()
+    pub fn get(&self, name: &str) -> Result<&Ty> {
+        self.env.get(name).ok_or(Error::UnboundTypeVariable)
     }
 
     pub fn new_ty_variable(&mut self) -> Ty {

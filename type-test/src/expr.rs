@@ -18,7 +18,7 @@ impl Expr {
     pub fn infer(self, ctx: &mut Context) -> Result<(Ty, Substitutions)> {
         match self {
             Expr::Number(_) => Ok((Ty::Named("Number".to_string()), Substitutions::default())),
-            Expr::Variable(name) => Ok((ctx.get(&name), Substitutions::default())),
+            Expr::Variable(name) => Ok((ctx.get(&name)?.clone(), Substitutions::default())),
             Expr::Func(it) => it.infer(ctx),
             Expr::Call(it) => it.infer(ctx),
             Expr::If(it) => it.infer(ctx),
@@ -58,15 +58,12 @@ impl CallExpr {
         subs += new_subs;
 
         let new_subs = builder::ty_func(arg_ty.clone(), new_var).unify(func_ty.clone())?;
-        let func_ty = func_ty.substitute(&new_subs);
+        let func_ty = func_ty
+            .substitute(&new_subs)
+            .try_into_func()
+            .expect("Should still be a func type here");
+
         subs += new_subs;
-
-        let func_ty = if let Ty::Func(func_ty) = func_ty {
-            func_ty
-        } else {
-            unreachable!()
-        };
-
         subs += func_ty.from.substitute(&subs).unify(arg_ty)?;
 
         Ok((func_ty.to.substitute(&subs), subs))
