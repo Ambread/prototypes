@@ -1,7 +1,4 @@
-use crate::{
-    ty::{FuncTy, Ty},
-    Context, Substitutions,
-};
+use crate::{builder, ty::Ty, Context, Substitutions};
 
 #[derive(Debug, Clone)]
 pub enum Expr {
@@ -37,13 +34,7 @@ impl FuncExpr {
         let (body_ty, subs) = self.body.infer(&mut ctx);
         let param_ty = param_ty.substitute(&subs);
 
-        (
-            Ty::Func(Box::new(FuncTy {
-                from: param_ty,
-                to: body_ty,
-            })),
-            subs,
-        )
+        (builder::ty_func(param_ty, body_ty), subs)
     }
 }
 
@@ -61,11 +52,7 @@ impl CallExpr {
         let new_var = ctx.new_ty_variable();
         subs += new_subs;
 
-        let new_subs = Ty::Func(Box::new(FuncTy {
-            from: arg_ty.clone(),
-            to: new_var,
-        }))
-        .unify(func_ty.clone());
+        let new_subs = builder::ty_func(arg_ty.clone(), new_var).unify(func_ty.clone());
         let func_ty = func_ty.substitute(&new_subs);
         subs += new_subs;
 
