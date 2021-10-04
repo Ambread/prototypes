@@ -1,10 +1,7 @@
 pub mod expr;
 pub mod ty;
 
-use std::{
-    collections::HashMap,
-    ops::{Add, AddAssign},
-};
+use std::{collections::HashMap, ops::AddAssign};
 
 use ty::Ty;
 
@@ -29,18 +26,18 @@ impl Context {
         ty
     }
 
-    fn add(&self, name: String, ty: Ty) -> Self {
+    fn with(&self, name: String, ty: Ty) -> Self {
         let mut context = self.clone();
         context.env.insert(name, ty);
         context
     }
 
-    fn apply_subs(&self, subs: &Substitutions) -> Self {
+    fn substitute(&self, subs: &Substitutions) -> Self {
         Self::new(
             self.env
                 .clone()
                 .into_iter()
-                .map(|(name, ty)| (name, ty.apply_subs(subs)))
+                .map(|(name, ty)| (name, ty.substitute(subs)))
                 .collect(),
         )
     }
@@ -48,15 +45,6 @@ impl Context {
 
 #[derive(Debug, Clone, Default)]
 pub struct Substitutions(HashMap<String, Ty>);
-
-impl Add for Substitutions {
-    type Output = Self;
-
-    fn add(mut self, rhs: Self) -> Self::Output {
-        self.0.extend(rhs.0.into_iter());
-        self
-    }
-}
 
 impl AddAssign for Substitutions {
     fn add_assign(&mut self, rhs: Self) {

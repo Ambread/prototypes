@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use type_test::{
     expr::{self, Expr},
-    ty::Ty,
+    ty::{FuncTy, Ty},
     Context,
 };
 
@@ -17,10 +17,7 @@ fn main() {
 }
 
 fn tfunc(from: Ty, to: Ty) -> Ty {
-    Ty::Func {
-        from: Box::new(from),
-        to: Box::new(to),
-    }
+    Ty::Func(Box::new(FuncTy { from, to }))
 }
 
 fn tn(name: &str) -> Ty {
@@ -36,8 +33,5 @@ fn i(number: i32) -> Expr {
 }
 
 fn c(func: Expr, arg: Expr) -> Expr {
-    Expr::Call(expr::CallExpr {
-        func: Box::new(func),
-        arg: Box::new(arg),
-    })
+    Expr::Call(Box::new(expr::CallExpr { func, arg }))
 }
