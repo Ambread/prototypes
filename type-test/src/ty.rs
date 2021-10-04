@@ -4,14 +4,14 @@ use crate::{
     error::{Error, Result},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Ty {
     Variable(String),
     Named(String),
     Func(Box<FuncTy>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FuncTy {
     pub from: Ty,
     pub to: Ty,

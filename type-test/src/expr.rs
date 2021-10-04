@@ -5,7 +5,7 @@ use crate::{
     ty::Ty,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Number(i32),
     Variable(String),
@@ -26,14 +26,14 @@ impl Expr {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FuncExpr {
     pub param: String,
     pub body: Expr,
 }
 
 impl FuncExpr {
-    pub fn infer(self, ctx: &mut Context) -> Result<(Ty, Substitutions)> {
+    fn infer(self, ctx: &mut Context) -> Result<(Ty, Substitutions)> {
         let param_ty = ctx.new_ty_variable();
         let mut ctx = ctx.with(self.param, param_ty.clone());
         let (body_ty, subs) = self.body.infer(&mut ctx)?;
@@ -43,14 +43,14 @@ impl FuncExpr {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CallExpr {
     pub func: Expr,
     pub arg: Expr,
 }
 
 impl CallExpr {
-    pub fn infer(self, ctx: &mut Context) -> Result<(Ty, Substitutions)> {
+    fn infer(self, ctx: &mut Context) -> Result<(Ty, Substitutions)> {
         let (func_ty, mut subs) = self.func.infer(ctx)?;
         let (arg_ty, new_subs) = self.arg.infer(&mut ctx.substitute(&subs))?;
 
@@ -70,7 +70,7 @@ impl CallExpr {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IfExpr {
     pub condition: Expr,
     pub true_branch: Expr,
@@ -78,7 +78,7 @@ pub struct IfExpr {
 }
 
 impl IfExpr {
-    pub fn infer(self, ctx: &mut Context) -> Result<(Ty, Substitutions)> {
+    fn infer(self, ctx: &mut Context) -> Result<(Ty, Substitutions)> {
         let (condition_ty, mut condition_subs) = self.condition.infer(ctx)?;
         let mut subs = condition_ty.unify(Ty::Named("Bool".to_string()))?;
         condition_subs += subs.clone();
