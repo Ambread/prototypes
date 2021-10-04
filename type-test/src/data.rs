@@ -17,7 +17,11 @@ impl Context {
     }
 
     pub fn get(&self, name: &str) -> Result<&Ty> {
-        self.env.get(name).ok_or(Error::UnboundTypeVariable)
+        self.env
+            .get(name)
+            .ok_or_else(|| Error::UnboundTypeVariable {
+                name: name.to_owned(),
+            })
     }
 
     pub fn new_ty_variable(&mut self) -> Ty {

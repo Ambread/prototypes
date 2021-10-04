@@ -48,7 +48,7 @@ impl Ty {
         if matches!(self, Ty::Variable(ref var_id) if *var_id == id) {
             Ok(Substitutions::default())
         } else if self.contains_variable(&id) {
-            Err(Error::SelfReference)
+            Err(Error::SelfReference { ty: self })
         } else {
             Ok(Substitutions::of(id, self))
         }

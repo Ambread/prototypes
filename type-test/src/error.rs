@@ -9,7 +9,7 @@ pub enum Error {
     #[error("Type mismatch")]
     TypeMismatch { expected: Ty, found: Ty },
     #[error("Type contains self reference")]
-    SelfReference,
+    SelfReference { ty: Ty },
     #[error("Unbound type variable")]
-    UnboundTypeVariable,
+    UnboundTypeVariable { name: String },
 }
