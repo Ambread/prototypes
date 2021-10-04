@@ -12,6 +12,7 @@ pub enum Expr {
     Func(Box<FuncExpr>),
     Call(Box<CallExpr>),
     If(Box<IfExpr>),
+    Let(Box<LetExpr>),
 }
 
 impl Expr {
@@ -22,6 +23,7 @@ impl Expr {
             Expr::Func(it) => it.infer(ctx),
             Expr::Call(it) => it.infer(ctx),
             Expr::If(it) => it.infer(ctx),
+            Expr::Let(it) => it.infer(ctx),
         }
     }
 }
@@ -98,5 +100,22 @@ impl IfExpr {
         subs += new_subs.clone();
 
         Ok((true_branch_ty.substitute(&new_subs), subs))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LetExpr {
+    pub name: String,
+    pub expr: Expr,
+    pub body: Expr,
+}
+
+impl LetExpr {
+    fn infer(self, ctx: &mut Context) -> Result<(Ty, Substitutions)> {
+        let (expr_ty, mut subs) = self.expr.infer(ctx)?;
+        let mut ctx = ctx.substitute(&subs).with(self.name, expr_ty);
+        let (body_ty, new_subs) = self.body.infer(&mut ctx)?;
+        subs += new_subs;
+        Ok((body_ty, subs))
     }
 }

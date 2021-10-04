@@ -1,7 +1,7 @@
 use crate::{
     data::Context,
     error::{Error, Result},
-    expr::{CallExpr, Expr, FuncExpr, IfExpr},
+    expr::{CallExpr, Expr, FuncExpr, IfExpr, LetExpr},
     ty::{FuncTy, Ty},
 };
 
@@ -15,11 +15,16 @@ pub fn infer(expr: Expr) -> Result<Ty> {
             "inc".to_owned(),
             ty_func(ty_name("Number"), ty_name("Number")),
         ),
+        ("any".to_owned(), ty_var("any")),
     ];
 
     let mut context = Context::new(IntoIterator::into_iter(env).collect());
 
     expr.infer(&mut context).map(|it| it.0)
+}
+
+pub fn ty_var(name: &str) -> Ty {
+    Ty::Variable(name.to_owned())
 }
 
 pub fn ty_name(name: &str) -> Ty {
@@ -54,6 +59,14 @@ pub fn if_else(condition: Expr, true_branch: Expr, false_branch: Expr) -> Expr {
         condition,
         true_branch,
         false_branch,
+    }))
+}
+
+pub fn let_in(name: &str, expr: Expr, body: Expr) -> Expr {
+    Expr::Let(Box::new(LetExpr {
+        name: name.to_owned(),
+        expr,
+        body,
     }))
 }
 
