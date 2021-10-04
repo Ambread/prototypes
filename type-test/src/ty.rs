@@ -2,8 +2,8 @@ use crate::Substitutions;
 
 #[derive(Debug, Clone)]
 pub enum Ty {
-    Named(String),
     Variable(String),
+    Named(String),
     Func(Box<FuncTy>),
 }
 

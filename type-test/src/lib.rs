@@ -1,3 +1,4 @@
+pub mod builder;
 pub mod expr;
 pub mod ty;
 

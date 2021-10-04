@@ -1,37 +1,27 @@
-use std::collections::HashMap;
-
-use type_test::{
-    expr::{self, Expr},
-    ty::{FuncTy, Ty},
-    Context,
-};
+use type_test::{builder::*, Context};
 
 fn main() {
-    let mut env = HashMap::new();
-    env.insert("even?".to_owned(), tfunc(tn("Number"), tn("Bool")));
-    env.insert("inc".to_owned(), tfunc(tn("Number"), tn("Number")));
+    let mut context = Context::new(
+        IntoIterator::into_iter([
+            (
+                "even?".to_owned(),
+                ty_func(ty_name("Number"), ty_name("Bool")),
+            ),
+            (
+                "inc".to_owned(),
+                ty_func(ty_name("Number"), ty_name("Number")),
+            ),
+        ])
+        .collect(),
+    );
 
-    let e = c(v("even?"), c(v("inc"), i(123)));
+    let expr = if_else(
+        call(var("even?"), call(var("inc"), number(123))),
+        number(456),
+        number(789),
+    );
 
-    dbg!(e.infer(&mut Context::new(env)));
-}
+    let result = expr.infer(&mut context);
 
-fn tfunc(from: Ty, to: Ty) -> Ty {
-    Ty::Func(Box::new(FuncTy { from, to }))
-}
-
-fn tn(name: &str) -> Ty {
-    Ty::Named(name.to_owned())
-}
-
-fn v(name: &str) -> Expr {
-    Expr::Variable(name.to_owned())
-}
-
-fn i(number: i32) -> Expr {
-    Expr::Number(number)
-}
-
-fn c(func: Expr, arg: Expr) -> Expr {
-    Expr::Call(Box::new(expr::CallExpr { func, arg }))
+    dbg!(result);
 }
