@@ -1,8 +1,15 @@
-export { Boolean };
+module boolean;
 
 enum Boolean(True, False) {
 
-    func if<R>(self: Self, body: block() -> R) -> Optional<R> {
+    func is_false(self: Self) -> Self {
+        match(self) {
+            True -> False,
+            False -> True,
+        }
+    };
+
+    func then<R>(self: Self, body: block() -> R) -> Optional<R> {
         match(self) {
             True -> Some(body()),
             False -> Nothing,
@@ -11,10 +18,14 @@ enum Boolean(True, False) {
 
     func while(self: block() -> Self, body: block() -> Unit) -> Unit {
         loop {
-            match(self) {
+            match(self()) {
                 True -> body(),
                 False -> return,
             };
         };
     };
+};
+
+func take_if<T>(self: T, condition: block(it: T) -> Boolean) -> Optional<T> {
+    condition.then { self }
 };

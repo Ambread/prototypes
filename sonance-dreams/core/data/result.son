@@ -1,44 +1,18 @@
-export { Result };
+module result;
 
 enum Result<T, E>(Okay(T), Error(E)) {
 
-    func if_error(self: Self, body: block(error: E) -> T) -> T {
-        match(self) {
-            Okay(value) -> value,
-            Error(error) -> body(error),
-        }
-    };
-
-    func if_okay(self: Self, body: block(value: T) -> E) -> E {
-        match(self) {
-            Okay(value) -> body(value),
-            Error(error) -> error,
-        }
-    };
-
-    func maybe_okay(self: Self) -> Optional<T> {
+    func okay(self: Self) -> Optional<T> {
         match(self) {
             Okay(value) -> Some(value),
             Error(_) -> Nothing,
         }
     };
 
-    func maybe_error(self: Self) -> Optional<T> {
+    func error(self: Self) -> Optional<T> {
         match(self) {
             Okay(_) -> Nothing,
             Error(error) -> Some(error),
         }
-    };
-};
-
-module into_okay<T, E> -> Result<T, E> with<From<T>> {
-    func from(other: T) {
-        Okay(other)
-    };
-};
-
-module into_error<T, E> -> Result<T, E> with<From<E>> {
-    func from(other: E) {
-        Error(other)
     };
 };

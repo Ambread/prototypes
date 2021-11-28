@@ -1,4 +1,4 @@
-export { From, into };
+module from;
 
 trait From<T> {
     func from(other: T) -> Self;

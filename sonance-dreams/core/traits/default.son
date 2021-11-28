@@ -1,4 +1,4 @@
-export { Default };
+module default;
 
 trait Default {
     func default() -> Self;

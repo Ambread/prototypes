@@ -1,6 +1,8 @@
-export { Unit };
+module unit;
 
 struct Unit() -> Default {
 
-    func default() { () };
+    func default() {
+        Self()
+    };
 };
