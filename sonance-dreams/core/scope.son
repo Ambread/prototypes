@@ -1,0 +1,12 @@
+func scope<T>(body: block() -> T) -> T {
+    body()
+};
+
+func scope<Self, T>(self: Self, body: block(it: Self) -> T) {
+    body(self)
+};
+
+func also<Self>(self: Self, body: block(it: &mut Self) -> Unit) -> Self {
+    body(&mut self);
+    self
+};
