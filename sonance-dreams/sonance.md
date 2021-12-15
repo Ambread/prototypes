@@ -6,9 +6,45 @@ Inspiration:
 - [Swift](https://developer.apple.com/swift/)
 - [Smalltalk](https://en.wikipedia.org/wiki/Smalltalk)
 
+
+## Examples
+
+```
+import {
+    std { compare.Ordering, io.stdin }, 
+    random { Random, thread_rng },
+};
+
+func main() {
+    print_line("Guess a number 0 to 100");
+
+    let correct = range(from: 0, to: 100).random(using: thread_rng());
+    let mut guess = String.new();
+
+    loop {
+        guess.clear()
+        stdin().read_line(into: &mut guess).expect();
+
+        let guess = guess.trim().parse().else {
+            print_line("Try again");
+            return@loop;
+        };
+
+        match(correct compare_to &guess) {
+            Ordering.Greater -> print_line("Greater"),
+            Ordering.Less -> print_line("Less"),
+            Ordering.Equal -> {
+                print_line("Correct");
+                return@main;
+            },
+        };
+    };
+};
+```
+
 ## Syntax
 
-EBNFish
+EBNF-ish
 - UPPERCASE : terminals 
 - lowercase : non-terminals 
 - < > : parameters
