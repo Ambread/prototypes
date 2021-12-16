@@ -122,7 +122,13 @@ statement = let_statement | expression
 
 let_statement = "let" pattern type? "=" expression
 
-expression = "(" expression ")" | property_expression | chain_expression | call_expression | literal_expression
+expression = 
+    | "(" expression ")" 
+    | property_expression 
+    | chain_expression 
+    | call_expression 
+    | literal_expression 
+    | return_expression
 
 property_expression = expression "." IDENTIFIER 
 
@@ -147,4 +153,8 @@ match_head =
 match_clause = pattern "->" expression
 
 literal_expression = STRING_LITERAL | INTEGER_LITERAL | FLOAT_LITERAL
+
+return_expression = "return" return_label? expression?
+
+return_label = "@" IDENTIFIER
 ```
