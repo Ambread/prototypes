@@ -46,13 +46,13 @@ import {
 };
 
 func main() {
-    print_line("Guess a number 0 to 100");
+    print_line("Guess a number 0 to 100:");
 
     let correct = range(from: 0, to: 100).random(using: thread_rng());
     let mut guess = String.new();
 
     loop {
-        guess.clear()
+        guess.clear();
         stdin().read_line(into: &mut guess).expect();
 
         let guess = guess.trim().parse().else {
@@ -60,11 +60,11 @@ func main() {
             return@loop;
         };
 
-        correct.compare_to(&guess).match {
-            Ordering.Greater -> print_line("Greater"),
-            Ordering.Less -> print_line("Less"),
+        correct.compare(to: &guess).match {
+            Ordering.Greater -> print_line("Try guessing higher"),
+            Ordering.Less -> print_line("Try guessing lower"),
             Ordering.Equal -> block {
-                print_line("Correct");
+                print_line("Congratulations!");
                 return@main;
             },
         };
