@@ -7,6 +7,36 @@ Inspiration:
 - [Smalltalk](https://en.wikipedia.org/wiki/Smalltalk)
 
 
+## Features 
+
+## - Chain Operator
+
+Unifies function call syntax and method call syntax from other languages.
+
+`foo(arg1, arg2, arg3)` is interchangeable with `arg1.foo(arg2, arg3)`.
+
+When applied repeatably, this allows you to *chain* function calls. 
+```
+foo().add(12).bar().join().baz().negate()
+```
+The calls are evaluated left-to-right on the result of the previous call.
+
+Without this feature, the expression would be written in a mix of function calls, regular operators, and chains. 
+```
+!baz(bar(foo() + 12).join())
+```
+This makes it more difficult to understand what is being executed and when.
+
+
+The accepted solution is to introduce intermediate variables. 
+```
+let rawThing = foo() + 12;
+let thing = bar(rawThing).join();
+let finalThing = !baz(thing);
+```
+This preferable to the previous example, but has downsides of its own. The programmer is now required to create unique names for each split, and also remember which is which. Additionally, the values now have the potential of being used more than once or mutated. This isn't bad for things that should be variables, but they add extra overhead for intermediate values.
+
+
 ## Examples
 
 ```
@@ -30,10 +60,10 @@ func main() {
             return@loop;
         };
 
-        match(correct compare_to &guess) {
+        correct.compare_to(&guess).match {
             Ordering.Greater -> print_line("Greater"),
             Ordering.Less -> print_line("Less"),
-            Ordering.Equal -> {
+            Ordering.Equal -> block {
                 print_line("Correct");
                 return@main;
             },
@@ -45,15 +75,15 @@ func main() {
 ## Syntax
 
 EBNF-ish
-- UPPERCASE : terminals 
-- lowercase : non-terminals 
-- < > : parameters
-- "text": literal terminals
-- | : or
-- ? : zero or one
-- * : zero or more
-- + : one or more
-- ( ) : grouping
+- `UPPERCASE` : terminals 
+- `lowercase` : non-terminals 
+- `< >` : parameters
+- `"text"` : literal terminals
+- `|` : or
+- `?` : zero or one
+- `*` : zero or more
+- `+` : one or more
+- `( )` : grouping
 
 ```cs
 list<T, sep = ","> = 
