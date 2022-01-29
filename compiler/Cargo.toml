@@ -10,3 +10,4 @@ proptest = "1.0.0"
 
 [dependencies]
 chumsky = "0.7.0"
+indoc = "1.0"

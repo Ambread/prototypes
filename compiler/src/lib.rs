@@ -1,4 +1,5 @@
 use chumsky::{prelude::*, text};
+use indoc::formatdoc;
 
 pub fn compile(input: &str) -> String {
     let tokens = lexer().parse(input).unwrap();
@@ -67,11 +68,19 @@ fn parser() -> impl Parser<Token, Ast, Error = Simple<Token>> {
 }
 
 fn generate(Ast { name, number }: Ast) -> String {
-    format!("function w ${name}() {{ @start %r =w call $puts(l $str) ret {number} }}")
+    formatdoc!(
+        "
+            export function w ${name}() {{
+            @start
+                ret {number}
+            }}
+        "
+    )
 }
 
 #[cfg(test)]
 mod test {
+    use indoc::formatdoc;
     use proptest::prelude::*;
 
     use crate::compile;
@@ -80,7 +89,16 @@ mod test {
         #[test]
         fn compile_number(name in "[a-zA-Z_]+", number: u64) {
             let input = format!("func {name}() {{ {number} }};");
-            let expected = format!("function w ${name}() {{ @start %r =w call $puts(l $str) ret {number} }}");
+
+            let expected = formatdoc!(
+                "
+                    export function w ${name}() {{
+                    @start
+                        ret {number}
+                    }}
+                "
+            );
+
             assert_eq!(expected, compile(&input));
         }
     }
