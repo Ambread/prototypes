@@ -9,5 +9,6 @@ edition = "2021"
 proptest = "1.0.0"
 
 [dependencies]
+anyhow = "1.0.53"
 chumsky = "0.7.0"
 indoc = "1.0"
