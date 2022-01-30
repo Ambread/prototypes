@@ -12,3 +12,7 @@ proptest = "1.0.0"
 anyhow = "1.0.53"
 chumsky = "0.7.0"
 indoc = "1.0"
+
+[dependencies.clap]
+version = "3.0.13"
+features = ["derive"]
