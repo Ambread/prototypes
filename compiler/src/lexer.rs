@@ -7,7 +7,7 @@ pub enum Token {
     OpenParen,
     CloseParen,
     OpenBrace,
-    Number(u64),
+    Number(u32),
     CloseBrace,
     Semicolon,
 }

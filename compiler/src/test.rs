@@ -5,7 +5,7 @@ use crate::compile;
 
 proptest! {
     #[test]
-    fn compile_number(name in "[a-zA-Z_]+", number: u64) {
+    fn compile_number(name in "[a-zA-Z_]+", number: u32) {
         let input = format!("func {name}() {{ {number} }};");
 
         let expected = formatdoc!(
@@ -14,7 +14,7 @@ proptest! {
                     @start
                         ret {number}
                     }}
-                "
+            "
         );
 
         assert_eq!(expected, compile(&input));

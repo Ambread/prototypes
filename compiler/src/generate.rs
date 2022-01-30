@@ -26,7 +26,7 @@ impl Display for Function {
 
 #[derive(Debug, Clone)]
 enum Instruction {
-    Ret(u64),
+    Ret(u32),
 }
 
 impl Display for Instruction {

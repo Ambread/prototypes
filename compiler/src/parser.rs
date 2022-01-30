@@ -5,7 +5,7 @@ use crate::lexer::Token;
 #[derive(Debug, Clone)]
 pub struct Ast {
     pub name: String,
-    pub number: u64,
+    pub number: u32,
 }
 
 pub fn parser() -> impl Parser<Token, Ast, Error = Simple<Token>> {
