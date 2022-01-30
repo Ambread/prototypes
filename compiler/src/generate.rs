@@ -5,7 +5,7 @@ use crate::parser::Ast;
 pub fn generate(ast: Ast) -> String {
     Function {
         name: ast.name,
-        body: Instruction::Ret(ast.number),
+        body: Instruction::Ret(ast.body.trailing),
     }
     .to_string()
 }

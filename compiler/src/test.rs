@@ -1,22 +1,49 @@
-use indoc::formatdoc;
+use indoc::indoc;
 
 use crate::compile;
 
 #[test]
 fn compile_number() {
-    let name = "main";
-    let number = 12345;
-
-    let input = format!("func {name}() {{ {number} }};");
-
-    let expected = formatdoc!(
+    let input = indoc!(
         "
-                    export function w ${name}() {{
-                    @start
-                        ret {number}
-                    }}
+        func test() {
+            1234
+        };
         "
     );
 
-    assert_eq!(expected, compile(&input));
+    let expected = indoc!(
+        "
+        export function w $test() {
+        @start
+            ret 1234
+        }
+        "
+    );
+
+    assert_eq!(expected, compile(input));
+}
+
+#[test]
+fn multiple_expressions() {
+    let input = indoc!(
+        "
+        func test() {
+            123;
+            456;
+            789
+        };
+        "
+    );
+
+    let expected = indoc!(
+        "
+        export function w $test() {
+        @start
+            ret 789
+        }
+        "
+    );
+
+    assert_eq!(expected, compile(input));
 }
