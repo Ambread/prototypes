@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::Ast;
+use crate::parser::Ast;
 
 pub fn generate(ast: Ast) -> String {
     Function {
