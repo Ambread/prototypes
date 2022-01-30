@@ -1,5 +1,7 @@
+mod generate;
+
 use chumsky::{prelude::*, text};
-use indoc::formatdoc;
+use generate::generate;
 
 pub fn compile(input: &str) -> String {
     let tokens = lexer().parse(input).unwrap();
@@ -48,7 +50,7 @@ fn lexer() -> impl Parser<char, Vec<Token>, Error = Simple<char>> {
 }
 
 #[derive(Debug, Clone)]
-struct Ast {
+pub struct Ast {
     name: String,
     number: u64,
 }
@@ -65,17 +67,6 @@ fn parser() -> impl Parser<Token, Ast, Error = Simple<Token>> {
         .then_ignore(just(CloseBrace))
         .then_ignore(just(Semicolon))
         .map(|(name, number)| Ast { name, number })
-}
-
-fn generate(Ast { name, number }: Ast) -> String {
-    formatdoc!(
-        "
-            export function w ${name}() {{
-            @start
-                ret {number}
-            }}
-        "
-    )
 }
 
 #[cfg(test)]
