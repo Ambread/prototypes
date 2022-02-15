@@ -2,7 +2,7 @@ use chumsky::prelude::*;
 
 #[derive(Debug, Clone)]
 pub enum Expr {
-    Num(f64),
+    Value(Value),
     Var(String),
 
     Neg(Box<Expr>),
@@ -30,8 +30,14 @@ pub fn parser() -> impl Parser<char, Expr, Error = Simple<char>> {
 
     let expr = recursive(|expr| {
         let int = text::int(10)
-            .map(|s: String| Expr::Num(s.parse().unwrap()))
+            .map(|s: String| Value::Num(s.parse().unwrap()))
             .padded();
+
+        let bool = text::keyword("true")
+            .to(Value::Bool(true))
+            .or(text::keyword("false").to(Value::Bool(false)));
+
+        let value = int.map(Expr::Value).or(bool.map(Expr::Value));
 
         let call = ident
             .then(
@@ -42,7 +48,7 @@ pub fn parser() -> impl Parser<char, Expr, Error = Simple<char>> {
             )
             .map(|(f, args)| Expr::Call(f, args));
 
-        let atom = int
+        let atom = value
             .or(expr.delimited_by(just('('), just(')')))
             .or(call)
             .or(ident.map(Expr::Var));
@@ -112,18 +118,53 @@ pub fn parser() -> impl Parser<char, Expr, Error = Simple<char>> {
     decl.then_ignore(end())
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Value {
+    Num(f64),
+    Bool(bool),
+}
+
+impl Value {
+    fn as_num(&self) -> Result<f64, String> {
+        if let Self::Num(v) = self {
+            Ok(*v)
+        } else {
+            Err("Wrong type".to_owned())
+        }
+    }
+}
+
+impl Expr {
+    pub fn eval<'a>(
+        &'a self,
+        vars: &mut Vec<(&'a String, Value)>,
+        funcs: &mut Vec<(&'a String, &'a [String], &'a Expr)>,
+    ) -> Result<Value, String> {
+        eval(self, vars, funcs)
+    }
+}
+
 pub fn eval<'a>(
     expr: &'a Expr,
-    vars: &mut Vec<(&'a String, f64)>,
+    vars: &mut Vec<(&'a String, Value)>,
     funcs: &mut Vec<(&'a String, &'a [String], &'a Expr)>,
-) -> Result<f64, String> {
+) -> Result<Value, String> {
     match expr {
-        Expr::Num(x) => Ok(*x),
-        Expr::Neg(a) => Ok(-eval(a, vars, funcs)?),
-        Expr::Add(a, b) => Ok(eval(a, vars, funcs)? + eval(b, vars, funcs)?),
-        Expr::Sub(a, b) => Ok(eval(a, vars, funcs)? - eval(b, vars, funcs)?),
-        Expr::Mul(a, b) => Ok(eval(a, vars, funcs)? * eval(b, vars, funcs)?),
-        Expr::Div(a, b) => Ok(eval(a, vars, funcs)? / eval(b, vars, funcs)?),
+        Expr::Value(x) => Ok(*x),
+
+        Expr::Neg(a) => Ok(Value::Num(-a.eval(vars, funcs)?.as_num()?)),
+        Expr::Add(a, b) => Ok(Value::Num(
+            a.eval(vars, funcs)?.as_num()? + b.eval(vars, funcs)?.as_num()?,
+        )),
+        Expr::Sub(a, b) => Ok(Value::Num(
+            a.eval(vars, funcs)?.as_num()? - b.eval(vars, funcs)?.as_num()?,
+        )),
+        Expr::Mul(a, b) => Ok(Value::Num(
+            a.eval(vars, funcs)?.as_num()? * b.eval(vars, funcs)?.as_num()?,
+        )),
+        Expr::Div(a, b) => Ok(Value::Num(
+            a.eval(vars, funcs)?.as_num()? / b.eval(vars, funcs)?.as_num()?,
+        )),
 
         Expr::Var(name) => {
             if let Some((_, val)) = vars.iter().rev().find(|(var, _)| *var == name) {

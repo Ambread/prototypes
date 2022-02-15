@@ -66,7 +66,7 @@ fn interpret(input: &str, current_mode: Mode) {
     let funcs = &mut Vec::new();
 
     match eval(&ast, vars, funcs) {
-        Ok(output) => println!("{}", output),
+        Ok(output) => println!("{:?}", output),
         Err(eval_err) => println!("Evaluation error: {}", eval_err),
     }
 }
