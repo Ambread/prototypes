@@ -8,7 +8,7 @@ use crate::GameChannels;
 pub fn render(channels: GameChannels) -> Result<()> {
     let surface = GlfwSurface::new(|glfw| {
         let (mut window, events) = glfw
-            .create_window(90, 90, "Wew", WindowMode::Windowed)
+            .create_window(400, 400, "Wew", WindowMode::Windowed)
             .ok_or(GlfwSurfaceError::UserError(()))?;
 
         window.make_current();
@@ -31,12 +31,15 @@ pub fn render(channels: GameChannels) -> Result<()> {
             if let WindowEvent::Key(key, _, _, _) = event {
                 let color = match key {
                     Key::R => [1.0, 0.0, 0.0, 1.0],
-                    Key::G => [1.0, 0.0, 0.0, 1.0],
-                    Key::B => [1.0, 0.0, 0.0, 1.0],
+                    Key::G => [0.0, 1.0, 0.0, 1.0],
+                    Key::B => [0.0, 0.0, 1.0, 1.0],
                     _ => continue,
                 };
 
-                channels.to_net.send(crate::Message::SetColor { color })?;
+                channels
+                    .to_net
+                    .send(crate::Message::SetColor { color })
+                    .unwrap();
             }
         }
 
