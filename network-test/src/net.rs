@@ -1,14 +1,12 @@
 use anyhow::Result;
-use std::{mem::size_of, net::SocketAddr};
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
     sync::broadcast,
 };
 
 use crate::{message::Message, NetChannels};
 
-pub async fn server(mut channels: NetChannels) -> Result<()> {
+pub async fn server(mut channels: NetChannels, addr: String) -> Result<()> {
     let (tx, mut rx) = broadcast::channel(16);
 
     {
@@ -29,7 +27,7 @@ pub async fn server(mut channels: NetChannels) -> Result<()> {
         });
     }
 
-    let listener = TcpListener::bind("127.0.0.1:7878").await.unwrap();
+    let listener = TcpListener::bind(addr).await.unwrap();
     println!("[server] Listener started");
 
     loop {
@@ -54,7 +52,7 @@ pub async fn server(mut channels: NetChannels) -> Result<()> {
     }
 }
 
-pub async fn client(mut channels: NetChannels, addr: SocketAddr) -> Result<()> {
+pub async fn client(mut channels: NetChannels, addr: String) -> Result<()> {
     let (mut read_stream, mut write_stream) = TcpStream::connect(addr).await.unwrap().into_split();
     println!("[client] Connection established");
 
