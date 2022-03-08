@@ -35,6 +35,21 @@ async fn server() -> Result<()> {
     let (tx, _) = broadcast::channel(16);
     let mut id = 0;
 
+    {
+        id += 1;
+        let id = id;
+        let mut rx = tx.subscribe();
+
+        let msg = Message::Connected { id };
+        println!("[server] {msg:?}");
+        tx.send(msg).unwrap();
+
+        tokio::spawn(async move {
+            let msg = rx.recv().await.unwrap();
+            println!("[client] {msg:?}");
+        });
+    }
+
     loop {
         let (mut stream, _) = listener.accept().await?;
 
