@@ -10,8 +10,8 @@ use render::render;
 use serde::{Deserialize, Serialize};
 use tokio::runtime::Builder;
 
-#[derive(Parser, Debug)]
-enum Mode {
+#[derive(Parser, Debug, Clone, Copy)]
+pub enum Mode {
     Server,
     Client,
 }
@@ -23,19 +23,20 @@ enum Message {
 }
 
 fn main() -> Result<()> {
+    let mode = Mode::parse();
     let rt = Builder::new_current_thread().enable_all().build()?;
     let (game_channels, net_channels) = create_channels();
 
     spawn(move || {
         rt.block_on(async move {
-            match Mode::parse() {
+            match mode {
                 Mode::Server => server(net_channels).await.unwrap(),
                 Mode::Client => client(net_channels).await.unwrap(),
             }
         });
     });
 
-    render(game_channels)
+    render(game_channels, mode)
 }
 
 #[derive(Debug)]

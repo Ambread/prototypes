@@ -3,12 +3,12 @@ use glfw::{Context as _, Key, SwapInterval, WindowEvent, WindowMode};
 use luminance::{context::GraphicsContext, pipeline::PipelineState};
 use luminance_glfw::{GlfwSurface, GlfwSurfaceError};
 
-use crate::GameChannels;
+use crate::{GameChannels, Mode};
 
-pub fn render(channels: GameChannels) -> Result<()> {
+pub fn render(channels: GameChannels, mode: Mode) -> Result<()> {
     let surface = GlfwSurface::new(|glfw| {
         let (mut window, events) = glfw
-            .create_window(400, 400, "Wew", WindowMode::Windowed)
+            .create_window(400, 400, &format!("{mode:?}"), WindowMode::Windowed)
             .ok_or(GlfwSurfaceError::UserError(()))?;
 
         window.make_current();
