@@ -1,12 +1,12 @@
 use anyhow::Result;
-use std::mem::size_of;
+use std::{mem::size_of, net::SocketAddr};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
     sync::broadcast,
 };
 
-use crate::NetChannels;
+use crate::{message::Message, NetChannels};
 
 pub async fn server(mut channels: NetChannels) -> Result<()> {
     let (tx, mut rx) = broadcast::channel(16);
@@ -40,59 +40,33 @@ pub async fn server(mut channels: NetChannels) -> Result<()> {
 
         tokio::spawn(async move {
             loop {
-                let value = rx.recv().await.unwrap();
-                let value = bincode::serialize(&value).unwrap();
-                let length = (value.len() as u32).to_be_bytes();
-
-                write_stream.write_all(&length).await.unwrap();
-                write_stream.write_all(&value).await.unwrap();
+                let data = Message::read(&mut read_stream).await.unwrap();
+                tx.send(data).unwrap();
             }
         });
 
         tokio::spawn(async move {
             loop {
-                let mut length = [0; size_of::<u32>()];
-                read_stream.read_exact(&mut length).await.unwrap();
-                let length = u32::from_be_bytes(length);
-
-                let mut data = vec![0; length as usize];
-                read_stream.read_exact(&mut data).await.unwrap();
-                let data = bincode::deserialize(&data).unwrap();
-
-                tx.send(data).unwrap();
+                let data = rx.recv().await.unwrap();
+                data.write(&mut write_stream).await.unwrap();
             }
         });
     }
 }
 
-pub async fn client(mut channels: NetChannels) -> Result<()> {
-    let (mut read_stream, mut write_stream) = TcpStream::connect("127.0.0.1:7878")
-        .await
-        .unwrap()
-        .into_split();
+pub async fn client(mut channels: NetChannels, addr: SocketAddr) -> Result<()> {
+    let (mut read_stream, mut write_stream) = TcpStream::connect(addr).await.unwrap().into_split();
     println!("[client] Connection established");
 
     tokio::spawn(async move {
         loop {
-            let mut length = [0; size_of::<u32>()];
-            read_stream.read_exact(&mut length).await.unwrap();
-            let length = u32::from_be_bytes(length);
-
-            let mut data = vec![0; length as usize];
-            read_stream.read_exact(&mut data).await.unwrap();
-            let data = bincode::deserialize(&data).unwrap();
-
+            let data = Message::read(&mut read_stream).await.unwrap();
             channels.to_game.send(data).unwrap();
         }
     });
 
     loop {
         let data = channels.from_game.recv().await.unwrap();
-
-        let data = bincode::serialize(&data).unwrap();
-        let length = (data.len() as u32).to_be_bytes();
-
-        write_stream.write_all(&length).await.unwrap();
-        write_stream.write_all(&data).await.unwrap();
+        data.write(&mut write_stream).await.unwrap();
     }
 }

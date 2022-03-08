@@ -1,25 +1,20 @@
+mod message;
 mod net;
 mod render;
 
-use std::thread::spawn;
+use std::{net::SocketAddr, thread::spawn};
 
 use anyhow::Result;
 use clap::Parser;
+use message::Message;
 use net::{client, server};
 use render::render;
-use serde::{Deserialize, Serialize};
 use tokio::runtime::Builder;
 
-#[derive(Parser, Debug, Clone, Copy)]
+#[derive(Parser, Debug, Clone)]
 pub enum Mode {
     Server,
-    Client,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-enum Message {
-    Connected { id: u32 },
-    SetColor { color: [f32; 4] },
+    Client { addr: SocketAddr },
 }
 
 fn main() -> Result<()> {
@@ -27,16 +22,21 @@ fn main() -> Result<()> {
     let rt = Builder::new_current_thread().enable_all().build()?;
     let (game_channels, net_channels) = create_channels();
 
+    let title = match &mode {
+        Mode::Server => "Server",
+        Mode::Client { .. } => "Client",
+    };
+
     spawn(move || {
         rt.block_on(async move {
             match mode {
                 Mode::Server => server(net_channels).await.unwrap(),
-                Mode::Client => client(net_channels).await.unwrap(),
+                Mode::Client { addr } => client(net_channels, addr).await.unwrap(),
             }
         });
     });
 
-    render(game_channels, mode)
+    render(game_channels, title)
 }
 
 #[derive(Debug)]
