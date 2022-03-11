@@ -2,7 +2,7 @@ mod message;
 mod net;
 mod render;
 
-use std::{net::SocketAddr, thread::spawn};
+use std::thread::spawn;
 
 use anyhow::Result;
 use clap::{ArgEnum, Parser};
@@ -26,7 +26,7 @@ pub enum Mode {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let rt = Builder::new_current_thread().enable_all().build()?;
+    let runtime = Builder::new_current_thread().enable_all().build()?;
     let (game_channels, net_channels) = create_channels();
 
     let title = match &args.mode {
@@ -35,7 +35,7 @@ fn main() -> Result<()> {
     };
 
     spawn(move || {
-        rt.block_on(async move {
+        runtime.block_on(async move {
             match args.mode {
                 Mode::Server => server(net_channels, args.addr).await.unwrap(),
                 Mode::Client => client(net_channels, args.addr).await.unwrap(),

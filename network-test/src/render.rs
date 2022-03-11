@@ -1,6 +1,9 @@
 use anyhow::Result;
 use glfw::{Context as _, Key, SwapInterval, WindowEvent, WindowMode};
-use luminance::{context::GraphicsContext, pipeline::PipelineState};
+use luminance::{
+    context::GraphicsContext, pipeline::PipelineState, render_state::RenderState, tess::Mode,
+};
+use luminance_derive::{Semantics, Vertex};
 use luminance_glfw::{GlfwSurface, GlfwSurfaceError};
 
 use crate::GameChannels;
@@ -24,6 +27,17 @@ pub fn render(channels: GameChannels, title: &str) -> Result<()> {
     let back_buffer = context.back_buffer().expect("back buffer");
 
     let mut current_color = [0.0; 4];
+
+    let triangle = context
+        .new_tess()
+        .set_vertices(VERTICES)
+        .set_mode(Mode::Triangle)
+        .build()?;
+
+    let mut program = context
+        .new_shader_program::<VertexSemantics, (), ()>()
+        .from_strings(VERTEX_SHADER, None, None, FRAGMENT_SHADER)?
+        .ignore_warnings();
 
     while !context.window.should_close() {
         context.window.glfw.poll_events();
@@ -52,12 +66,51 @@ pub fn render(channels: GameChannels, title: &str) -> Result<()> {
             .pipeline(
                 &back_buffer,
                 &PipelineState::default().set_clear_color(current_color),
-                |_, _| Ok(()),
+                |_, mut shade_gate| {
+                    shade_gate.shade(&mut program, |_, _, mut render_gate| {
+                        render_gate.render(&RenderState::default(), |mut tess_gate| {
+                            tess_gate.render(&triangle)
+                        })
+                    })
+                },
             )
-            .assume();
+            .assume()
+            .into_result()?;
 
         context.window.swap_buffers();
     }
 
     Ok(())
 }
+
+const VERTEX_SHADER: &str = include_str!("vertex.glsl");
+const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
+
+#[derive(Debug, Clone, Copy, Semantics)]
+pub enum VertexSemantics {
+    #[sem(name = "position", repr = "[f32; 2]", wrapper = "VertexPosition")]
+    Position,
+    #[sem(name = "color", repr = "[u8; 3]", wrapper = "VertexRGB")]
+    Color,
+}
+
+#[derive(Debug, Clone, Copy, Vertex)]
+#[vertex(sem = "VertexSemantics")]
+#[allow(dead_code)]
+pub struct Vertex {
+    position: VertexPosition,
+    #[vertex(normalized = "true")]
+    color: VertexRGB,
+}
+
+const VERTICES: &[Vertex] = &[
+    Vertex::new(
+        VertexPosition::new([-0.5, -0.5]),
+        VertexRGB::new([255, 0, 0]),
+    ),
+    Vertex::new(
+        VertexPosition::new([0.5, -0.5]),
+        VertexRGB::new([0, 255, 0]),
+    ),
+    Vertex::new(VertexPosition::new([0., 0.5]), VertexRGB::new([0, 0, 255])),
+];
