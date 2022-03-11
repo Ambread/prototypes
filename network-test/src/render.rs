@@ -1,12 +1,17 @@
+use std::collections::HashSet;
+
 use anyhow::Result;
 use glfw::{Context as _, Key, SwapInterval, WindowEvent, WindowMode};
 use luminance::{
-    context::GraphicsContext, pipeline::PipelineState, render_state::RenderState, tess::Mode,
+    context::GraphicsContext,
+    pipeline::PipelineState,
+    render_state::RenderState,
+    tess::{Mode, Tess},
 };
 use luminance_derive::{Semantics, Vertex};
 use luminance_glfw::{GlfwSurface, GlfwSurfaceError};
 
-use crate::GameChannels;
+use crate::{message::Message, GameChannels};
 
 pub fn render(channels: GameChannels, title: &str) -> Result<()> {
     let surface = GlfwSurface::new(|glfw| {
@@ -26,18 +31,20 @@ pub fn render(channels: GameChannels, title: &str) -> Result<()> {
     let events = surface.events_rx;
     let back_buffer = context.back_buffer().expect("back buffer");
 
-    let mut current_color = [0.0; 4];
-
-    let triangle = context
-        .new_tess()
-        .set_vertices(VERTICES)
-        .set_mode(Mode::Triangle)
-        .build()?;
-
     let mut program = context
         .new_shader_program::<VertexSemantics, (), ()>()
         .from_strings(VERTEX_SHADER, None, None, FRAGMENT_SHADER)?
         .ignore_warnings();
+
+    let mut tess = context
+        .new_tess()
+        .set_vertices([])
+        .set_mode(Mode::Triangle)
+        .build()?;
+
+    let mut current_color = [0.0; 4];
+    let mut self_id = 0;
+    let mut players = HashSet::new();
 
     while !context.window.should_close() {
         context.window.glfw.poll_events();
@@ -50,15 +57,30 @@ pub fn render(channels: GameChannels, title: &str) -> Result<()> {
                     _ => continue,
                 };
 
-                channels
-                    .to_net
-                    .send(crate::Message::SetColor { color })
-                    .unwrap();
+                channels.to_net.send(Message::SetColor { color }).unwrap();
             }
         }
 
-        if let Ok(crate::Message::SetColor { color }) = channels.from_net.try_recv() {
-            current_color = color;
+        while let Ok(message) = channels.from_net.try_recv() {
+            match message {
+                Message::SelfJoined { id } => self_id = id,
+                Message::SetColor { color } => current_color = color,
+                Message::PlayerJoined { id } => {
+                    println!("Player {id} joined");
+                    players.insert(id);
+
+                    let vertices: Vec<_> = players
+                        .iter()
+                        .flat_map(|id| quad(*id as f32 * 0.1, [255, 0, 0]))
+                        .collect();
+
+                    tess = context
+                        .new_tess()
+                        .set_vertices(vertices.as_slice())
+                        .set_mode(Mode::Triangle)
+                        .build()?;
+                }
+            }
         }
 
         context
@@ -69,7 +91,7 @@ pub fn render(channels: GameChannels, title: &str) -> Result<()> {
                 |_, mut shade_gate| {
                     shade_gate.shade(&mut program, |_, _, mut render_gate| {
                         render_gate.render(&RenderState::default(), |mut tess_gate| {
-                            tess_gate.render(&triangle)
+                            tess_gate.render(&tess)
                         })
                     })
                 },
@@ -103,14 +125,21 @@ pub struct Vertex {
     color: VertexRGB,
 }
 
-const VERTICES: &[Vertex] = &[
-    Vertex::new(
-        VertexPosition::new([-0.5, -0.5]),
-        VertexRGB::new([255, 0, 0]),
-    ),
-    Vertex::new(
-        VertexPosition::new([0.5, -0.5]),
-        VertexRGB::new([0, 255, 0]),
-    ),
-    Vertex::new(VertexPosition::new([0., 0.5]), VertexRGB::new([0, 0, 255])),
-];
+fn quad(size: f32, color: [u8; 3]) -> Vec<Vertex> {
+    [
+        [1.0, 1.0],
+        [1.0, -1.0],
+        [-1.0, 1.0],
+        [-1.0, -1.0],
+        [-1.0, 1.0],
+        [1.0, -1.0],
+    ]
+    .into_iter()
+    .map(|position| {
+        Vertex::new(
+            VertexPosition::new(position.map(|sign| size * sign)),
+            VertexRGB::new(color),
+        )
+    })
+    .collect()
+}

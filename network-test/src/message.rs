@@ -9,6 +9,8 @@ use tokio::{
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Message {
+    SelfJoined { id: u32 },
+    PlayerJoined { id: u32 },
     SetColor { color: [f32; 4] },
 }
 
