@@ -3,10 +3,7 @@ use std::collections::HashSet;
 use anyhow::Result;
 use glfw::{Context as _, Key, SwapInterval, WindowEvent, WindowMode};
 use luminance::{
-    context::GraphicsContext,
-    pipeline::PipelineState,
-    render_state::RenderState,
-    tess::{Mode, Tess},
+    context::GraphicsContext, pipeline::PipelineState, render_state::RenderState, tess::Mode,
 };
 use luminance_derive::{Semantics, Vertex};
 use luminance_glfw::{GlfwSurface, GlfwSurfaceError};
@@ -43,7 +40,7 @@ pub fn render(channels: GameChannels, title: &str) -> Result<()> {
         .build()?;
 
     let mut current_color = [0.0; 4];
-    let mut self_id = 0;
+    let mut _self_id = 0;
     let mut players = HashSet::new();
 
     while !context.window.should_close() {
@@ -63,7 +60,7 @@ pub fn render(channels: GameChannels, title: &str) -> Result<()> {
 
         while let Ok(message) = channels.from_net.try_recv() {
             match message {
-                Message::SelfJoined { id } => self_id = id,
+                Message::SelfJoined { id } => _self_id = id,
                 Message::SetColor { color } => current_color = color,
                 Message::PlayerJoined { id } => {
                     println!("Player {id} joined");
