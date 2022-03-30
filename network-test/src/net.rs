@@ -9,8 +9,15 @@ use crate::{message::Message, NetChannels};
 pub async fn server(mut channels: NetChannels, addr: String) -> Result<()> {
     let (tx, mut rx) = broadcast::channel(16);
 
+    let mut id = 0;
+
     {
         let tx = tx.clone();
+        id += 1;
+        let id = id;
+
+        channels.to_game.send(Message::SelfJoined { id })?;
+        tx.send(Message::PlayerJoined { id })?;
 
         tokio::spawn(async move {
             loop {
@@ -32,9 +39,16 @@ pub async fn server(mut channels: NetChannels, addr: String) -> Result<()> {
 
     loop {
         let (stream, _) = listener.accept().await.unwrap();
+        let (mut read_stream, mut write_stream) = stream.into_split();
+
         let mut rx = tx.subscribe();
         let tx = tx.clone();
-        let (mut read_stream, mut write_stream) = stream.into_split();
+
+        id += 1;
+        let id = id;
+
+        Message::SelfJoined { id }.write(&mut write_stream).await?;
+        tx.send(Message::PlayerJoined { id })?;
 
         tokio::spawn(async move {
             loop {
