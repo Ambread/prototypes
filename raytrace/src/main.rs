@@ -5,6 +5,10 @@ use std::io::Write;
 
 use hittable::{HitRecord, Hittable, Ray};
 use rand::{distributions::Uniform, prelude::Distribution};
+use rayon::{
+    current_num_threads,
+    iter::{IntoParallelIterator, ParallelIterator},
+};
 use vec3::{Color, Point3, Scalar, Vec3};
 
 use crate::hittable::Sphere;
@@ -63,7 +67,7 @@ fn ray_color(ray: Ray, world: &impl Hittable) -> Color {
 fn main() {
     // Image
     let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
+    let image_width = 1080;
     let image_height = (image_width as Scalar / aspect_ratio) as u32;
     let samples_per_pixel = 100;
 
@@ -85,22 +89,28 @@ fn main() {
     // Render
     println!("P3\n{image_width} {image_height}\n255");
 
+    eprintln!("Using {} threads", current_num_threads());
     for j in (0..image_height).rev() {
-        eprint!("\rScanlines remaining: {j:03}");
+        let percent_left = (j as Scalar / image_height as Scalar) * 100.0;
+        eprint!("\rProgress: {:.2}%", 100.0 - percent_left);
         std::io::stderr().flush().unwrap();
 
         for i in 0..image_width {
-            let mut pixel_color = Color::new(0.0, 0.0, 0.0);
-
-            let mut rng = rand::thread_rng();
             let uniform = Uniform::from(0.0..1.0);
 
-            for _ in 0..samples_per_pixel {
-                let u = (i as Scalar + uniform.sample(&mut rng)) / (image_width as Scalar - 1.0);
-                let v = (j as Scalar + uniform.sample(&mut rng)) / (image_height as Scalar - 1.0);
-                let ray = camera.get_ray(u, v);
-                pixel_color += ray_color(ray, &world);
-            }
+            let pixel_color = (0..samples_per_pixel)
+                .into_par_iter()
+                .map(|_| {
+                    let mut rng = rand::thread_rng();
+                    let u =
+                        (i as Scalar + uniform.sample(&mut rng)) / (image_width as Scalar - 1.0);
+                    let v =
+                        (j as Scalar + uniform.sample(&mut rng)) / (image_height as Scalar - 1.0);
+
+                    let ray = camera.get_ray(u, v);
+                    ray_color(ray, &world)
+                })
+                .sum();
 
             write_color(pixel_color, samples_per_pixel);
         }

@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
+use std::{
+    iter::Sum,
+    ops::{Add, AddAssign, Div, Mul, Neg, Sub},
+};
 
 pub type Scalar = f64;
 pub type Point3 = Vec3;
@@ -56,6 +59,15 @@ impl Add for Vec3 {
 impl AddAssign for Vec3 {
     fn add_assign(&mut self, rhs: Self) {
         *self = *self + rhs;
+    }
+}
+
+impl Sum for Vec3 {
+    fn sum<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = Self>,
+    {
+        iter.fold(Vec3::default(), |a, b| a + b)
     }
 }
 
