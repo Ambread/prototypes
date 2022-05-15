@@ -4,9 +4,50 @@ mod vec3;
 use std::io::Write;
 
 use hittable::{HitRecord, Hittable, Ray};
+use rand::{distributions::Uniform, prelude::Distribution};
 use vec3::{Color, Point3, Scalar, Vec3};
 
 use crate::hittable::Sphere;
+
+#[derive(Debug, Clone, Copy)]
+struct Camera {
+    origin: Point3,
+    lower_left_corner: Point3,
+    horizontal: Vec3,
+    vertical: Vec3,
+}
+
+impl Camera {
+    fn new() -> Self {
+        let aspect_ratio = 16.0 / 9.0;
+        let viewport_height = 2.0;
+        let viewport_width = aspect_ratio * viewport_height;
+        let focal_length = 1.0;
+
+        let origin = Point3::new(0.0, 0.0, 0.0);
+        let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
+        let vertical = Vec3::new(0.0, viewport_height, 0.0);
+        let lower_left_corner =
+            origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
+
+        Self {
+            origin,
+            lower_left_corner,
+            horizontal,
+            vertical,
+        }
+    }
+
+    fn get_ray(&self, u: Scalar, v: Scalar) -> Ray {
+        let direction =
+            self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin;
+
+        Ray {
+            origin: self.origin,
+            direction,
+        }
+    }
+}
 
 fn ray_color(ray: Ray, world: &impl Hittable) -> Color {
     let mut hit_record = HitRecord::default();
@@ -21,9 +62,10 @@ fn ray_color(ray: Ray, world: &impl Hittable) -> Color {
 
 fn main() {
     // Image
-    let aspect_ratio = 16.0 / 8.0;
+    let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
     let image_height = (image_width as Scalar / aspect_ratio) as u32;
+    let samples_per_pixel = 100;
 
     // World
     let world = vec![
@@ -38,15 +80,7 @@ fn main() {
     ];
 
     // Camera
-    let viewport_height = 2.0;
-    let viewport_width = aspect_ratio * viewport_height;
-    let focal_length = 1.0;
-
-    let origin = Point3::new(0.0, 0.0, 0.0);
-    let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, viewport_height, 0.0);
-    let lower_left_corner =
-        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
+    let camera = Camera::new();
 
     // Render
     println!("P3\n{image_width} {image_height}\n255");
@@ -54,23 +88,31 @@ fn main() {
     for j in (0..image_height).rev() {
         eprint!("\rScanlines remaining: {j:03}");
         std::io::stderr().flush().unwrap();
+
         for i in 0..image_width {
-            let u = f64::from(i) / f64::from(image_width - 1);
-            let v = f64::from(j) / f64::from(image_height - 1);
+            let mut pixel_color = Color::new(0.0, 0.0, 0.0);
 
-            let direction = lower_left_corner + u * horizontal + v * vertical - origin;
-            let ray = Ray { origin, direction };
+            let mut rng = rand::thread_rng();
+            let uniform = Uniform::from(0.0..1.0);
 
-            let color = ray_color(ray, &world);
-            write_color(color);
+            for _ in 0..samples_per_pixel {
+                let u = (i as Scalar + uniform.sample(&mut rng)) / (image_width as Scalar - 1.0);
+                let v = (j as Scalar + uniform.sample(&mut rng)) / (image_height as Scalar - 1.0);
+                let ray = camera.get_ray(u, v);
+                pixel_color += ray_color(ray, &world);
+            }
+
+            write_color(pixel_color, samples_per_pixel);
         }
     }
 }
 
-fn write_color(color: Color) {
-    let r = (255.999 * color.x) as u8;
-    let g = (255.999 * color.y) as u8;
-    let b = (255.999 * color.z) as u8;
+fn write_color(pixel_color: Color, samples_per_pixel: u32) {
+    let scale = 1.0 / samples_per_pixel as Scalar;
+
+    let r = ((pixel_color.x * scale).clamp(0.0, 0.999) * 256.0) as u8;
+    let g = ((pixel_color.y * scale).clamp(0.0, 0.999) * 256.0) as u8;
+    let b = ((pixel_color.z * scale).clamp(0.0, 0.999) * 256.0) as u8;
 
     println!("{r} {g} {b}");
 }
