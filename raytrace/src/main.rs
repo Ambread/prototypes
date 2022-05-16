@@ -56,6 +56,7 @@ fn main() -> Result<()> {
         radius: 0.5,
         material: Material::Metal {
             albedo: Color::new(0.8, 0.8, 0.8),
+            fuzz: 0.0,
         },
     };
 
@@ -64,6 +65,7 @@ fn main() -> Result<()> {
         radius: 0.5,
         material: Material::Metal {
             albedo: Color::new(0.8, 0.6, 0.2),
+            fuzz: 0.5,
         },
     };
 
