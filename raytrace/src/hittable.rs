@@ -1,4 +1,7 @@
-use crate::vec3::{Color, Point3, Scalar, Vec3};
+use crate::{
+    material::Material,
+    vec3::{Color, Point3, Scalar, Vec3},
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ray {
@@ -17,12 +20,12 @@ impl Ray {
         }
 
         if let Some(hit_record) = world.hit(self, 0.001, Scalar::INFINITY) {
-            let target = hit_record.point + hit_record.normal + Vec3::random_unit_vector();
-            let ray = Ray {
-                origin: hit_record.point,
-                direction: target - hit_record.point,
-            };
-            return 0.5 * ray.color(world, depth - 1);
+            if let Some((scattered, attenuation)) = hit_record.material.scatter(&self, &hit_record)
+            {
+                return attenuation * scattered.color(world, depth - 1);
+            }
+
+            return Color::new(0.0, 0.0, 0.0);
         }
 
         let direction = self.direction.unit_length();
@@ -35,12 +38,19 @@ impl Ray {
 pub struct HitRecord {
     pub point: Point3,
     pub normal: Vec3,
+    pub material: Material,
     pub t: Scalar,
     pub front_face: bool,
 }
 
 impl HitRecord {
-    pub fn new(point: Point3, t: Scalar, ray: Ray, outward_normal: Vec3) -> Self {
+    pub fn new(
+        point: Point3,
+        t: Scalar,
+        material: Material,
+        ray: Ray,
+        outward_normal: Vec3,
+    ) -> Self {
         let front_face = ray.direction.dot(outward_normal) < 0.0;
         let normal = if front_face {
             outward_normal
@@ -51,6 +61,7 @@ impl HitRecord {
         Self {
             point,
             normal,
+            material,
             t,
             front_face,
         }
@@ -65,6 +76,7 @@ pub trait Hittable {
 pub struct Sphere {
     pub center: Point3,
     pub radius: Scalar,
+    pub material: Material,
 }
 
 impl Hittable for Sphere {
@@ -92,7 +104,13 @@ impl Hittable for Sphere {
         let point = ray.at(root);
         let outward_normal = (point - self.center) / self.radius;
 
-        Some(HitRecord::new(point, root, ray, outward_normal))
+        Some(HitRecord::new(
+            point,
+            root,
+            self.material,
+            ray,
+            outward_normal,
+        ))
     }
 }
 

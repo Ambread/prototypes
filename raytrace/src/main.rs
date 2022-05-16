@@ -1,5 +1,6 @@
 mod camera;
 mod hittable;
+mod material;
 mod vec3;
 
 use std::{io::Write, path::PathBuf};
@@ -14,7 +15,7 @@ use rayon::{
 };
 use vec3::{Color, Point3, Scalar};
 
-use crate::{camera::Camera, hittable::Sphere};
+use crate::{camera::Camera, hittable::Sphere, material::Material};
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -34,16 +35,39 @@ fn main() -> Result<()> {
     let max_depth = 50;
 
     // World
-    let world = vec![
-        Sphere {
-            center: Point3::new(0.0, 0.0, -1.0),
-            radius: 0.5,
+    let ground = Sphere {
+        center: Point3::new(0.0, -100.5, -1.0),
+        radius: 100.0,
+        material: Material::Lambertian {
+            albedo: Color::new(0.8, 0.8, 0.0),
         },
-        Sphere {
-            center: Point3::new(0.0, -100.5, -1.0),
-            radius: 100.0,
+    };
+
+    let center = Sphere {
+        center: Point3::new(0.0, 0.0, -1.0),
+        radius: 0.5,
+        material: Material::Lambertian {
+            albedo: Color::new(0.7, 0.3, 0.3),
         },
-    ];
+    };
+
+    let left = Sphere {
+        center: Point3::new(-1.0, 0.0, -1.0),
+        radius: 0.5,
+        material: Material::Metal {
+            albedo: Color::new(0.8, 0.8, 0.8),
+        },
+    };
+
+    let right = Sphere {
+        center: Point3::new(1.0, 0.0, -1.0),
+        radius: 0.5,
+        material: Material::Metal {
+            albedo: Color::new(0.8, 0.6, 0.2),
+        },
+    };
+
+    let world = vec![ground, center, left, right];
 
     // Camera
     let camera = Camera::new();
