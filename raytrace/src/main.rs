@@ -3,7 +3,9 @@ mod vec3;
 
 use std::io::Write;
 
+use anyhow::Result;
 use hittable::{HitRecord, Hittable, Ray};
+use image::ColorType;
 use rand::{distributions::Uniform, prelude::Distribution};
 use rayon::{
     current_num_threads,
@@ -64,7 +66,7 @@ fn ray_color(ray: Ray, world: &impl Hittable) -> Color {
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
-fn main() {
+fn main() -> Result<()> {
     // Image
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 1080;
@@ -87,18 +89,18 @@ fn main() {
     let camera = Camera::new();
 
     // Render
-    println!("P3\n{image_width} {image_height}\n255");
+    let mut image = Vec::with_capacity((image_width * image_height * 3) as usize);
 
     eprintln!("Using {} threads", current_num_threads());
     for j in (0..image_height).rev() {
         let percent_left = (j as Scalar / image_height as Scalar) * 100.0;
         eprint!("\rProgress: {:.2}%", 100.0 - percent_left);
-        std::io::stderr().flush().unwrap();
+        std::io::stderr().flush()?;
 
         for i in 0..image_width {
             let uniform = Uniform::from(0.0..1.0);
 
-            let pixel_color = (0..samples_per_pixel)
+            let pixel_color: Color = (0..samples_per_pixel)
                 .into_par_iter()
                 .map(|_| {
                     let mut rng = rand::thread_rng();
@@ -112,17 +114,21 @@ fn main() {
                 })
                 .sum();
 
-            write_color(pixel_color, samples_per_pixel);
+            let scale = 1.0 / samples_per_pixel as Scalar;
+
+            image.push(((pixel_color.x * scale).clamp(0.0, 0.999) * 256.0) as u8);
+            image.push(((pixel_color.y * scale).clamp(0.0, 0.999) * 256.0) as u8);
+            image.push(((pixel_color.z * scale).clamp(0.0, 0.999) * 256.0) as u8);
         }
     }
-}
 
-fn write_color(pixel_color: Color, samples_per_pixel: u32) {
-    let scale = 1.0 / samples_per_pixel as Scalar;
+    image::save_buffer(
+        "output/cool.png",
+        &image,
+        image_width,
+        image_height,
+        ColorType::Rgb8,
+    )?;
 
-    let r = ((pixel_color.x * scale).clamp(0.0, 0.999) * 256.0) as u8;
-    let g = ((pixel_color.y * scale).clamp(0.0, 0.999) * 256.0) as u8;
-    let b = ((pixel_color.z * scale).clamp(0.0, 0.999) * 256.0) as u8;
-
-    println!("{r} {g} {b}");
+    Ok(())
 }
