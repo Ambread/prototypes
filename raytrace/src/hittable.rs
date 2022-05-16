@@ -1,4 +1,4 @@
-use crate::vec3::{Point3, Scalar, Vec3};
+use crate::vec3::{Color, Point3, Scalar, Vec3};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ray {
@@ -9,6 +9,17 @@ pub struct Ray {
 impl Ray {
     pub fn at(self, time: Scalar) -> Point3 {
         self.origin + time * self.direction
+    }
+
+    pub fn color(self, world: &impl Hittable) -> Color {
+        let mut hit_record = HitRecord::default();
+        if world.hit(self, 0.0, Scalar::INFINITY, &mut hit_record) {
+            return 0.5 * (hit_record.normal + Color::new(1.0, 1.0, 1.0));
+        }
+
+        let direction = self.direction.unit_length();
+        let t = 0.5 * (direction.y + 1.0);
+        (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
     }
 }
 

@@ -1,70 +1,19 @@
+mod camera;
 mod hittable;
 mod vec3;
 
 use std::io::Write;
 
 use anyhow::Result;
-use hittable::{HitRecord, Hittable, Ray};
 use image::{ColorType, ImageFormat};
 use rand::{distributions::Uniform, prelude::Distribution};
 use rayon::{
     current_num_threads,
     iter::{IntoParallelIterator, ParallelIterator},
 };
-use vec3::{Color, Point3, Scalar, Vec3};
+use vec3::{Color, Point3, Scalar};
 
-use crate::hittable::Sphere;
-
-#[derive(Debug, Clone, Copy)]
-struct Camera {
-    origin: Point3,
-    lower_left_corner: Point3,
-    horizontal: Vec3,
-    vertical: Vec3,
-}
-
-impl Camera {
-    fn new() -> Self {
-        let aspect_ratio = 16.0 / 9.0;
-        let viewport_height = 2.0;
-        let viewport_width = aspect_ratio * viewport_height;
-        let focal_length = 1.0;
-
-        let origin = Point3::new(0.0, 0.0, 0.0);
-        let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-        let vertical = Vec3::new(0.0, viewport_height, 0.0);
-        let lower_left_corner =
-            origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
-
-        Self {
-            origin,
-            lower_left_corner,
-            horizontal,
-            vertical,
-        }
-    }
-
-    fn get_ray(&self, u: Scalar, v: Scalar) -> Ray {
-        let direction =
-            self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin;
-
-        Ray {
-            origin: self.origin,
-            direction,
-        }
-    }
-}
-
-fn ray_color(ray: Ray, world: &impl Hittable) -> Color {
-    let mut hit_record = HitRecord::default();
-    if world.hit(ray, 0.0, Scalar::INFINITY, &mut hit_record) {
-        return 0.5 * (hit_record.normal + Color::new(1.0, 1.0, 1.0));
-    }
-
-    let direction = ray.direction.unit_length();
-    let t = 0.5 * (direction.y + 1.0);
-    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
-}
+use crate::{camera::Camera, hittable::Sphere};
 
 fn main() -> Result<()> {
     // Image
@@ -109,8 +58,7 @@ fn main() -> Result<()> {
                     let v =
                         (j as Scalar + uniform.sample(&mut rng)) / (image_height as Scalar - 1.0);
 
-                    let ray = camera.get_ray(u, v);
-                    ray_color(ray, &world)
+                    camera.get_ray(u, v).color(&world)
                 })
                 .sum();
 
