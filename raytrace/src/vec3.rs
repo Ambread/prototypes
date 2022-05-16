@@ -1,7 +1,9 @@
 use std::{
     iter::Sum,
-    ops::{Add, AddAssign, Div, Mul, Neg, Sub},
+    ops::{Add, AddAssign, Div, Mul, Neg, Range, Sub},
 };
+
+use rand::{distributions::Uniform, prelude::Distribution};
 
 pub type Scalar = f64;
 pub type Point3 = Vec3;
@@ -29,6 +31,30 @@ impl Vec3 {
 
     pub fn unit_length(self) -> Self {
         self / self.length()
+    }
+
+    pub fn random_unit_vector() -> Self {
+        Self::random_in_unit_sphere().unit_length()
+    }
+
+    pub fn random_in_unit_sphere() -> Self {
+        loop {
+            let p = Self::random(-1.0..1.0);
+            if p.length_squared() < 1.0 {
+                return p;
+            }
+        }
+    }
+
+    pub fn random(range: Range<Scalar>) -> Self {
+        let mut rng = rand::thread_rng();
+        let uniform = Uniform::from(range);
+
+        Self {
+            x: uniform.sample(&mut rng),
+            y: uniform.sample(&mut rng),
+            z: uniform.sample(&mut rng),
+        }
     }
 
     pub fn dot(self, rhs: Self) -> Scalar {

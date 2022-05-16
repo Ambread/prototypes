@@ -19,6 +19,7 @@ use crate::{camera::Camera, hittable::Sphere};
 #[derive(Debug, Parser)]
 struct Args {
     width: u32,
+    samples: u32,
     output: PathBuf,
 }
 
@@ -29,7 +30,8 @@ fn main() -> Result<()> {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = args.width;
     let image_height = (image_width as Scalar / aspect_ratio) as u32;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = args.samples;
+    let max_depth = 50;
 
     // World
     let world = vec![
@@ -67,15 +69,15 @@ fn main() -> Result<()> {
                     let v =
                         (j as Scalar + uniform.sample(&mut rng)) / (image_height as Scalar - 1.0);
 
-                    camera.get_ray(u, v).color(&world)
+                    camera.get_ray(u, v).color(&world, max_depth)
                 })
                 .sum();
 
             let scale = 1.0 / samples_per_pixel as Scalar;
 
-            image.push(((pixel_color.x * scale).clamp(0.0, 0.999) * 256.0) as u8);
-            image.push(((pixel_color.y * scale).clamp(0.0, 0.999) * 256.0) as u8);
-            image.push(((pixel_color.z * scale).clamp(0.0, 0.999) * 256.0) as u8);
+            image.push(((pixel_color.x * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8);
+            image.push(((pixel_color.y * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8);
+            image.push(((pixel_color.z * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8);
         }
     }
 
