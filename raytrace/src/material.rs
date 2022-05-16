@@ -13,14 +13,15 @@ impl Material {
     pub fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord) -> Option<(Ray, Color)> {
         match self {
             Material::Lambertian { albedo } => {
-                let origin = hit_record.normal;
-                let mut direction = origin + Vec3::random_unit_vector();
+                let origin = hit_record.point;
+                let mut direction = hit_record.normal + Vec3::random_unit_vector();
 
                 if direction.near_zero() {
                     direction = origin;
                 }
 
-                Some((Ray { origin, direction }, *albedo))
+                let scattered = Ray { origin, direction };
+                Some((scattered, *albedo))
             }
 
             Material::Metal { albedo } => {
