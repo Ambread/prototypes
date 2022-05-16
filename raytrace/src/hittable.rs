@@ -16,9 +16,7 @@ impl Ray {
             return Color::new(0.0, 0.0, 0.0);
         }
 
-        let mut hit_record = HitRecord::default();
-
-        if world.hit(self, 0.001, Scalar::INFINITY, &mut hit_record) {
+        if let Some(hit_record) = world.hit(self, 0.001, Scalar::INFINITY) {
             let target = hit_record.point + hit_record.normal + Vec3::random_unit_vector();
             let ray = Ray {
                 origin: hit_record.point,
@@ -33,7 +31,7 @@ impl Ray {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct HitRecord {
     pub point: Point3,
     pub normal: Vec3,
@@ -42,18 +40,25 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
-    fn set_face_normal(&mut self, ray: Ray, outward_normal: Vec3) {
-        self.front_face = ray.direction.dot(outward_normal) < 0.0;
-        self.normal = if self.front_face {
+    pub fn new(point: Point3, t: Scalar, ray: Ray, outward_normal: Vec3) -> Self {
+        let front_face = ray.direction.dot(outward_normal) < 0.0;
+        let normal = if front_face {
             outward_normal
         } else {
             -outward_normal
         };
+
+        Self {
+            point,
+            normal,
+            t,
+            front_face,
+        }
     }
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: Ray, t_min: Scalar, t_max: Scalar, hit_record: &mut HitRecord) -> bool;
+    fn hit(&self, ray: Ray, t_min: Scalar, t_max: Scalar) -> Option<HitRecord>;
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -63,7 +68,7 @@ pub struct Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: Ray, t_min: Scalar, t_max: Scalar, hit_record: &mut HitRecord) -> bool {
+    fn hit(&self, ray: Ray, t_min: Scalar, t_max: Scalar) -> Option<HitRecord> {
         let oc = ray.origin - self.center;
 
         let a = ray.direction.length_squared();
@@ -72,7 +77,7 @@ impl Hittable for Sphere {
 
         let discriminant = half_b * half_b - a * c;
         if discriminant < 0.0 {
-            return false;
+            return None;
         }
         let discriminant = discriminant.sqrt();
 
@@ -80,16 +85,14 @@ impl Hittable for Sphere {
         if root < t_min || t_max < root {
             root = (-half_b - discriminant) / a;
             if root < t_min || t_max < root {
-                return false;
+                return None;
             }
         };
 
-        hit_record.t = root;
-        hit_record.point = ray.at(hit_record.t);
-        let outward_normal = (hit_record.point - self.center) / self.radius;
-        hit_record.set_face_normal(ray, outward_normal);
+        let point = ray.at(root);
+        let outward_normal = (point - self.center) / self.radius;
 
-        true
+        Some(HitRecord::new(point, root, ray, outward_normal))
     }
 }
 
@@ -97,19 +100,17 @@ impl<T> Hittable for Vec<T>
 where
     T: Hittable,
 {
-    fn hit(&self, r: Ray, t_min: Scalar, t_max: Scalar, hit_record: &mut HitRecord) -> bool {
-        let mut temp_record = HitRecord::default();
-        let mut hit_anything = false;
+    fn hit(&self, r: Ray, t_min: Scalar, t_max: Scalar) -> Option<HitRecord> {
+        let mut hit_record = None;
         let mut closest_so_far = t_max;
 
         for object in self {
-            if object.hit(r, t_min, closest_so_far, &mut temp_record) {
-                hit_anything = true;
-                closest_so_far = temp_record.t;
-                *hit_record = temp_record;
+            if let Some(object_record) = object.hit(r, t_min, closest_so_far) {
+                closest_so_far = object_record.t;
+                hit_record = Some(object_record);
             }
         }
 
-        hit_anything
+        hit_record
     }
 }
