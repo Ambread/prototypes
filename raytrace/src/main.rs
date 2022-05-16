@@ -2,9 +2,10 @@ mod camera;
 mod hittable;
 mod vec3;
 
-use std::io::Write;
+use std::{io::Write, path::PathBuf};
 
 use anyhow::Result;
+use clap::Parser;
 use image::{ColorType, ImageFormat};
 use rand::{distributions::Uniform, prelude::Distribution};
 use rayon::{
@@ -15,10 +16,18 @@ use vec3::{Color, Point3, Scalar};
 
 use crate::{camera::Camera, hittable::Sphere};
 
+#[derive(Debug, Parser)]
+struct Args {
+    width: u32,
+    output: PathBuf,
+}
+
 fn main() -> Result<()> {
+    let args = Args::parse();
+
     // Image
     let aspect_ratio = 16.0 / 9.0;
-    let image_width = 1080;
+    let image_width = args.width;
     let image_height = (image_width as Scalar / aspect_ratio) as u32;
     let samples_per_pixel = 100;
 
@@ -71,7 +80,7 @@ fn main() -> Result<()> {
     }
 
     image::save_buffer_with_format(
-        "output/cool.png",
+        args.output,
         &image,
         image_width,
         image_height,
