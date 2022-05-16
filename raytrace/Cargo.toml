@@ -7,6 +7,10 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.57"
-image = "0.24.2"
 rand = "0.8.5"
 rayon = "1.5.3"
+
+[dependencies.image]
+version = "0.24.2"
+features = ["png"]
+default-features = false

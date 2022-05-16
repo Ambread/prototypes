@@ -5,7 +5,7 @@ use std::io::Write;
 
 use anyhow::Result;
 use hittable::{HitRecord, Hittable, Ray};
-use image::ColorType;
+use image::{ColorType, ImageFormat};
 use rand::{distributions::Uniform, prelude::Distribution};
 use rayon::{
     current_num_threads,
@@ -122,12 +122,13 @@ fn main() -> Result<()> {
         }
     }
 
-    image::save_buffer(
+    image::save_buffer_with_format(
         "output/cool.png",
         &image,
         image_width,
         image_height,
         ColorType::Rgb8,
+        ImageFormat::Png,
     )?;
 
     Ok(())
