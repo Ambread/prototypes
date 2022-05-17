@@ -7,6 +7,7 @@ use crate::{
 pub enum Material {
     Lambertian { albedo: Color },
     Metal { albedo: Color, fuzz: Scalar },
+    Dielectric { index_of_refraction: Scalar },
 }
 
 impl Material {
@@ -31,6 +32,29 @@ impl Material {
                 let scattered = Ray { origin, direction };
 
                 (scattered.direction.dot(hit_record.normal) > 0.0).then(|| (scattered, albedo))
+            }
+
+            Material::Dielectric {
+                index_of_refraction,
+            } => {
+                let attenuation = Color::new(1.0, 1.0, 1.0);
+                let refraction_ratio = if hit_record.front_face {
+                    1.0 / index_of_refraction
+                } else {
+                    index_of_refraction
+                };
+
+                let direction = ray_in
+                    .direction
+                    .unit_length()
+                    .refract(hit_record.normal, refraction_ratio);
+
+                let scattered = Ray {
+                    origin: hit_record.point,
+                    direction,
+                };
+
+                Some((scattered, attenuation))
             }
         }
     }

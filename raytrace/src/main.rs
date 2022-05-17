@@ -46,17 +46,16 @@ fn main() -> Result<()> {
     let center = Sphere {
         center: Point3::new(0.0, 0.0, -1.0),
         radius: 0.5,
-        material: Material::Lambertian {
-            albedo: Color::new(0.7, 0.3, 0.3),
+        material: Material::Dielectric {
+            index_of_refraction: 1.5,
         },
     };
 
     let left = Sphere {
         center: Point3::new(-1.0, 0.0, -1.0),
         radius: 0.5,
-        material: Material::Metal {
-            albedo: Color::new(0.8, 0.8, 0.8),
-            fuzz: 0.0,
+        material: Material::Dielectric {
+            index_of_refraction: 1.5,
         },
     };
 
