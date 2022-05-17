@@ -46,8 +46,8 @@ fn main() -> Result<()> {
     let center = Sphere {
         center: Point3::new(0.0, 0.0, -1.0),
         radius: 0.5,
-        material: Material::Dielectric {
-            index_of_refraction: 1.5,
+        material: Material::Lambertian {
+            albedo: Color::new(0.1, 0.2, 0.5),
         },
     };
 
@@ -64,7 +64,7 @@ fn main() -> Result<()> {
         radius: 0.5,
         material: Material::Metal {
             albedo: Color::new(0.8, 0.6, 0.2),
-            fuzz: 0.5,
+            fuzz: 0.0,
         },
     };
 

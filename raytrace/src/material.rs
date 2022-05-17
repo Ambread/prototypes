@@ -44,10 +44,16 @@ impl Material {
                     index_of_refraction
                 };
 
-                let direction = ray_in
-                    .direction
-                    .unit_length()
-                    .refract(hit_record.normal, refraction_ratio);
+                let direction = ray_in.direction.unit_length();
+                let cos_theta = (-direction).dot(hit_record.normal).min(1.0);
+                let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+
+                let can_refract = refraction_ratio * sin_theta <= 1.0;
+                let direction = if can_refract {
+                    direction.refract(hit_record.normal, refraction_ratio)
+                } else {
+                    direction.reflect(hit_record.normal)
+                };
 
                 let scattered = Ray {
                     origin: hit_record.point,
