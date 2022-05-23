@@ -2,6 +2,7 @@ mod camera;
 mod hittable;
 mod material;
 mod vec3;
+mod world;
 
 use std::{io::Write, path::PathBuf};
 
@@ -15,7 +16,7 @@ use rayon::{
 };
 use vec3::{Color, Point3, Scalar};
 
-use crate::{camera::Camera, hittable::Sphere, material::Material};
+use crate::{camera::Camera, hittable::Sphere, material::Material, world::world};
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -34,44 +35,9 @@ fn main() -> Result<()> {
     let samples_per_pixel = args.samples;
     let max_depth = 50;
 
-    // World
-    let ground = Sphere {
-        center: Point3::new(0.0, -100.5, -1.0),
-        radius: 100.0,
-        material: Material::Lambertian {
-            albedo: Color::new(0.8, 0.8, 0.0),
-        },
-    };
-
-    let center = Sphere {
-        center: Point3::new(0.0, 0.0, -1.0),
-        radius: 0.5,
-        material: Material::Lambertian {
-            albedo: Color::new(0.1, 0.2, 0.5),
-        },
-    };
-
-    let left = Sphere {
-        center: Point3::new(-1.0, 0.0, -1.0),
-        radius: 0.5,
-        material: Material::Dielectric {
-            index_of_refraction: 1.5,
-        },
-    };
-
-    let right = Sphere {
-        center: Point3::new(1.0, 0.0, -1.0),
-        radius: 0.5,
-        material: Material::Metal {
-            albedo: Color::new(0.8, 0.6, 0.2),
-            fuzz: 0.0,
-        },
-    };
-
-    let world = vec![ground, center, left, right];
-
     // Camera
     let camera = Camera::new();
+    let world = world();
 
     // Render
     let mut image = Vec::with_capacity((image_width * image_height * 3) as usize);
