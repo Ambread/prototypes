@@ -4,19 +4,17 @@ mod material;
 mod vec3;
 mod world;
 
-use std::{io::Write, path::PathBuf};
+use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Parser;
-use image::{ColorType, ImageFormat};
+use eventuals::{Closed, EventualWriter};
+use futures::never::Never;
 use rand::{distributions::Uniform, prelude::Distribution};
-use rayon::{
-    current_num_threads,
-    iter::{IntoParallelIterator, ParallelIterator},
-};
-use vec3::{Color, Point3, Scalar};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use vec3::{Color, Scalar};
 
-use crate::{camera::Camera, hittable::Sphere, material::Material, world::world};
+use crate::{camera::Camera, world::world};
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -25,7 +23,15 @@ struct Args {
     output: PathBuf,
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() {
+    let mut reader = eventuals::Eventual::spawn(aaaa).subscribe();
+    while let Ok(value) = reader.next().await {
+        dbg!(value.len());
+    }
+}
+
+async fn aaaa(mut writer: EventualWriter<Vec<u8>>) -> Result<Never, Closed> {
     let args = Args::parse();
 
     // Image
@@ -42,12 +48,8 @@ fn main() -> Result<()> {
     // Render
     let mut image = Vec::with_capacity((image_width * image_height * 3) as usize);
 
-    eprintln!("Using {} threads", current_num_threads());
     for j in (0..image_height).rev() {
-        let percent_left = (j as Scalar / image_height as Scalar) * 100.0;
-        eprint!("\rProgress: {:.2}%", 100.0 - percent_left);
-        std::io::stderr().flush()?;
-
+        writer.write(image.clone());
         for i in 0..image_width {
             let uniform = Uniform::from(0.0..1.0);
 
@@ -72,14 +74,5 @@ fn main() -> Result<()> {
         }
     }
 
-    image::save_buffer_with_format(
-        args.output,
-        &image,
-        image_width,
-        image_height,
-        ColorType::Rgb8,
-        ImageFormat::Png,
-    )?;
-
-    Ok(())
+    Err(Closed)
 }
