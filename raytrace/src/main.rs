@@ -1,78 +1,63 @@
 mod camera;
 mod hittable;
 mod material;
+mod render;
 mod vec3;
 mod world;
 
-use std::path::PathBuf;
+use std::{
+    io::Write,
+    path::PathBuf,
+    sync::mpsc::{self},
+    thread,
+};
 
 use anyhow::Result;
 use clap::Parser;
-use eventuals::{Closed, EventualWriter};
-use futures::never::Never;
-use rand::{distributions::Uniform, prelude::Distribution};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use vec3::{Color, Scalar};
+use image::{ColorType, ImageFormat};
+use rayon::current_num_threads;
 
-use crate::{camera::Camera, world::world};
+use crate::{
+    render::{render, ImageInfo},
+    vec3::Scalar,
+};
 
 #[derive(Debug, Parser)]
 struct Args {
     width: u32,
-    samples: u32,
+    samples_per_pixel: u32,
     output: PathBuf,
 }
 
-#[tokio::main]
-async fn main() {
-    let mut reader = eventuals::Eventual::spawn(aaaa).subscribe();
-    while let Ok(value) = reader.next().await {
-        dbg!(value.len());
-    }
-}
-
-async fn aaaa(mut writer: EventualWriter<Vec<u8>>) -> Result<Never, Closed> {
+fn main() -> Result<()> {
     let args = Args::parse();
+    let image_info = ImageInfo::new(args.width, args.samples_per_pixel);
 
-    // Image
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = args.width;
-    let image_height = (image_width as Scalar / aspect_ratio) as u32;
-    let samples_per_pixel = args.samples;
-    let max_depth = 50;
+    println!("Using {} threads", current_num_threads());
 
-    // Camera
-    let camera = Camera::new();
-    let world = world();
+    let (sender, receiver) = mpsc::channel();
+    thread::spawn(move || render(sender, image_info));
 
-    // Render
-    let mut image = Vec::with_capacity((image_width * image_height * 3) as usize);
+    let mut buffer = Vec::new();
 
-    for j in (0..image_height).rev() {
-        writer.write(image.clone());
-        for i in 0..image_width {
-            let uniform = Uniform::from(0.0..1.0);
+    while let Ok((mut line, current_line)) = receiver.recv() {
+        buffer.append(&mut line);
 
-            let pixel_color: Color = (0..samples_per_pixel)
-                .into_par_iter()
-                .map(|_| {
-                    let mut rng = rand::thread_rng();
-                    let u =
-                        (i as Scalar + uniform.sample(&mut rng)) / (image_width as Scalar - 1.0);
-                    let v =
-                        (j as Scalar + uniform.sample(&mut rng)) / (image_height as Scalar - 1.0);
-
-                    camera.get_ray(u, v).color(&world, max_depth)
-                })
-                .sum();
-
-            let scale = 1.0 / samples_per_pixel as Scalar;
-
-            image.push(((pixel_color.x * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8);
-            image.push(((pixel_color.y * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8);
-            image.push(((pixel_color.z * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8);
-        }
+        let percent_left = (current_line as Scalar / image_info.height as Scalar) * 100.0;
+        print!("\rProgress: {:.2}%", 100.0 - percent_left);
+        std::io::stderr().flush()?;
     }
 
-    Err(Closed)
+    println!("\nSaving...");
+    image::save_buffer_with_format(
+        args.output,
+        &buffer,
+        image_info.width,
+        image_info.height,
+        ColorType::Rgb8,
+        ImageFormat::Png,
+    )?;
+    println!("Done!");
+
+    Ok(())
 }
