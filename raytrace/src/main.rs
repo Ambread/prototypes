@@ -6,58 +6,75 @@ mod vec3;
 mod world;
 
 use std::{
-    io::Write,
     path::PathBuf,
-    sync::mpsc::{self},
+    sync::mpsc::{self, Receiver},
     thread,
 };
 
-use anyhow::Result;
 use clap::Parser;
-use image::{ColorType, ImageFormat};
-use rayon::current_num_threads;
-
-use crate::{
-    render::{render, ImageInfo},
-    vec3::Scalar,
+use eframe::{
+    epaint::{ColorImage, TextureHandle},
+    CreationContext,
 };
 
-#[derive(Debug, Parser)]
+use crate::render::{render, ImageInfo};
+
+#[derive(Debug, Clone, Parser)]
 struct Args {
     width: u32,
     samples_per_pixel: u32,
     output: PathBuf,
 }
 
-fn main() -> Result<()> {
-    let args = Args::parse();
-    let image_info = ImageInfo::new(args.width, args.samples_per_pixel);
+fn main() {
+    eframe::run_native(
+        "Raytrace",
+        eframe::NativeOptions::default(),
+        Box::new(|ctx| Box::new(App::new(ctx))),
+    );
+}
 
-    println!("Using {} threads", current_num_threads());
+struct App {
+    image_info: ImageInfo,
+    receiver: Receiver<(Vec<u8>, u32)>,
+    texture: TextureHandle,
+}
 
-    let (sender, receiver) = mpsc::channel();
-    thread::spawn(move || render(sender, image_info));
+impl App {
+    fn new(ctx: &CreationContext<'_>) -> Self {
+        let args = Args::parse();
+        let image_info = ImageInfo::new(args.width, args.samples_per_pixel);
+        let buffer = vec![0; (image_info.height * image_info.width * 4) as usize];
 
-    let mut buffer = Vec::new();
+        let size = [image_info.width as usize, image_info.height as usize];
+        let image = ColorImage::from_rgba_unmultiplied(size, buffer.as_slice());
+        let texture = ctx.egui_ctx.load_texture("render", image);
 
-    while let Ok((mut line, current_line)) = receiver.recv() {
-        buffer.append(&mut line);
+        let (sender, receiver) = mpsc::channel();
+        thread::spawn(move || render(sender, image_info));
 
-        let percent_left = (current_line as Scalar / image_info.height as Scalar) * 100.0;
-        print!("\rProgress: {:.2}%", 100.0 - percent_left);
-        std::io::stderr().flush()?;
+        Self {
+            image_info,
+            receiver,
+            texture,
+        }
     }
+}
 
-    println!("\nSaving...");
-    image::save_buffer_with_format(
-        args.output,
-        &buffer,
-        image_info.width,
-        image_info.height,
-        ColorType::Rgb8,
-        ImageFormat::Png,
-    )?;
-    println!("Done!");
+impl eframe::App for App {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
+        eframe::egui::CentralPanel::default().show(ctx, |ui| {
+            ui.image(&self.texture, self.texture.size_vec2());
 
-    Ok(())
+            if let Ok((line, current_height)) = self.receiver.try_recv() {
+                dbg!(current_height);
+
+                let size = [self.image_info.width as usize, 1];
+                let image = ColorImage::from_rgba_unmultiplied(size, &line);
+
+                self.texture
+                    .set_partial([0, current_height as usize - 1], image);
+            }
+        });
+    }
 }

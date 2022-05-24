@@ -14,7 +14,7 @@ pub fn render(sender: Sender<(Vec<u8>, u32)>, image_info: ImageInfo) -> Result<(
     let camera = Camera::new(image_info.aspect_ratio);
     let world = world();
 
-    let mut line = Vec::with_capacity((image_info.width * image_info.height * 3) as usize);
+    let mut line = Vec::with_capacity((image_info.width * 4) as usize);
 
     for current_line in (0..image_info.height).rev() {
         for current_column in 0..image_info.width {
@@ -35,12 +35,14 @@ pub fn render(sender: Sender<(Vec<u8>, u32)>, image_info: ImageInfo) -> Result<(
 
             let scale = 1.0 / image_info.samples_per_pixel as Scalar;
 
-            line.push(((pixel_color.x * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8);
-            line.push(((pixel_color.y * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8);
-            line.push(((pixel_color.z * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8);
+            let r = ((pixel_color.x * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8;
+            let g = ((pixel_color.y * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8;
+            let b = ((pixel_color.z * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8;
+
+            line.extend([r, g, b, 255]);
         }
 
-        sender.send((mem::take(&mut line), current_line))?;
+        sender.send((mem::take(&mut line), image_info.height - current_line))?;
     }
 
     Ok(())
