@@ -16,6 +16,7 @@ use eframe::{
     epaint::{ColorImage, TextureHandle},
     CreationContext,
 };
+use image::{ColorType, ImageFormat};
 
 use crate::render::{render, ImageInfo};
 
@@ -38,16 +39,20 @@ struct App {
     image_info: ImageInfo,
     receiver: Receiver<(Vec<u8>, u32)>,
     texture: TextureHandle,
+    buffer: Vec<u8>,
 }
 
 impl App {
     fn new(ctx: &CreationContext<'_>) -> Self {
         let args = Args::parse();
         let image_info = ImageInfo::new(args.width, args.samples_per_pixel);
-        let buffer = vec![0; (image_info.height * image_info.width * 4) as usize];
+
+        let capacity = (image_info.height * image_info.width * 4) as usize;
+        let blank = vec![0; capacity];
+        let buffer = Vec::with_capacity(capacity);
 
         let size = [image_info.width as usize, image_info.height as usize];
-        let image = ColorImage::from_rgba_unmultiplied(size, buffer.as_slice());
+        let image = ColorImage::from_rgba_unmultiplied(size, blank.as_slice());
         let texture = ctx.egui_ctx.load_texture("render", image);
 
         let (sender, receiver) = mpsc::channel();
@@ -57,6 +62,7 @@ impl App {
             image_info,
             receiver,
             texture,
+            buffer,
         }
     }
 }
@@ -66,7 +72,7 @@ impl eframe::App for App {
         eframe::egui::CentralPanel::default().show(ctx, |ui| {
             ui.image(&self.texture, self.texture.size_vec2());
 
-            if let Ok((line, current_height)) = self.receiver.try_recv() {
+            if let Ok((mut line, current_height)) = self.receiver.try_recv() {
                 dbg!(current_height);
 
                 let size = [self.image_info.width as usize, 1];
@@ -74,6 +80,22 @@ impl eframe::App for App {
 
                 self.texture
                     .set_partial([0, current_height as usize - 1], image);
+
+                self.buffer.append(&mut line);
+
+                if current_height == self.image_info.height {
+                    println!("Saving...");
+                    image::save_buffer_with_format(
+                        "output/cool.png",
+                        &self.buffer,
+                        self.image_info.width,
+                        self.image_info.height,
+                        ColorType::Rgba8,
+                        ImageFormat::Png,
+                    )
+                    .unwrap();
+                    println!("Done!");
+                }
             }
         });
     }
