@@ -10,11 +10,11 @@ use crate::{
     world::world,
 };
 
-pub fn render(sender: Sender<(Vec<u8>, u32)>, image_info: ImageInfo) -> Result<()> {
+pub fn render(sender: Sender<(Vec<u8>, usize)>, image_info: ImageInfo) -> Result<()> {
     let camera = Camera::new(image_info.aspect_ratio);
     let world = world();
 
-    let mut line = Vec::with_capacity((image_info.width * 4) as usize);
+    let mut line = Vec::with_capacity(image_info.width * 4);
 
     for current_line in (0..image_info.height).rev() {
         for current_column in 0..image_info.width {
@@ -51,16 +51,16 @@ pub fn render(sender: Sender<(Vec<u8>, u32)>, image_info: ImageInfo) -> Result<(
 #[derive(Debug, Clone, Copy)]
 pub struct ImageInfo {
     pub aspect_ratio: Scalar,
-    pub width: u32,
-    pub height: u32,
+    pub width: usize,
+    pub height: usize,
     pub samples_per_pixel: u32,
     pub max_depth: u32,
 }
 
 impl ImageInfo {
-    pub fn new(width: u32, samples_per_pixel: u32) -> Self {
+    pub fn new(width: usize, samples_per_pixel: u32) -> Self {
         let aspect_ratio = 16.0 / 9.0;
-        let height = (width as Scalar / aspect_ratio) as u32;
+        let height = (width as Scalar / aspect_ratio) as _;
         let max_depth = 50;
 
         Self {

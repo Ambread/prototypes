@@ -22,7 +22,7 @@ use crate::render::{render, ImageInfo};
 
 #[derive(Debug, Clone, Parser)]
 struct Args {
-    width: u32,
+    width: usize,
     samples_per_pixel: u32,
     output: PathBuf,
 }
@@ -36,8 +36,9 @@ fn main() {
 }
 
 struct App {
+    args: Args,
     image_info: ImageInfo,
-    receiver: Receiver<(Vec<u8>, u32)>,
+    receiver: Receiver<(Vec<u8>, usize)>,
     texture: TextureHandle,
     buffer: Vec<u8>,
 }
@@ -47,11 +48,11 @@ impl App {
         let args = Args::parse();
         let image_info = ImageInfo::new(args.width, args.samples_per_pixel);
 
-        let capacity = (image_info.height * image_info.width * 4) as usize;
+        let capacity = image_info.height * image_info.width * 4;
         let blank = vec![0; capacity];
         let buffer = Vec::with_capacity(capacity);
 
-        let size = [image_info.width as usize, image_info.height as usize];
+        let size = [image_info.width, image_info.height];
         let image = ColorImage::from_rgba_unmultiplied(size, blank.as_slice());
         let texture = ctx.egui_ctx.load_texture("render", image);
 
@@ -59,6 +60,7 @@ impl App {
         thread::spawn(move || render(sender, image_info));
 
         Self {
+            args,
             image_info,
             receiver,
             texture,
@@ -75,21 +77,20 @@ impl eframe::App for App {
             if let Ok((mut line, current_height)) = self.receiver.try_recv() {
                 dbg!(current_height);
 
-                let size = [self.image_info.width as usize, 1];
+                let size = [self.image_info.width, 1];
                 let image = ColorImage::from_rgba_unmultiplied(size, &line);
 
-                self.texture
-                    .set_partial([0, current_height as usize - 1], image);
+                self.texture.set_partial([0, current_height - 1], image);
 
                 self.buffer.append(&mut line);
 
                 if current_height == self.image_info.height {
                     println!("Saving...");
                     image::save_buffer_with_format(
-                        "output/cool.png",
+                        &self.args.output,
                         &self.buffer,
-                        self.image_info.width,
-                        self.image_info.height,
+                        self.image_info.width as _,
+                        self.image_info.height as _,
                         ColorType::Rgba8,
                         ImageFormat::Png,
                     )
