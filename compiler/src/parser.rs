@@ -1,14 +1,15 @@
 use chumsky::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::lexer::Token;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ast {
     pub name: String,
     pub body: Block,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     pub body: Vec<u32>,
     pub trailing: u32,
