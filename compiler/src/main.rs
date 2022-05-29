@@ -14,19 +14,26 @@ fn main() -> Result<()> {
 
     let input = fs::read_to_string(&args.input)?;
     let output = compile(&input);
-    fs::write(args.input.with_extension(".ssa"), output)?;
+    fs::write(args.input.with_extension("ssa"), output)?;
 
     Command::new("qbe")
-        .arg(args.input.with_extension(".ssa"))
+        .arg(args.input.with_extension("ssa"))
         .arg("-o")
-        .arg(args.input.with_extension(".s"))
+        .arg(args.input.with_extension("s"))
         .output()?;
 
     Command::new("cc")
-        .arg(args.input.with_extension(".s"))
+        .arg(args.input.with_extension("s"))
         .arg("-o")
-        .arg(args.input.file_stem().unwrap())
+        .arg(args.input.with_extension(""))
         .output()?;
+
+    let exit_code = Command::new(args.input.with_extension(""))
+        .output()?
+        .status
+        .code();
+
+    println!("exit_code: {exit_code:?}");
 
     Ok(())
 }
