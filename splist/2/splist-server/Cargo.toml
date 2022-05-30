@@ -1,0 +1,10 @@
+[package]
+name = "splist-server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.5.6", features = ["ws"] }
+hyper = { version = "0.14.19", features = ["full"] }
+tokio = { version = "1.18.2", features = ["full"] }
+tower = "0.4.12"
