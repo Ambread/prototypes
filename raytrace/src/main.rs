@@ -1,103 +1,142 @@
-mod camera;
-mod hittable;
-mod material;
-mod render;
-mod vec3;
-mod world;
+use std::collections::HashSet;
 
-use std::{
-    path::PathBuf,
-    sync::mpsc::{self, Receiver},
-    thread,
+use anyhow::Result;
+use glfw::{Context as _, Key, SwapInterval, WindowEvent, WindowMode};
+use luminance::{
+    context::GraphicsContext, pipeline::PipelineState, render_state::RenderState, tess::Mode,
 };
+use luminance_derive::{Semantics, Vertex};
+use luminance_glfw::{GlfwSurface, GlfwSurfaceError};
 
-use clap::Parser;
-use eframe::{
-    epaint::{ColorImage, TextureHandle},
-    CreationContext,
-};
-use image::{ColorType, ImageFormat};
+use crate::{message::Message, GameChannels};
 
-use crate::render::{render, ImageInfo};
+pub fn render(channels: GameChannels, title: &str) -> Result<()> {
+    let surface = GlfwSurface::new(|glfw| {
+        let (mut window, events) = glfw
+            .create_window(400, 400, title, WindowMode::Windowed)
+            .ok_or(GlfwSurfaceError::UserError(()))?;
 
-#[derive(Debug, Clone, Parser)]
-struct Args {
-    width: usize,
-    samples_per_pixel: u32,
-    output: PathBuf,
-}
+        window.make_current();
+        window.set_all_polling(true);
+        glfw.set_swap_interval(SwapInterval::Sync(1));
 
-fn main() {
-    eframe::run_native(
-        "Raytrace",
-        eframe::NativeOptions::default(),
-        Box::new(|ctx| Box::new(App::new(ctx))),
-    );
-}
+        Ok((window, events))
+    })
+    .unwrap();
 
-struct App {
-    args: Args,
-    image_info: ImageInfo,
-    receiver: Receiver<(Vec<u8>, usize)>,
-    texture: TextureHandle,
-    buffer: Vec<u8>,
-}
+    let mut context = surface.context;
+    let events = surface.events_rx;
+    let back_buffer = context.back_buffer().expect("back buffer");
 
-impl App {
-    fn new(ctx: &CreationContext<'_>) -> Self {
-        let args = Args::parse();
-        let image_info = ImageInfo::new(args.width, args.samples_per_pixel);
+    let mut program = context
+        .new_shader_program::<VertexSemantics, (), ()>()
+        .from_strings(VERTEX_SHADER, None, None, FRAGMENT_SHADER)?
+        .ignore_warnings();
 
-        let capacity = image_info.height * image_info.width * 4;
-        let blank = vec![0; capacity];
-        let buffer = Vec::with_capacity(capacity);
+    let mut tess = context
+        .new_tess()
+        .set_vertices([])
+        .set_mode(Mode::Triangle)
+        .build()?;
 
-        let size = [image_info.width, image_info.height];
-        let image = ColorImage::from_rgba_unmultiplied(size, blank.as_slice());
-        let texture = ctx.egui_ctx.load_texture("render", image);
+    let mut current_color = [0.0; 4];
+    let mut _self_id = 0;
+    let mut players = HashSet::new();
 
-        let (sender, receiver) = mpsc::channel();
-        thread::spawn(move || render(sender, image_info));
+    while !context.window.should_close() {
+        context.window.glfw.poll_events();
+        for (_, event) in glfw::flush_messages(&events) {
+            if let WindowEvent::Key(key, _, _, _) = event {
+                let color = match key {
+                    Key::R => [1.0, 0.0, 0.0, 1.0],
+                    Key::G => [0.0, 1.0, 0.0, 1.0],
+                    Key::B => [0.0, 0.0, 1.0, 1.0],
+                    _ => continue,
+                };
 
-        Self {
-            args,
-            image_info,
-            receiver,
-            texture,
-            buffer,
+                channels.to_net.send(Message::SetColor { color }).unwrap();
+            }
         }
-    }
-}
 
-impl eframe::App for App {
-    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
-        eframe::egui::CentralPanel::default().show(ctx, |ui| {
-            ui.image(&self.texture, self.texture.size_vec2());
+        while let Ok(message) = channels.from_net.try_recv() {
+            match message {
+                Message::SelfJoined { id } => _self_id = id,
+                Message::SetColor { color } => current_color = color,
+                Message::PlayerJoined { id } => {
+                    println!("Player {id} joined");
+                    players.insert(id);
 
-            if let Ok((mut line, current_height)) = self.receiver.try_recv() {
-                dbg!(current_height);
+                    let vertices: Vec<_> = players
+                        .iter()
+                        .flat_map(|id| quad(*id as f32 * 0.1, [255, 0, 0]))
+                        .collect();
 
-                let size = [self.image_info.width, 1];
-                let image = ColorImage::from_rgba_unmultiplied(size, &line);
-
-                self.texture.set_partial([0, current_height - 1], image);
-
-                self.buffer.append(&mut line);
-
-                if current_height == self.image_info.height {
-                    println!("Saving...");
-                    image::save_buffer_with_format(
-                        &self.args.output,
-                        &self.buffer,
-                        self.image_info.width as _,
-                        self.image_info.height as _,
-                        ColorType::Rgba8,
-                        ImageFormat::Png,
-                    )
-                    .unwrap();
-                    println!("Done!");
+                    tess = context
+                        .new_tess()
+                        .set_vertices(vertices.as_slice())
+                        .set_mode(Mode::Triangle)
+                        .build()?;
                 }
             }
-        });
+        }
+
+        context
+            .new_pipeline_gate()
+            .pipeline(
+                &back_buffer,
+                &PipelineState::default().set_clear_color(current_color),
+                |_, mut shade_gate| {
+                    shade_gate.shade(&mut program, |_, _, mut render_gate| {
+                        render_gate.render(&RenderState::default(), |mut tess_gate| {
+                            tess_gate.render(&tess)
+                        })
+                    })
+                },
+            )
+            .assume()
+            .into_result()?;
+
+        context.window.swap_buffers();
     }
+
+    Ok(())
+}
+
+const VERTEX_SHADER: &str = include_str!("vertex.glsl");
+const FRAGMENT_SHADER: &str = include_str!("fragment.glsl");
+
+#[derive(Debug, Clone, Copy, Semantics)]
+pub enum VertexSemantics {
+    #[sem(name = "position", repr = "[f32; 2]", wrapper = "VertexPosition")]
+    Position,
+    #[sem(name = "color", repr = "[u8; 3]", wrapper = "VertexRGB")]
+    Color,
+}
+
+#[derive(Debug, Clone, Copy, Vertex)]
+#[vertex(sem = "VertexSemantics")]
+#[allow(dead_code)]
+pub struct Vertex {
+    position: VertexPosition,
+    #[vertex(normalized = "true")]
+    color: VertexRGB,
+}
+
+fn quad(size: f32, color: [u8; 3]) -> Vec<Vertex> {
+    [
+        [1.0, 1.0],
+        [1.0, -1.0],
+        [-1.0, 1.0],
+        [-1.0, -1.0],
+        [-1.0, 1.0],
+        [1.0, -1.0],
+    ]
+    .into_iter()
+    .map(|position| {
+        Vertex::new(
+            VertexPosition::new(position.map(|sign| size * sign)),
+            VertexRGB::new(color),
+        )
+    })
+    .collect()
 }
