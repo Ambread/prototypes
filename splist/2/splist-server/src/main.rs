@@ -8,7 +8,7 @@ use axum::{
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .route("/", get(|| async { "Hello, World!" }))
+        .route("/", get(|| async { "\"Hello, World!\"" }))
         .route("/ws", get(get_ws));
 
     axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
