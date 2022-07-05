@@ -1,5 +1,5 @@
 import type { NextPage } from 'next';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { trpc } from '../utils/trpc';
 
 const Home: NextPage = () => {
@@ -9,10 +9,21 @@ const Home: NextPage = () => {
     const messagesQuery = trpc.useQuery(['messages']);
     const [messages, setMessages] = useState(() => messagesQuery.data ?? []);
 
+    useEffect(() => {
+        setMessages(messagesQuery.data ?? []);
+    }, [messagesQuery.data]);
+
     trpc.useSubscription(['onSend'], {
         onNext(data) {
-            console.log('onSent');
+            console.log('onSend');
             setMessages((messages) => [...messages, data]);
+        },
+    });
+
+    trpc.useSubscription(['onClear'], {
+        onNext() {
+            console.log('onClear');
+            setMessages([]);
         },
     });
 
@@ -37,7 +48,7 @@ const Home: NextPage = () => {
                 }}
             />
             <ul>
-                {messages?.map(({ id, content }) => (
+                {messages.map(({ id, content }) => (
                     <li key={id}>{content}</li>
                 ))}
             </ul>

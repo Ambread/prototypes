@@ -37,6 +37,7 @@ export const appRouter = createRouter()
     .mutation('clear', {
         async resolve({ ctx }) {
             await ctx.prisma.message.deleteMany();
+            events.emit('clear');
         },
     })
     .subscription('onSend', {
@@ -50,6 +51,15 @@ export const appRouter = createRouter()
                 return () => {
                     events.off('send', handle);
                 };
+            });
+        },
+    })
+    .subscription('onClear', {
+        resolve() {
+            return new Subscription((emit) => {
+                const handle = () => emit.data(null);
+                events.on('clear', handle);
+                return () => events.off('clear', handle);
             });
         },
     });
