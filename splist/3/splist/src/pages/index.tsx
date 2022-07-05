@@ -28,6 +28,7 @@ const Home: NextPage = () => {
     });
 
     const [content, setContent] = useState('');
+    const [name, setName] = useState('');
 
     if (!messagesQuery.data) {
         return <h1>Loading...</h1>;
@@ -37,19 +38,28 @@ const Home: NextPage = () => {
         <div>
             <input
                 type="text"
+                placeholder="Username"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+            />
+            <input
+                type="text"
+                placeholder="Message"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key !== 'Enter') {
                         return;
                     }
-                    send.mutate({ content });
+                    send.mutate({ content, name });
                     setContent('');
                 }}
             />
             <ul>
-                {messages.map(({ id, content }) => (
-                    <li key={id}>{content}</li>
+                {messages.map(({ id, content, author }) => (
+                    <li key={id}>
+                        [{author.name}] {content}
+                    </li>
                 ))}
             </ul>
             <button onClick={() => clear.mutate()}>Clear</button>

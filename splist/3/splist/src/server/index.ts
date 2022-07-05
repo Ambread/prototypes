@@ -1,35 +1,54 @@
-import { Message } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { createRouter } from './createContext';
-
-export interface Events {
-    send: Message;
-    clear: null;
-}
 
 const zMessage = z.object({
     id: z.string(),
     content: z.string(),
+    author: z.object({
+        id: z.string(),
+        name: z.string(),
+    }),
 });
+
+export interface Events {
+    send: z.infer<typeof zMessage>;
+    clear: null;
+}
 
 export const appRouter = createRouter()
     .query('messages', {
         output: z.array(zMessage),
 
         resolve({ ctx }) {
-            return ctx.prisma.message.findMany();
+            return ctx.prisma.message.findMany({ include: { author: true } });
         },
     })
     .mutation('send', {
         input: z.object({
             content: z.string(),
+            name: z.string(),
         }),
 
         output: zMessage,
 
         async resolve({ input, ctx }) {
+            const author = await ctx.prisma.user.findFirst({
+                where: { name: input.name },
+            });
+
+            if (!author) {
+                throw new TRPCError({ code: 'UNAUTHORIZED' });
+            }
+
             const message = await ctx.prisma.message.create({
-                data: input,
+                data: {
+                    content: input.content,
+                    authorId: author.id,
+                },
+                include: {
+                    author: true,
+                },
             });
             ctx.events.emit('send', message);
             return message;
