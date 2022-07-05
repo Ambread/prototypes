@@ -3,20 +3,22 @@ import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 
 const Home: NextPage = () => {
-    const utils = trpc.useContext();
-    const messages = trpc.useQuery(['messages']);
     const send = trpc.useMutation(['send']);
     const clear = trpc.useMutation(['clear']);
+
+    const messagesQuery = trpc.useQuery(['messages']);
+    const [messages, setMessages] = useState(() => messagesQuery.data ?? []);
+
     trpc.useSubscription(['onSend'], {
         onNext(data) {
             console.log('onSent');
-            messages.data?.push(data);
+            setMessages((messages) => [...messages, data]);
         },
     });
 
     const [content, setContent] = useState('');
 
-    if (!messages.data) {
+    if (!messagesQuery.data) {
         return <h1>Loading...</h1>;
     }
 
@@ -35,7 +37,7 @@ const Home: NextPage = () => {
                 }}
             />
             <ul>
-                {messages.data.map(({ id, content }) => (
+                {messages?.map(({ id, content }) => (
                     <li key={id}>{content}</li>
                 ))}
             </ul>
