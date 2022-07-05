@@ -3,9 +3,16 @@ import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 
 const Home: NextPage = () => {
+    const utils = trpc.useContext();
     const messages = trpc.useQuery(['messages']);
     const send = trpc.useMutation(['send']);
     const clear = trpc.useMutation(['clear']);
+    trpc.useSubscription(['onSend'], {
+        onNext(data) {
+            console.log('onSent');
+            messages.data?.push(data);
+        },
+    });
 
     const [content, setContent] = useState('');
 
@@ -19,8 +26,14 @@ const Home: NextPage = () => {
                 type="text"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key !== 'Enter') {
+                        return;
+                    }
+                    send.mutate({ content });
+                    setContent('');
+                }}
             />
-            <button onClick={() => send.mutate({ content })}>Send</button>
             <ul>
                 {messages.data.map(({ id, content }) => (
                     <li key={id}>{content}</li>
