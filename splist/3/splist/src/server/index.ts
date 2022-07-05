@@ -1,20 +1,18 @@
-import { PrismaClient } from '@prisma/client';
 import { router } from '@trpc/server';
 import { z } from 'zod';
-
-const prisma = new PrismaClient();
+import { Context, createRouter } from './createContext';
 
 const zMessage = z.object({
     id: z.string(),
     content: z.string(),
 });
 
-export const appRouter = router()
+export const appRouter = createRouter()
     .query('messages', {
         output: z.array(zMessage),
 
-        resolve() {
-            return prisma.message.findMany();
+        resolve({ ctx }) {
+            return ctx.prisma.message.findMany();
         },
     })
     .mutation('send', {
@@ -24,15 +22,15 @@ export const appRouter = router()
 
         output: zMessage,
 
-        resolve({ input }) {
-            return prisma.message.create({
+        resolve({ input, ctx }) {
+            return ctx.prisma.message.create({
                 data: input,
             });
         },
     })
     .mutation('clear', {
-        async resolve() {
-            await prisma.message.deleteMany();
+        async resolve({ ctx }) {
+            await ctx.prisma.message.deleteMany();
         },
     });
 
