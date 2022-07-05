@@ -2,13 +2,19 @@ import type { NextPage } from 'next';
 import { trpc } from '../utils/trpc';
 
 const Home: NextPage = () => {
-    const hello = trpc.useQuery(['hello', { text: 'cool person' }]);
+    const messages = trpc.useQuery(['messages']);
 
-    if (!hello.data) {
+    if (!messages.data) {
         return <h1>Loading...</h1>;
     }
 
-    return <h1>{hello.data.greeting}</h1>;
+    return (
+        <ul>
+            {messages.data.map(({ id, content }) => (
+                <li key={id}>{content}</li>
+            ))}
+        </ul>
+    );
 };
 
 export default Home;
