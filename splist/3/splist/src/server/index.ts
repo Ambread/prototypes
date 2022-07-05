@@ -4,34 +4,35 @@ import { z } from 'zod';
 
 const prisma = new PrismaClient();
 
+const zMessage = z.object({
+    id: z.string(),
+    content: z.string(),
+});
+
 export const appRouter = router()
-    .query('hello', {
-        input: z
-            .object({
-                text: z.string().nullish(),
-            })
-            .nullish(),
-
-        output: z.object({
-            greeting: z.string(),
-        }),
-
-        resolve({ input }) {
-            return {
-                greeting: `Hello ${input?.text ?? 'world'}!`,
-            };
-        },
-    })
     .query('messages', {
-        output: z.array(
-            z.object({
-                id: z.string(),
-                content: z.string(),
-            }),
-        ),
+        output: z.array(zMessage),
 
         resolve() {
             return prisma.message.findMany();
+        },
+    })
+    .mutation('send', {
+        input: z.object({
+            content: z.string(),
+        }),
+
+        output: zMessage,
+
+        resolve({ input }) {
+            return prisma.message.create({
+                data: input,
+            });
+        },
+    })
+    .mutation('clear', {
+        async resolve() {
+            await prisma.message.deleteMany();
         },
     });
 
