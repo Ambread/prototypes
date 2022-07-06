@@ -10,8 +10,9 @@ function App({ Component, pageProps }: AppProps) {
             <Component {...pageProps} />
             <style>
                 {`
-                    body {
+                    html, body {
                         margin: 0;
+                        padding: 0;
                     }
                 `}
             </style>

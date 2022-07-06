@@ -8,6 +8,7 @@ import {
     Text,
     Paper,
     ScrollArea,
+    Footer,
 } from '@mantine/core';
 import { FC } from 'react';
 import { useEffect, useState } from 'react';

@@ -10,7 +10,6 @@ import {
     Title,
     Text,
     Alert,
-    Center,
     Stack,
 } from '@mantine/core';
 import { AlertCircle } from 'tabler-icons-react';
@@ -30,6 +29,7 @@ const Home: NextPage = () => {
     return (
         <AppShell
             fixed
+            style={{ height: '100%', width: '100%' }}
             navbar={
                 <Navbar p="md" width={{ lg: 300 }}>
                     <Navbar.Section grow>
