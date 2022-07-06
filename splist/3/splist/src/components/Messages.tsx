@@ -1,4 +1,4 @@
-import { Button, Card, Divider, Stack, TextInput } from '@mantine/core';
+import { Button, Card, Divider, Group, Stack, TextInput } from '@mantine/core';
 import { FC } from 'react';
 import { useEffect, useState } from 'react';
 import { trpc } from '../utils/hooks';
@@ -35,19 +35,7 @@ export const Messages: FC = () => {
     }
 
     return (
-        <div>
-            <TextInput
-                label="Message"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key !== 'Enter') {
-                        return;
-                    }
-                    send.mutate({ content });
-                    setContent('');
-                }}
-            />
+        <>
             <Stack>
                 {messages.map(({ id, content, author }) => (
                     <div key={id}>
@@ -55,7 +43,22 @@ export const Messages: FC = () => {
                     </div>
                 ))}
             </Stack>
-            <Button onClick={() => clear.mutate()}>Clear</Button>
-        </div>
+            <Group>
+                <TextInput
+                    style={{ flexGrow: 1 }}
+                    placeholder="Message"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key !== 'Enter') {
+                            return;
+                        }
+                        send.mutate({ content });
+                        setContent('');
+                    }}
+                />
+                <Button onClick={() => clear.mutate()}>Clear All</Button>
+            </Group>
+        </>
     );
 };
