@@ -45,17 +45,10 @@ type Props =
     | NodeHTTPCreateContextFnOptions<IncomingMessage, ws>;
 
 export const createContext = async ({ req, res }: Props) => {
-    console.log(req.headers.authorization);
-    const user = req.headers.authorization
-        ? await prisma.user.findFirst({
-              where: { name: req.headers.authorization },
-          })
-        : null;
-
     return {
         prisma,
         events,
         useEvent,
-        user,
+        user: null,
     };
 };

@@ -27,7 +27,6 @@ export const appRouter = createRouter()
     .mutation('send', {
         input: z.object({
             content: z.string(),
-            name: z.string(),
         }),
 
         output: zMessage,
@@ -65,6 +64,25 @@ export const appRouter = createRouter()
     .subscription('onClear', {
         resolve({ ctx }) {
             return ctx.useEvent('clear', (emit) => emit.data(null));
+        },
+    })
+    .mutation('login', {
+        input: z.object({
+            name: z.string(),
+        }),
+        output: z
+            .object({
+                id: z.string(),
+                name: z.string(),
+            })
+            .nullable(),
+
+        async resolve({ input, ctx }) {
+            const user = await ctx.prisma.user.findFirst({
+                where: { name: input.name },
+            });
+            ctx.user = user;
+            return user;
         },
     });
 
