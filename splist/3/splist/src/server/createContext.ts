@@ -31,10 +31,13 @@ const useEvent = <E extends keyof Events>(
         return () => events.off(event, wrapper);
     });
 
+const emitEvent = <E extends keyof Events>(event: E, value: Events[E]) =>
+    events.emit(event, value);
+
 export interface Context {
     prisma: PrismaClient;
-    events: EventEmitter;
     useEvent: typeof useEvent;
+    emitEvent: typeof emitEvent;
     user: User | null;
     requiredUser: User;
 }
@@ -48,8 +51,8 @@ type Props =
 export const createContext = async ({ req, res }: Props) => {
     return {
         prisma,
-        events,
         useEvent,
+        emitEvent,
         user: null,
         get requiredUser() {
             if (!this.user) {

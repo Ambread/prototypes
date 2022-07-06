@@ -11,19 +11,19 @@ const zMessage = z.object({
 });
 
 export interface Events {
-    send: z.infer<typeof zMessage>;
-    clear: null;
+    'text.send': z.infer<typeof zMessage>;
+    'text.clear': null;
 }
 
 export const appRouter = createRouter()
-    .query('messages', {
+    .query('text.messages', {
         output: z.array(zMessage),
 
         resolve({ ctx }) {
             return ctx.prisma.message.findMany({ include: { author: true } });
         },
     })
-    .mutation('send', {
+    .mutation('text.send', {
         input: z.object({
             content: z.string(),
         }),
@@ -41,24 +41,26 @@ export const appRouter = createRouter()
                 },
             });
 
-            ctx.events.emit('send', message);
+            ctx.emitEvent('text.send', message);
             return message;
         },
     })
-    .mutation('clear', {
+    .mutation('text.clear', {
         async resolve({ ctx }) {
             await ctx.prisma.message.deleteMany();
-            ctx.events.emit('clear');
+            ctx.emitEvent('text.clear', null);
         },
     })
-    .subscription('onSend', {
+    .subscription('text.onSend', {
         resolve({ ctx }) {
-            return ctx.useEvent('send', (emit, message) => emit.data(message));
+            return ctx.useEvent('text.send', (emit, message) =>
+                emit.data(message),
+            );
         },
     })
-    .subscription('onClear', {
+    .subscription('text.onClear', {
         resolve({ ctx }) {
-            return ctx.useEvent('clear', (emit) => emit.data(null));
+            return ctx.useEvent('text.clear', (emit) => emit.data(null));
         },
     })
     .mutation('login', {

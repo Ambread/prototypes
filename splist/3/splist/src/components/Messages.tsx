@@ -31,24 +31,24 @@ const Footer = styled.footer`
 `;
 
 export const Messages: FC = () => {
-    const send = trpc.useMutation(['send']);
-    const clear = trpc.useMutation(['clear']);
+    const send = trpc.useMutation(['text.send']);
+    const clear = trpc.useMutation(['text.clear']);
 
-    const messagesQuery = trpc.useQuery(['messages']);
+    const messagesQuery = trpc.useQuery(['text.messages']);
     const [messages, setMessages] = useState(() => messagesQuery.data ?? []);
 
     useEffect(() => {
         setMessages(messagesQuery.data ?? []);
     }, [messagesQuery.data]);
 
-    trpc.useSubscription(['onSend'], {
+    trpc.useSubscription(['text.onSend'], {
         onNext(data) {
             console.log('onSend');
             setMessages((messages) => [...messages, data]);
         },
     });
 
-    trpc.useSubscription(['onClear'], {
+    trpc.useSubscription(['text.onClear'], {
         onNext() {
             console.log('onClear');
             setMessages([]);
