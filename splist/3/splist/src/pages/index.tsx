@@ -2,6 +2,7 @@ import type { NextPage } from 'next';
 import { trpc, useMount } from '../utils/hooks';
 import { useLocalStorage } from '@mantine/hooks';
 import { Messages } from '../components/Messages';
+import { TextInput } from '@mantine/core';
 
 const Home: NextPage = () => {
     const [name, setName] = useLocalStorage({
@@ -17,9 +18,8 @@ const Home: NextPage = () => {
 
     return (
         <>
-            <input
-                type="text"
-                placeholder="Username"
+            <TextInput
+                label="Username"
                 value={name}
                 onChange={(e) => {
                     setName(e.target.value);
