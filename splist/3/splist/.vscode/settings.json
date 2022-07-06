@@ -24,14 +24,11 @@
     "editor.codeActionsOnSave": {
         "source.fixAll": true
     },
-    "[typescript][typescriptreact][jsonc][css][scss]": {
+    "[javascript][javascriptreact][typescript][typescriptreact][jsonc][css][scss]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "[prisma]": {
         "editor.defaultFormatter": "Prisma.prisma"
-    },
-    "[typescriptreact]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "cSpell.words": [
         "trpc"

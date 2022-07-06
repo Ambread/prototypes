@@ -79,18 +79,13 @@ const Home: NextPage = () => {
             {login.data ? (
                 <Messages />
             ) : (
-                <>
-                    <main style={{ gridArea: 'main' }}></main>
-                    <footer style={{ gridArea: 'footer', padding: '1em' }}>
-                        <Alert
-                            icon={<AlertCircle size={16} />}
-                            color="red"
-                            title="Unauthorized"
-                        >
-                            You need to log in
-                        </Alert>
-                    </footer>
-                </>
+                <Alert
+                    icon={<AlertCircle size={16} />}
+                    color="red"
+                    title="Unauthorized"
+                >
+                    You need to log in
+                </Alert>
             )}
         </Grid>
     );
