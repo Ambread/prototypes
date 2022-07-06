@@ -27,33 +27,81 @@ const Home: NextPage = () => {
     });
 
     return (
-        <>
-            <TextInput
-                label="Username"
-                value={name}
-                onChange={(e) => {
-                    setName(e.target.value);
+        <div
+            style={{
+                display: 'grid',
+                width: '100vw',
+                height: '100vh',
+                gridTemplate: `
+                    "header header" 10vh
+                    "nav    main  " 1fr
+                    "user   footer" 10vh
+                    / 30vh 1fr
+                `,
+            }}
+        >
+            <header
+                style={{
+                    gridArea: 'header',
+                    borderBottom: 'solid thin grey',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '3em',
                 }}
-                onKeyDown={(e) => {
-                    if (e.key !== 'Enter') {
-                        return;
-                    }
-                    login.mutate({ name });
+            >
+                <Title>Splist</Title>
+            </header>
+            <nav
+                style={{
+                    gridArea: 'nav',
+                    borderRight: 'solid thin grey',
+                    padding: '3em',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
                 }}
-            />
-
+            >
+                <Text>Cool navbar</Text>
+            </nav>
+            <aside
+                style={{
+                    gridArea: 'user',
+                    borderRight: 'solid thin grey',
+                    borderTop: 'solid thin grey',
+                    padding: '1em',
+                }}
+            >
+                <TextInput
+                    label="Username"
+                    value={name}
+                    onChange={(e) => {
+                        setName(e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key !== 'Enter') {
+                            return;
+                        }
+                        login.mutate({ name });
+                    }}
+                />
+            </aside>
             {login.data ? (
                 <Messages />
             ) : (
-                <Alert
-                    icon={<AlertCircle size={16} />}
-                    color="red"
-                    title="Unauthorized"
-                >
-                    You need to log in
-                </Alert>
+                <>
+                    <main style={{ gridArea: 'main' }}></main>
+                    <footer style={{ gridArea: 'footer', padding: '1em' }}>
+                        <Alert
+                            icon={<AlertCircle size={16} />}
+                            color="red"
+                            title="Unauthorized"
+                        >
+                            You need to log in
+                        </Alert>
+                    </footer>
+                </>
             )}
-        </>
+        </div>
     );
 };
 
