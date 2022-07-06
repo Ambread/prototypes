@@ -5,7 +5,18 @@ import { wsLink, createWSClient } from '@trpc/client/links/wsLink';
 import { TRPCLink } from '@trpc/client';
 
 function App({ Component, pageProps }: AppProps) {
-    return <Component {...pageProps} />;
+    return (
+        <>
+            <Component {...pageProps} />
+            <style>
+                {`
+                    body {
+                        margin: 0;
+                    }
+                `}
+            </style>
+        </>
+    );
 }
 
 const links = [] as TRPCLink<AppRouter>[];

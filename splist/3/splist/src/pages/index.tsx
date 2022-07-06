@@ -4,13 +4,16 @@ import { useLocalStorage } from '@mantine/hooks';
 import { Messages } from '../components/Messages';
 import {
     AppShell,
-    Footer,
     Header,
     Navbar,
     TextInput,
     Title,
     Text,
+    Alert,
+    Center,
+    Stack,
 } from '@mantine/core';
+import { AlertCircle } from 'tabler-icons-react';
 
 const Home: NextPage = () => {
     const [name, setName] = useLocalStorage({
@@ -28,7 +31,7 @@ const Home: NextPage = () => {
         <AppShell
             fixed
             navbar={
-                <Navbar p="md" width={{ sm: 200, lg: 300 }}>
+                <Navbar p="md" width={{ lg: 300 }}>
                     <Navbar.Section grow>
                         <Text>Cool navbar</Text>
                     </Navbar.Section>
@@ -55,7 +58,19 @@ const Home: NextPage = () => {
                 </Header>
             }
         >
-            {login.data ? <Messages /> : <p>Logged out</p>}
+            <Stack justify="flex-end" style={{ height: '100%' }}>
+                {login.data ? (
+                    <Messages />
+                ) : (
+                    <Alert
+                        icon={<AlertCircle size={16} />}
+                        color="red"
+                        title="Unauthorized"
+                    >
+                        You need to log in
+                    </Alert>
+                )}
+            </Stack>
         </AppShell>
     );
 };
