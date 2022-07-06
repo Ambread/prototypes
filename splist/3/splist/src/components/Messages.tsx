@@ -1,7 +1,6 @@
 import { FC } from 'react';
 import { useEffect, useState } from 'react';
 import { trpc } from '../utils/hooks';
-import { useLocalStorage } from '@mantine/hooks';
 
 export const Messages: FC = () => {
     const send = trpc.useMutation(['send']);

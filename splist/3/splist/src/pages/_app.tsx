@@ -1,6 +1,6 @@
 import { withTRPC } from '@trpc/next';
 import type { AppProps } from 'next/app';
-import { AppRouter } from '../server';
+import type { AppRouter } from '../server';
 import { wsLink, createWSClient } from '@trpc/client/links/wsLink';
 import { TRPCLink } from '@trpc/client';
 
@@ -18,7 +18,7 @@ if (typeof window !== 'undefined') {
 }
 
 export default withTRPC<AppRouter>({
-    config({ ctx }) {
+    config() {
         return {
             links,
         };

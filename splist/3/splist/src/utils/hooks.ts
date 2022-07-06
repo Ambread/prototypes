@@ -1,6 +1,6 @@
 import { createReactQueryHooks } from '@trpc/react';
 import { EffectCallback, useEffect } from 'react';
-import { AppRouter } from '../server';
+import type { AppRouter } from '../server';
 
 export const trpc = createReactQueryHooks<AppRouter>();
 
