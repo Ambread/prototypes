@@ -1,6 +1,7 @@
 import type { NextPage } from 'next';
 import { useEffect, useState } from 'react';
 import { trpc } from '../utils/trpc';
+import { useLocalStorage } from '@mantine/hooks';
 
 const Home: NextPage = () => {
     const send = trpc.useMutation(['send']);
@@ -28,7 +29,10 @@ const Home: NextPage = () => {
     });
 
     const [content, setContent] = useState('');
-    const [name, setName] = useState('');
+    const [name, setName] = useLocalStorage({
+        key: 'name',
+        defaultValue: '',
+    });
 
     if (!messagesQuery.data) {
         return <h1>Loading...</h1>;

@@ -1,5 +1,10 @@
-import { PrismaClient } from '@prisma/client';
-import { router, Subscription, SubscriptionEmit } from '@trpc/server';
+import { PrismaClient, User } from '@prisma/client';
+import {
+    router,
+    Subscription,
+    SubscriptionEmit,
+    TRPCError,
+} from '@trpc/server';
 import { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { NodeHTTPCreateContextFnOptions } from '@trpc/server/dist/declarations/src/adapters/node-http';
 import { IncomingMessage } from 'node:http';
@@ -30,6 +35,7 @@ export interface Context {
     prisma: PrismaClient;
     events: EventEmitter;
     useEvent: typeof useEvent;
+    user: User | null;
 }
 
 export const createRouter = () => router<Context>();
@@ -38,10 +44,18 @@ type Props =
     | CreateNextContextOptions
     | NodeHTTPCreateContextFnOptions<IncomingMessage, ws>;
 
-export const createContext = async ({ req, res }: Props): Promise<Context> => {
+export const createContext = async ({ req, res }: Props) => {
+    console.log(req.headers.authorization);
+    const user = req.headers.authorization
+        ? await prisma.user.findFirst({
+              where: { name: req.headers.authorization },
+          })
+        : null;
+
     return {
         prisma,
         events,
         useEvent,
+        user,
     };
 };

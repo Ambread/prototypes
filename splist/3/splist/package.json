@@ -10,6 +10,9 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@mantine/core": "^4.2.12",
+        "@mantine/hooks": "^4.2.12",
+        "@mantine/next": "^4.2.12",
         "@prisma/client": "4.0.0",
         "@trpc/client": "^9.25.3",
         "@trpc/next": "^9.25.3",
