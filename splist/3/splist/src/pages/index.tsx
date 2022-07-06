@@ -2,16 +2,7 @@ import type { NextPage } from 'next';
 import { trpc, useMount } from '../utils/hooks';
 import { useLocalStorage } from '@mantine/hooks';
 import { Messages } from '../components/Messages';
-import {
-    AppShell,
-    Header,
-    Navbar,
-    TextInput,
-    Title,
-    Text,
-    Alert,
-    Stack,
-} from '@mantine/core';
+import { TextInput, Title, Text, Alert } from '@mantine/core';
 import { AlertCircle } from 'tabler-icons-react';
 
 const Home: NextPage = () => {
