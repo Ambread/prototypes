@@ -47,30 +47,33 @@ export const Messages: FC = () => {
 
     return (
         <>
-            {messages.map(({ id, content, author }) => (
-                <Paper key={id}>
-                    <Divider p={10} />
-                    <Badge p={10}>{author.name}</Badge>
-                    <Text p={10}>{content}</Text>
-                </Paper>
-            ))}
-
-            <Group>
-                <TextInput
-                    style={{ flexGrow: 1 }}
-                    placeholder="Message"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key !== 'Enter') {
-                            return;
-                        }
-                        send.mutate({ content });
-                        setContent('');
-                    }}
-                />
-                <Button onClick={() => clear.mutate()}>Clear All</Button>
-            </Group>
+            <main style={{ gridArea: 'main', overflowY: 'scroll' }}>
+                {messages.map(({ id, content, author }) => (
+                    <Paper key={id}>
+                        <Divider p={10} />
+                        <Badge p={10}>{author.name}</Badge>
+                        <Text p={10}>{content}</Text>
+                    </Paper>
+                ))}
+            </main>
+            <footer style={{ gridArea: 'footer', padding: '1em' }}>
+                <Group>
+                    <TextInput
+                        style={{ flexGrow: 1 }}
+                        placeholder="Message"
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key !== 'Enter') {
+                                return;
+                            }
+                            send.mutate({ content });
+                            setContent('');
+                        }}
+                    />
+                    <Button onClick={() => clear.mutate()}>Clear All</Button>
+                </Group>
+            </footer>
         </>
     );
 };
