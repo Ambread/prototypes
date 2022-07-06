@@ -8,11 +8,14 @@ const zMessage = z.object({
         id: z.string(),
         name: z.string(),
     }),
+    channel: z.object({
+        id: z.string(),
+    }),
 });
 
 export interface Events {
     'text.send': z.infer<typeof zMessage>;
-    'text.clear': null;
+    'text.clear': { channelId: string };
 }
 
 export const appRouter = createRouter()
@@ -48,7 +51,7 @@ export const appRouter = createRouter()
 
         resolve({ ctx, input }) {
             return ctx.prisma.message.findMany({
-                include: { author: true },
+                include: { author: true, channel: true },
                 where: { channelId: input.channelId },
             });
         },
@@ -70,6 +73,7 @@ export const appRouter = createRouter()
                 },
                 include: {
                     author: true,
+                    channel: true,
                 },
             });
 
@@ -78,21 +82,43 @@ export const appRouter = createRouter()
         },
     })
     .mutation('text.clear', {
-        async resolve({ ctx }) {
-            await ctx.prisma.message.deleteMany();
-            ctx.emitEvent('text.clear', null);
+        input: z.object({
+            channelId: z.string(),
+        }),
+
+        async resolve({ ctx, input }) {
+            await ctx.prisma.message.deleteMany({
+                where: { channelId: input.channelId },
+            });
+            ctx.emitEvent('text.clear', { channelId: input.channelId });
         },
     })
     .subscription('text.onSend', {
-        resolve({ ctx }) {
-            return ctx.useEvent('text.send', (emit, message) =>
-                emit.data(message),
-            );
+        input: z.object({
+            channelId: z.string(),
+        }),
+
+        resolve({ ctx, input }) {
+            return ctx.useEvent('text.send', (emit, message) => {
+                if (message.channel.id !== input.channelId) {
+                    return;
+                }
+                emit.data(message);
+            });
         },
     })
     .subscription('text.onClear', {
-        resolve({ ctx }) {
-            return ctx.useEvent('text.clear', (emit) => emit.data(null));
+        input: z.object({
+            channelId: z.string(),
+        }),
+
+        resolve({ ctx, input }) {
+            return ctx.useEvent('text.clear', (emit, { channelId }) => {
+                if (channelId !== input.channelId) {
+                    return;
+                }
+                emit.data({ channelId });
+            });
         },
     })
     .mutation('login', {

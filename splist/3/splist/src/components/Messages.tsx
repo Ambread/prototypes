@@ -45,14 +45,14 @@ export const Messages: FC<Props> = ({ channelId }) => {
         setMessages(messagesQuery.data ?? []);
     }, [messagesQuery.data]);
 
-    trpc.useSubscription(['text.onSend'], {
+    trpc.useSubscription(['text.onSend', { channelId }], {
         onNext(data) {
             console.log('onSend');
             setMessages((messages) => [...messages, data]);
         },
     });
 
-    trpc.useSubscription(['text.onClear'], {
+    trpc.useSubscription(['text.onClear', { channelId }], {
         onNext() {
             console.log('onClear');
             setMessages([]);
@@ -90,7 +90,9 @@ export const Messages: FC<Props> = ({ channelId }) => {
                         setContent('');
                     }}
                 />
-                <Button onClick={() => clear.mutate()}>Clear All</Button>
+                <Button onClick={() => clear.mutate({ channelId })}>
+                    Clear All
+                </Button>
             </Footer>
         </>
     );
