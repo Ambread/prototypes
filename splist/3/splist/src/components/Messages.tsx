@@ -1,7 +1,34 @@
-import { Badge, Button, Divider, Group, TextInput, Text } from '@mantine/core';
+import { Badge, Button, Divider, TextInput, Text } from '@mantine/core';
 import { FC } from 'react';
 import { useEffect, useState } from 'react';
+import styled from 'styled-components';
 import { trpc } from '../utils/hooks';
+
+const Main = styled.main`
+    grid-area: main;
+    overflow-y: scroll;
+    scroll-snap-type: y proximity;
+    display: flex;
+    flex-flow: column;
+
+    > :first-child {
+        margin-top: auto;
+    }
+
+    > :last-child {
+        scroll-snap-align: end;
+    }
+`;
+
+const Footer = styled.footer`
+    grid-area: footer;
+    border-top: solid thin grey;
+
+    padding: 1em;
+    display: flex;
+    align-items: end;
+    gap: 1em;
+`;
 
 export const Messages: FC = () => {
     const send = trpc.useMutation(['send']);
@@ -36,25 +63,7 @@ export const Messages: FC = () => {
 
     return (
         <>
-            <main>
-                <style jsx>{`
-                    main {
-                        grid-area: main;
-                        overflow-y: scroll;
-                        scroll-snap-type: y proximity;
-                        display: flex;
-                        flex-flow: column;
-                    }
-
-                    main > :first-child {
-                        margin-top: auto;
-                    }
-
-                    main > :last-child {
-                        scroll-snap-align: end;
-                    }
-                `}</style>
-                <div></div>
+            <Main>
                 {messages.map(({ id, content, author }) => (
                     <div key={id}>
                         <Divider p={10} />
@@ -62,19 +71,8 @@ export const Messages: FC = () => {
                         <Text p={10}>{content}</Text>
                     </div>
                 ))}
-            </main>
-            <footer>
-                <style jsx>{`
-                    footer {
-                        grid-area: footer;
-                        border-top: solid thin grey;
-
-                        padding: 1em;
-                        display: flex;
-                        align-items: end;
-                        gap: 1em;
-                    }
-                `}</style>
+            </Main>
+            <Footer>
                 <TextInput
                     style={{ flexGrow: 1 }}
                     placeholder="Message"
@@ -89,7 +87,7 @@ export const Messages: FC = () => {
                     }}
                 />
                 <Button onClick={() => clear.mutate()}>Clear All</Button>
-            </footer>
+            </Footer>
         </>
     );
 };

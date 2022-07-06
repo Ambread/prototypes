@@ -4,6 +4,42 @@ import { useLocalStorage } from '@mantine/hooks';
 import { Messages } from '../components/Messages';
 import { TextInput, Title, Text, Alert } from '@mantine/core';
 import { AlertCircle } from 'tabler-icons-react';
+import styled from 'styled-components';
+
+const Grid = styled.div`
+    display: grid;
+    width: 100vw;
+    height: 100vh;
+    grid-template:
+        'header header' 10vh
+        'nav    main  ' 1fr
+        'user   footer' 10vh
+        / 30vh 1fr;
+`;
+
+const Header = styled.header`
+    grid-area: header;
+    border-bottom: solid thin grey;
+    display: flex;
+    align-items: center;
+    padding: 2em;
+`;
+
+const Nav = styled.nav`
+    grid-area: nav;
+    border-right: solid thin grey;
+    padding: 3em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`;
+
+const Aside = styled.aside`
+    grid-area: user;
+    border-right: solid thin grey;
+    border-top: solid thin grey;
+    padding: 1em;
+`;
 
 const Home: NextPage = () => {
     const [name, setName] = useLocalStorage({
@@ -18,50 +54,14 @@ const Home: NextPage = () => {
     });
 
     return (
-        <div
-            style={{
-                display: 'grid',
-                width: '100vw',
-                height: '100vh',
-                gridTemplate: `
-                    "header header" 10vh
-                    "nav    main  " 1fr
-                    "user   footer" 10vh
-                    / 30vh 1fr
-                `,
-            }}
-        >
-            <header
-                style={{
-                    gridArea: 'header',
-                    borderBottom: 'solid thin grey',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '3em',
-                }}
-            >
+        <Grid>
+            <Header>
                 <Title>Splist</Title>
-            </header>
-            <nav
-                style={{
-                    gridArea: 'nav',
-                    borderRight: 'solid thin grey',
-                    padding: '3em',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                }}
-            >
+            </Header>
+            <Nav>
                 <Text>Cool navbar</Text>
-            </nav>
-            <aside
-                style={{
-                    gridArea: 'user',
-                    borderRight: 'solid thin grey',
-                    borderTop: 'solid thin grey',
-                    padding: '1em',
-                }}
-            >
+            </Nav>
+            <Aside>
                 <TextInput
                     label="Username"
                     value={name}
@@ -75,7 +75,7 @@ const Home: NextPage = () => {
                         login.mutate({ name });
                     }}
                 />
-            </aside>
+            </Aside>
             {login.data ? (
                 <Messages />
             ) : (
@@ -92,7 +92,7 @@ const Home: NextPage = () => {
                     </footer>
                 </>
             )}
-        </div>
+        </Grid>
     );
 };
 
