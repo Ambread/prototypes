@@ -1,4 +1,14 @@
-import { Button, Card, Divider, Group, Stack, TextInput } from '@mantine/core';
+import {
+    Badge,
+    Button,
+    Divider,
+    Group,
+    Stack,
+    TextInput,
+    Text,
+    Paper,
+    ScrollArea,
+} from '@mantine/core';
 import { FC } from 'react';
 import { useEffect, useState } from 'react';
 import { trpc } from '../utils/hooks';
@@ -36,13 +46,17 @@ export const Messages: FC = () => {
 
     return (
         <>
-            <Stack>
-                {messages.map(({ id, content, author }) => (
-                    <div key={id}>
-                        <Divider />[{author.name}] {content}
-                    </div>
-                ))}
-            </Stack>
+            <ScrollArea type="always">
+                <Stack>
+                    {messages.map(({ id, content, author }) => (
+                        <Paper key={id}>
+                            <Divider p={10} />
+                            <Badge p={10}>{author.name}</Badge>
+                            <Text p={10}>{content}</Text>
+                        </Paper>
+                    ))}
+                </Stack>
+            </ScrollArea>
             <Group>
                 <TextInput
                     style={{ flexGrow: 1 }}
