@@ -36,6 +36,7 @@ export interface Context {
     events: EventEmitter;
     useEvent: typeof useEvent;
     user: User | null;
+    requiredUser: User;
 }
 
 export const createRouter = () => router<Context>();
@@ -50,5 +51,11 @@ export const createContext = async ({ req, res }: Props) => {
         events,
         useEvent,
         user: null,
+        get requiredUser() {
+            if (!this.user) {
+                throw new TRPCError({ code: 'UNAUTHORIZED' });
+            }
+            return this.user;
+        },
     };
 };

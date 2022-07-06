@@ -32,14 +32,10 @@ export const appRouter = createRouter()
         output: zMessage,
 
         async resolve({ input, ctx }) {
-            if (!ctx.user) {
-                throw new TRPCError({ code: 'UNAUTHORIZED' });
-            }
-
             const message = await ctx.prisma.message.create({
                 data: {
                     content: input.content,
-                    authorId: ctx.user.id,
+                    authorId: ctx.requiredUser.id,
                 },
                 include: {
                     author: true,
@@ -70,6 +66,7 @@ export const appRouter = createRouter()
         input: z.object({
             name: z.string(),
         }),
+
         output: z
             .object({
                 id: z.string(),
