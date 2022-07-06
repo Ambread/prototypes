@@ -16,6 +16,18 @@ export interface Events {
 }
 
 export const appRouter = createRouter()
+    .query('channels', {
+        output: z.array(
+            z.object({
+                id: z.string(),
+                title: z.string(),
+            }),
+        ),
+
+        resolve({ ctx }) {
+            return ctx.prisma.channel.findMany();
+        },
+    })
     .query('text.messages', {
         output: z.array(zMessage),
 
@@ -35,6 +47,7 @@ export const appRouter = createRouter()
                 data: {
                     content: input.content,
                     authorId: ctx.requiredUser.id,
+                    channelId: '0',
                 },
                 include: {
                     author: true,

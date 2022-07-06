@@ -5,6 +5,7 @@ import { Messages } from '../components/Messages';
 import { TextInput, Title, Text, Alert } from '@mantine/core';
 import { AlertCircle } from 'tabler-icons-react';
 import styled from 'styled-components';
+import { useState } from 'react';
 
 const Grid = styled.div`
     display: grid;
@@ -41,6 +42,19 @@ const Aside = styled.aside`
     padding: 1em;
 `;
 
+const Channel = styled.div<{ active?: boolean }>`
+    font-size: 2rem;
+    width: 100%;
+    border-radius: 20px;
+    padding: 0.3em;
+    background-color: ${(props) => (props.active ? 'skyblue' : 'white')};
+
+    &:hover {
+        background-color: ${(props) =>
+            props.active ? 'lightblue' : 'lightgrey'};
+    }
+`;
+
 const Home: NextPage = () => {
     const [name, setName] = useLocalStorage({
         key: 'name',
@@ -53,13 +67,29 @@ const Home: NextPage = () => {
         login.mutate({ name });
     });
 
+    const channels = trpc.useQuery(['channels']);
+
+    const [active, setActive] = useState('');
+
     return (
         <Grid>
             <Header>
                 <Title>Splist</Title>
             </Header>
             <Nav>
-                <Text>Cool navbar</Text>
+                {channels.data ? (
+                    channels.data.map((channel) => (
+                        <Channel
+                            key={channel.id}
+                            active={active === channel.id}
+                            onClick={() => setActive(channel.id)}
+                        >
+                            {channel.title}
+                        </Channel>
+                    ))
+                ) : (
+                    <p>Loading...</p>
+                )}
             </Nav>
             <Aside>
                 <TextInput

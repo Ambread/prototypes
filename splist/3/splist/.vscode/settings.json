@@ -32,5 +32,8 @@
     },
     "cSpell.words": [
         "trpc"
-    ]
+    ],
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
 }
