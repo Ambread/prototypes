@@ -30,11 +30,15 @@ const Footer = styled.footer`
     gap: 1em;
 `;
 
-export const Messages: FC = () => {
+export interface Props {
+    channelId: string;
+}
+
+export const Messages: FC<Props> = ({ channelId }) => {
     const send = trpc.useMutation(['text.send']);
     const clear = trpc.useMutation(['text.clear']);
 
-    const messagesQuery = trpc.useQuery(['text.messages']);
+    const messagesQuery = trpc.useQuery(['text.messages', { channelId }]);
     const [messages, setMessages] = useState(() => messagesQuery.data ?? []);
 
     useEffect(() => {
@@ -82,7 +86,7 @@ export const Messages: FC = () => {
                         if (e.key !== 'Enter') {
                             return;
                         }
-                        send.mutate({ content });
+                        send.mutate({ content, channelId });
                         setContent('');
                     }}
                 />

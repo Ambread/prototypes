@@ -106,9 +106,7 @@ const Home: NextPage = () => {
                     }}
                 />
             </Aside>
-            {login.data ? (
-                <Messages />
-            ) : (
+            {!login.data ? (
                 <Alert
                     icon={<AlertCircle size={16} />}
                     color="red"
@@ -116,6 +114,16 @@ const Home: NextPage = () => {
                 >
                     You need to log in
                 </Alert>
+            ) : !channels.data?.find((it) => it.id === active)?.text ? (
+                <Alert
+                    icon={<AlertCircle size={16} />}
+                    color="blue"
+                    title="Missing Component"
+                >
+                    This channel has no Text Component
+                </Alert>
+            ) : (
+                <Messages channelId={active} />
             )}
         </Grid>
     );

@@ -21,23 +21,42 @@ export const appRouter = createRouter()
             z.object({
                 id: z.string(),
                 title: z.string(),
+                text: z
+                    .object({
+                        id: z.string(),
+                    })
+                    .nullable(),
             }),
         ),
 
         resolve({ ctx }) {
-            return ctx.prisma.channel.findMany();
+            return ctx.prisma.channel.findMany({
+                include: {
+                    text: {
+                        select: { id: true },
+                    },
+                },
+            });
         },
     })
     .query('text.messages', {
+        input: z.object({
+            channelId: z.string(),
+        }),
+
         output: z.array(zMessage),
 
-        resolve({ ctx }) {
-            return ctx.prisma.message.findMany({ include: { author: true } });
+        resolve({ ctx, input }) {
+            return ctx.prisma.message.findMany({
+                include: { author: true },
+                where: { channelId: input.channelId },
+            });
         },
     })
     .mutation('text.send', {
         input: z.object({
             content: z.string(),
+            channelId: z.string(),
         }),
 
         output: zMessage,
@@ -47,7 +66,7 @@ export const appRouter = createRouter()
                 data: {
                     content: input.content,
                     authorId: ctx.requiredUser.id,
-                    channelId: '0',
+                    channelId: input.channelId,
                 },
                 include: {
                     author: true,
