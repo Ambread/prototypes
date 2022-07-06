@@ -15,6 +15,29 @@ model User {
     name String
 
     messages Message[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Channel {
+    id    String @id @default(uuid())
+    title String
+
+    text TextChannel?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model TextChannel {
+    id      String  @id
+    channel Channel @relation(fields: [id], references: [id])
+
+    messages Message[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
 
 model Message {
@@ -23,4 +46,10 @@ model Message {
 
     author   User   @relation(fields: [authorId], references: [id])
     authorId String
+
+    channel   TextChannel @relation(fields: [channelId], references: [id])
+    channelId String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
