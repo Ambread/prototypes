@@ -47,17 +47,14 @@ export const Messages: FC = () => {
 
     return (
         <>
-            <ScrollArea type="always">
-                <Stack>
-                    {messages.map(({ id, content, author }) => (
-                        <Paper key={id}>
-                            <Divider p={10} />
-                            <Badge p={10}>{author.name}</Badge>
-                            <Text p={10}>{content}</Text>
-                        </Paper>
-                    ))}
-                </Stack>
-            </ScrollArea>
+            {messages.map(({ id, content, author }) => (
+                <Paper key={id}>
+                    <Divider p={10} />
+                    <Badge p={10}>{author.name}</Badge>
+                    <Text p={10}>{content}</Text>
+                </Paper>
+            ))}
+
             <Group>
                 <TextInput
                     style={{ flexGrow: 1 }}
