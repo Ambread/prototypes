@@ -1,0 +1,4 @@
+[alias]
+prisma = "run --bin prisma-cli --"
+client = "run --bin splist-client --"
+server = "run --bin splist-server --"
