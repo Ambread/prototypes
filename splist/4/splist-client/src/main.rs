@@ -1,7 +1,8 @@
 use futures_channel::mpsc;
 use futures_util::{future, pin_mut, StreamExt};
 use log::info;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use serde::{Deserialize, Serialize};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 #[tokio::main]
@@ -16,13 +17,17 @@ async fn main() {
     tokio::spawn(read_stdin(stdin_tx));
 
     let (ws_stream, _) = connect_async(addr).await.unwrap();
-    info!("WebSocket connected");
+    info!("WebSocket connected to {addr}");
 
     let (write, read) = ws_stream.split();
     let stdin_to_ws = stdin_rx.map(Ok).forward(write);
     let ws_to_stdout = read.for_each(|message| async {
         let data = message.unwrap().into_data();
-        tokio::io::stdout().write_all(&data).await.unwrap();
+        let SplistPacket::Text(text) = bincode::deserialize::<SplistPacket>(&data).unwrap();
+        tokio::io::stdout()
+            .write_all(text.as_bytes())
+            .await
+            .unwrap();
     });
 
     pin_mut!(stdin_to_ws, ws_to_stdout);
@@ -30,14 +35,16 @@ async fn main() {
 }
 
 async fn read_stdin(tx: mpsc::UnboundedSender<Message>) {
-    let mut stdin = tokio::io::stdin();
+    let mut stdin = BufReader::new(tokio::io::stdin());
     loop {
-        let mut buffer = vec![0; 1024];
-        let n = match stdin.read(&mut buffer).await {
-            Err(_) | Ok(0) => break,
-            Ok(n) => n,
-        };
-        buffer.truncate(n);
-        tx.unbounded_send(Message::binary(buffer)).unwrap();
+        let mut buffer = String::new();
+        stdin.read_line(&mut buffer).await.unwrap();
+        let packet = bincode::serialize(&SplistPacket::Text(buffer)).unwrap();
+        tx.unbounded_send(Message::binary(packet)).unwrap();
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+enum SplistPacket {
+    Text(String),
 }

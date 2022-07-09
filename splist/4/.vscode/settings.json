@@ -19,6 +19,7 @@
         "prisma-cli/": true
     },
     "cSpell.words": [
+        "Splist",
         "tungstenite"
     ]
 }

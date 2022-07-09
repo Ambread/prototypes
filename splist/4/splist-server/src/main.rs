@@ -1,6 +1,8 @@
 use futures_util::{future, StreamExt, TryStreamExt};
 use log::info;
+use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream};
+use tokio_tungstenite::tungstenite::Message;
 
 mod prisma;
 
@@ -31,8 +33,21 @@ async fn accept_connection(stream: TcpStream) {
 
     let (write, read) = ws_stream.split();
 
-    read.try_filter(|msg| future::ready(msg.is_text() || msg.is_binary()))
+    read.try_filter(|msg| future::ready(msg.is_binary()))
+        .map(|msg| {
+            let msg = msg?;
+            let SplistPacket::Text(text) =
+                bincode::deserialize::<SplistPacket>(&msg.into_data()).unwrap();
+            let packet = SplistPacket::Text(text);
+            let msg = Message::binary(bincode::serialize(&packet).unwrap());
+            Ok(msg)
+        })
         .forward(write)
         .await
         .unwrap();
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+enum SplistPacket {
+    Text(String),
 }
