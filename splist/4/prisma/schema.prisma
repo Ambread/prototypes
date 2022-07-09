@@ -1,0 +1,19 @@
+datasource db {
+    provider = "sqlite"
+    url      = "file:../.data/dev.db"
+}
+
+generator client {
+    // Corresponds to the cargo alias created earlier
+    provider = "cargo prisma"
+    // The location to generate the schema. Is relative to the position of the schema
+    output   = "../splist-server/src/prisma.rs"
+}
+
+model Message {
+    id      String @id @default(uuid())
+    content String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}

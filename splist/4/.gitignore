@@ -1,1 +1,3 @@
 target/
+.data/
+splist-server/src/prisma.rs
