@@ -1,7 +1,3 @@
-fn main() {
-    println!("Hello, world!");
-}
-
 trait ReIterator {
     type Item;
 
@@ -13,6 +9,35 @@ trait ReIterator {
         T: FromReIterator<Self::Item>,
     {
         T::from_iter(self)
+    }
+
+    fn map<J, F>(self, f: F) -> Map<Self::Item, J, Self, F>
+    where
+        Self: Sized,
+        F: FnMut(Self::Item) -> J,
+    {
+        Map { iter: self, f }
+    }
+}
+
+struct Map<I, J, T, F>
+where
+    T: ReIterator<Item = I>,
+    F: FnMut(I) -> J,
+{
+    iter: T,
+    f: F,
+}
+
+impl<I, J, T, F> ReIterator for Map<I, J, T, F>
+where
+    T: ReIterator<Item = I>,
+    F: FnMut(I) -> J,
+{
+    type Item = J;
+
+    fn next(&mut self) -> Self::Item {
+        (self.f)(self.iter.next())
     }
 }
 
