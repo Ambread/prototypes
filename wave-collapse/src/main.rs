@@ -20,22 +20,33 @@ type Image = ImageBuffer<Pixel, Vec<u8>>;
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let img = image::io::Reader::open(args.input)?.decode()?.to_rgba8();
-    let rules = generate_rules(&img);
+
+    let (rules, width, height) = {
+        let img = image::io::Reader::open(args.input)?.decode()?.to_rgba8();
+        let rules = generate_rules(&img);
+        (rules, img.width(), img.height())
+    };
+
+    let mut tiles = {
+        let initial = rules.keys().copied().collect();
+        vec![vec![initial; height as usize]; height as usize]
+    };
+    let mut output = Image::new(width, height);
+
     let mut rng = thread_rng();
 
-    let initial = Tile::Potential(rules.keys().copied().collect());
-    let mut tiles = vec![vec![initial; img.height() as usize]; img.width() as usize];
-    let mut output = Image::new(img.width(), img.height());
-
     while let Some((x, y, tile)) = find_lowest_entropy(&mut tiles, &rules) {
-        dbg!((x, y));
-        let pixels: Vec<_> = tile.iter().collect();
-        let weights = pixels.iter().map(|pixel| rules[pixel].count);
-        let dist = WeightedIndex::new(weights)?;
-        let pixel = *pixels[dist.sample(&mut rng)];
-        tiles[x][y] = Tile::Collapsed(pixel);
-        output.put_pixel(x as u32, y as u32, pixel);
+        let collapsed = {
+            let pixels: Vec<_> = tile.iter().collect();
+
+            let weights = pixels.iter().map(|pixel| rules[pixel].count);
+            let dist = WeightedIndex::new(weights)?;
+
+            *pixels[dist.sample(&mut rng)]
+        };
+
+        tile.retain(|pixel| *pixel == collapsed);
+        output.put_pixel(x as u32, y as u32, collapsed);
     }
 
     output.save("wave-collapse-output.png")?;
@@ -43,40 +54,29 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone)]
-enum Tile {
-    Collapsed(Pixel),
-    Potential(HashSet<Pixel>),
-}
-
-impl Tile {
-    fn as_potential(&self) -> Option<&HashSet<Pixel>> {
-        if let Self::Potential(tile) = self {
-            Some(tile)
-        } else {
-            None
-        }
-    }
-}
-
 fn find_lowest_entropy<'a>(
-    tiles: &'a mut [Vec<Tile>],
-    rules: &'a HashMap<Rgba<u8>, Rule>,
-) -> Option<(usize, usize, &'a HashSet<Rgba<u8>>)> {
+    tiles: &'a mut [Vec<HashSet<Pixel>>],
+    rules: &'a HashMap<Pixel, Rule>,
+) -> Option<(usize, usize, &'a mut HashSet<Pixel>)> {
     tiles
-        .iter()
+        .iter_mut()
         .enumerate()
-        .flat_map(|(x, column)| column.iter().enumerate().map(move |(y, tile)| (x, y, tile)))
-        .filter_map(|(x, y, tile)| {
-            let tile = tile.as_potential()?;
+        .flat_map(|(x, column)| {
+            column
+                .iter_mut()
+                .enumerate()
+                .map(move |(y, tile)| (x, y, tile))
+        })
+        .filter(|(_, _, tile)| tile.len() > 1)
+        .map(|(x, y, tile)| {
             let entropy = shannon_entropy_for_tile(tile, rules);
-            Some((x, y, tile, entropy))
+            (x, y, tile, entropy)
         })
         .min_by(|a, b| a.3.partial_cmp(&b.3).unwrap())
         .map(|(x, y, tile, _)| (x, y, tile))
 }
 
-fn shannon_entropy_for_tile(tile: &HashSet<Rgba<u8>>, rules: &HashMap<Rgba<u8>, Rule>) -> f64 {
+fn shannon_entropy_for_tile(tile: &HashSet<Pixel>, rules: &HashMap<Pixel, Rule>) -> f64 {
     let sum = tile.iter().map(|pixel| rules[pixel].count).sum::<f64>();
     -tile
         .iter()
