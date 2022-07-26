@@ -5,11 +5,12 @@ use std::{collections::HashMap, vec};
 use crate::{Frame, Instruction::*, VM};
 
 impl VM {
-    fn run_as_test(self) {
+    /// Create a fresh VM with this VM's instructions, run it to completion, and assert that it reaches the same state as this VM
+    fn run_and_asset(self) {
         let mut vm = VM::new(self.instructions.clone());
         vm.run();
 
-        assert_eq!(self, vm);
+        assert_eq!(vm, self);
     }
 }
 
@@ -20,7 +21,7 @@ fn empty_program() {
         instruction_index: 1,
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -31,7 +32,7 @@ fn push_halt() {
         stack: vec![42, 68],
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -42,7 +43,7 @@ fn add() {
         stack: vec![3],
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -52,7 +53,7 @@ fn pop() {
         instruction_index: 3,
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -63,7 +64,7 @@ fn dupe() {
         stack: vec![42, 42],
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -73,7 +74,7 @@ fn jump() {
         instruction_index: 2,
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -83,7 +84,7 @@ fn jump_if() {
         instruction_index: 6,
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -94,7 +95,7 @@ fn load_uninitialized() {
         stack: vec![0],
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -108,7 +109,7 @@ fn store() {
         }],
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -123,7 +124,7 @@ fn load_store() {
         }],
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -159,7 +160,7 @@ fn if_else() {
         }],
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -205,7 +206,7 @@ fn while_mul() {
         }],
         ..Default::default()
     }
-    .run_as_test()
+    .run_and_asset()
 }
 
 #[test]
@@ -215,7 +216,7 @@ fn call_ret_empty() {
         instruction_index: 2,
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -226,7 +227,7 @@ fn call_ret_const() {
         stack: vec![7],
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
 
 #[test]
@@ -237,5 +238,5 @@ fn call_ret_double() {
         stack: vec![6],
         ..Default::default()
     }
-    .run_as_test();
+    .run_and_asset();
 }
