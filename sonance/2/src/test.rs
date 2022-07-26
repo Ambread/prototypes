@@ -176,13 +176,13 @@ fn while_mul() {
             // let total
             Push(0),
             Store(2),
-            // while cond
+            // while
             Load(1),
             Push(1),
             Geq,
             Not,
             JumpIf(20),
-            // while body
+            // do
             // total += a
             Load(0),
             Load(2),
@@ -239,4 +239,34 @@ fn call_ret_double() {
         ..Default::default()
     }
     .run_and_asset();
+}
+
+#[test]
+fn max() {
+    VM {
+        instructions: vec![
+            Push(6),
+            Push(4),
+            Call(4),
+            Halt,
+            // fn max
+            Store(1),
+            Store(0),
+            // if
+            Load(0),
+            Load(1),
+            Gt,
+            JumpIf(12),
+            // then
+            Load(1),
+            Return,
+            // else
+            Load(0),
+            Return,
+        ],
+        instruction_index: 4,
+        stack: vec![6],
+        ..Default::default()
+    }
+    .run_and_asset()
 }
