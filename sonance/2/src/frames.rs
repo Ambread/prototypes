@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{Error, Result};
+use crate::error::{Error, Result};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Frame {
@@ -39,13 +39,13 @@ impl Frames {
     }
 
     pub fn load(&self, variable: usize) -> Result<usize> {
-        let frame = self.frames.last().ok_or(Error::FrameShouldExist)?;
+        let frame = self.frames.last().ok_or(Error::ExpectedFrame)?;
 
         Ok(frame.variables.get(&variable).copied().unwrap_or(0))
     }
 
     pub fn store(&mut self, variable: usize, value: usize) -> Result<()> {
-        let frame = self.frames.last_mut().ok_or(Error::FrameShouldExist)?;
+        let frame = self.frames.last_mut().ok_or(Error::ExpectedFrame)?;
 
         frame.variables.insert(variable, value);
         Ok(())

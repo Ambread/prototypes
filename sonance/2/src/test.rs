@@ -4,15 +4,14 @@ use std::{collections::HashMap, vec};
 
 use crate::{
     frames::{Frame, Frames},
-    Instruction::*,
-    VM,
+    vm::{Instruction::*, VM},
 };
 
 impl VM {
     /// Create a fresh VM with this VM's instructions, run it to completion, and assert that it reaches the same state as this VM
     fn run_and_asset(self) {
         let mut vm = VM::new(self.instructions.clone());
-        vm.run();
+        vm.run().unwrap();
 
         assert_eq!(vm, self);
     }

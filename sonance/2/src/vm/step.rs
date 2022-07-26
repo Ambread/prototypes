@@ -1,93 +1,9 @@
-use frames::Frames;
-use thiserror::Error;
-
-pub mod frames;
-#[cfg(test)]
-mod test;
-
-fn main() {
-    println!("Hello, world!");
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Instruction {
-    Halt,
-
-    Push(usize),
-    Pop,
-    Dupe,
-
-    Jump(usize),
-    JumpIf(usize),
-
-    Load(usize),
-    Store(usize),
-
-    Call(usize),
-    Return,
-
-    Add,
-    Sub,
-    Mul,
-    Div,
-
-    And,
-    Or,
-    Not,
-
-    Eq,
-    Gt,
-    Geq,
-}
-
-#[derive(Debug, Clone, Error)]
-pub enum Error {
-    #[error("instruction {0:?} wanted a value from the stack, but it was empty")]
-    EmptyStack(Instruction),
-    #[error("attempted to return outside of function call")]
-    TopLevelReturn,
-    #[error("at least one frame should exist")]
-    FrameShouldExist,
-}
-
-pub type Result<T> = std::result::Result<T, Error>;
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct VM {
-    instructions: Vec<Instruction>,
-    instruction_index: usize,
-    current_instruction: Instruction,
-    is_halted: bool,
-    stack: Vec<usize>,
-    frames: Frames,
-}
-
-impl Default for VM {
-    fn default() -> Self {
-        Self {
-            instructions: vec![Instruction::Halt],
-            instruction_index: 0,
-            current_instruction: Instruction::Halt,
-            is_halted: true,
-            stack: vec![],
-            frames: Default::default(),
-        }
-    }
-}
+use crate::{
+    error::Result,
+    vm::{Instruction, VM},
+};
 
 impl VM {
-    pub fn new(instructions: Vec<Instruction>) -> Self {
-        Self {
-            instructions,
-            is_halted: false,
-            ..Default::default()
-        }
-    }
-
-    pub fn run(&mut self) {
-        while self.step().unwrap() {}
-    }
-
     pub fn step(&mut self) -> Result<bool> {
         if self.is_halted {
             return Ok(false);
@@ -159,27 +75,5 @@ impl VM {
         self.instruction_index += 1;
 
         Ok(true)
-    }
-
-    fn pop(&mut self) -> Result<usize> {
-        self.stack
-            .pop()
-            .ok_or(Error::EmptyStack(self.current_instruction))
-    }
-
-    fn unary_op(&mut self, body: impl FnOnce(usize) -> usize) -> Result<()> {
-        let a = self.pop()?;
-        self.stack.push(body(a));
-        Ok(())
-    }
-
-    fn binary_op<F>(&mut self, body: F) -> Result<()>
-    where
-        F: FnOnce(usize, usize) -> usize,
-    {
-        let b = self.pop()?;
-        let a = self.pop()?;
-        self.stack.push(body(a, b));
-        Ok(())
     }
 }
