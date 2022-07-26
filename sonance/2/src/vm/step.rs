@@ -1,3 +1,7 @@
+use std::io::Write;
+
+use console::Term;
+
 use crate::{
     error::Result,
     vm::{Instruction, VM},
@@ -59,6 +63,16 @@ impl VM {
             Instruction::Return => {
                 self.instruction_index = self.frames.ret()?;
                 return Ok(Step::Jump);
+            }
+
+            Instruction::In => {
+                let char = Term::stdout().read_char().unwrap();
+                self.stack.push(char as usize);
+            }
+            Instruction::Out => {
+                let buffer = self.pop()?.to_ne_bytes();
+                std::io::stdout().write_all(&buffer).unwrap();
+                std::io::stdout().flush().unwrap();
             }
 
             Instruction::Add => self.binary_op(|a, b| a + b)?,

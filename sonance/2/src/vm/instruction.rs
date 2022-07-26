@@ -15,6 +15,9 @@ pub enum Instruction {
     Call(usize),
     Return,
 
+    In,
+    Out,
+
     Add,
     Sub,
     Mul,
