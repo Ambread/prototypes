@@ -108,7 +108,7 @@ impl VM {
 
             Instruction::And => self.binary_op(|a, b| a & b)?,
             Instruction::Or => self.binary_op(|a, b| a | b)?,
-            Instruction::Not => self.unary_op(|a| !a)?,
+            Instruction::Not => self.unary_op(|a| if a == 0 { 1 } else { 0 })?,
 
             Instruction::Eq => self.binary_op(|a, b| (a == b) as usize)?,
             Instruction::Gt => self.binary_op(|a, b| (a > b) as usize)?,
@@ -129,8 +129,8 @@ impl VM {
     where
         F: FnOnce(usize, usize) -> usize,
     {
-        let a = self.stack.pop()?;
         let b = self.stack.pop()?;
+        let a = self.stack.pop()?;
         self.stack.push(body(a, b));
         Some(())
     }
