@@ -18,7 +18,7 @@ impl VM {
 fn empty_program() {
     VM {
         instructions: vec![Halt],
-        instruction_index: 1,
+        instruction_index: 0,
         ..Default::default()
     }
     .run_and_asset();
@@ -28,7 +28,7 @@ fn empty_program() {
 fn push_halt() {
     VM {
         instructions: vec![Push(42), Push(68), Halt],
-        instruction_index: 3,
+        instruction_index: 2,
         stack: vec![42, 68],
         ..Default::default()
     }
@@ -39,7 +39,7 @@ fn push_halt() {
 fn add() {
     VM {
         instructions: vec![Push(1), Push(2), Add, Halt],
-        instruction_index: 4,
+        instruction_index: 3,
         stack: vec![3],
         ..Default::default()
     }
@@ -50,7 +50,7 @@ fn add() {
 fn pop() {
     VM {
         instructions: vec![Push(42), Pop, Halt],
-        instruction_index: 3,
+        instruction_index: 2,
         ..Default::default()
     }
     .run_and_asset();
@@ -60,7 +60,7 @@ fn pop() {
 fn dupe() {
     VM {
         instructions: vec![Push(42), Dupe, Halt],
-        instruction_index: 3,
+        instruction_index: 2,
         stack: vec![42, 42],
         ..Default::default()
     }
@@ -71,7 +71,7 @@ fn dupe() {
 fn jump() {
     VM {
         instructions: vec![Jump(2), Halt, Jump(1)],
-        instruction_index: 2,
+        instruction_index: 1,
         ..Default::default()
     }
     .run_and_asset();
@@ -81,7 +81,7 @@ fn jump() {
 fn jump_if() {
     VM {
         instructions: vec![Push(1), JumpIf(3), Pop, Push(0), JumpIf(2), Halt],
-        instruction_index: 6,
+        instruction_index: 5,
         ..Default::default()
     }
     .run_and_asset();
@@ -91,7 +91,7 @@ fn jump_if() {
 fn load_uninitialized() {
     VM {
         instructions: vec![Load(0), Halt],
-        instruction_index: 2,
+        instruction_index: 1,
         stack: vec![0],
         ..Default::default()
     }
@@ -102,7 +102,7 @@ fn load_uninitialized() {
 fn store() {
     VM {
         instructions: vec![Push(42), Store(0), Halt],
-        instruction_index: 3,
+        instruction_index: 2,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 42)]),
@@ -116,7 +116,7 @@ fn store() {
 fn load_store() {
     VM {
         instructions: vec![Push(42), Store(0), Load(0), Halt],
-        instruction_index: 4,
+        instruction_index: 3,
         stack: vec![42],
         frames: Frames::new(vec![Frame {
             return_index: 0,
@@ -153,7 +153,7 @@ fn if_else() {
             Halt,
         ],
 
-        instruction_index: 14,
+        instruction_index: 13,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 4), (2, 6)]),
@@ -199,7 +199,7 @@ fn while_mul() {
             Halt,
         ],
 
-        instruction_index: 21,
+        instruction_index: 20,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 0), (2, 24)]),
@@ -213,7 +213,7 @@ fn while_mul() {
 fn call_ret_empty() {
     VM {
         instructions: vec![Call(2), Halt, Return],
-        instruction_index: 2,
+        instruction_index: 1,
         ..Default::default()
     }
     .run_and_asset();
@@ -223,7 +223,7 @@ fn call_ret_empty() {
 fn call_ret_const() {
     VM {
         instructions: vec![Call(2), Halt, Push(7), Return],
-        instruction_index: 2,
+        instruction_index: 1,
         stack: vec![7],
         ..Default::default()
     }
@@ -234,7 +234,7 @@ fn call_ret_const() {
 fn call_ret_double() {
     VM {
         instructions: vec![Push(3), Call(3), Halt, Push(2), Mul, Return],
-        instruction_index: 3,
+        instruction_index: 2,
         stack: vec![6],
         ..Default::default()
     }
@@ -264,7 +264,7 @@ fn max() {
             Load(0),
             Return,
         ],
-        instruction_index: 4,
+        instruction_index: 3,
         stack: vec![6],
         ..Default::default()
     }

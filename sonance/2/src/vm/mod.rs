@@ -2,10 +2,13 @@ mod frames;
 mod instruction;
 mod step;
 
-use crate::error::{Error, Result};
 pub use crate::vm::{
     frames::{Frame, Frames},
     instruction::Instruction,
+};
+use crate::{
+    error::{Error, Result},
+    vm::step::Step,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -41,7 +44,7 @@ impl VM {
     }
 
     pub fn run(&mut self) -> Result<()> {
-        while self.step()? {}
+        while self.step()? != Step::Halt {}
         Ok(())
     }
 

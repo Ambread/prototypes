@@ -3,16 +3,24 @@ use crate::{
     vm::{Instruction, VM},
 };
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Step {
+    Normal,
+    Jump,
+    Halt,
+}
+
 impl VM {
-    pub fn step(&mut self) -> Result<bool> {
+    pub fn step(&mut self) -> Result<Step> {
         if self.is_halted {
-            return Ok(false);
+            return Ok(Step::Halt);
         }
 
         self.current_instruction = self.instructions[self.instruction_index];
         match self.current_instruction {
             Instruction::Halt => {
                 self.is_halted = true;
+                return Ok(Step::Halt);
             }
 
             Instruction::Push(value) => {
@@ -29,13 +37,13 @@ impl VM {
 
             Instruction::Jump(index) => {
                 self.instruction_index = index;
-                return Ok(true); // Don't ++ index at end
+                return Ok(Step::Jump);
             }
             Instruction::JumpIf(index) => {
                 let a = self.pop()?;
                 if a != 0 {
                     self.instruction_index = index;
-                    return Ok(true); // Don't ++ index at end
+                    return Ok(Step::Jump);
                 }
             }
 
@@ -51,11 +59,11 @@ impl VM {
             Instruction::Call(index) => {
                 self.frames.call(self.instruction_index + 1);
                 self.instruction_index = index;
-                return Ok(true); // Don't ++ index at end
+                return Ok(Step::Jump);
             }
             Instruction::Return => {
                 self.instruction_index = self.frames.ret()?;
-                return Ok(true); // Don't ++ index at end
+                return Ok(Step::Jump);
             }
 
             Instruction::Add => self.binary_op(|a, b| a + b)?,
@@ -74,6 +82,6 @@ impl VM {
 
         self.instruction_index += 1;
 
-        Ok(true)
+        Ok(Step::Normal)
     }
 }
