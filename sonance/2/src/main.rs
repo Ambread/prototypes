@@ -21,6 +21,9 @@ pub enum Instruction {
     Load(usize),
     Store(usize),
 
+    Call(usize),
+    Return,
+
     Add,
     Sub,
     Mul,
@@ -35,12 +38,17 @@ pub enum Instruction {
     Geq,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct VM {
     instructions: Vec<Instruction>,
     instruction_index: usize,
     is_halted: bool,
     stack: Vec<usize>,
+    frames: Vec<Frame>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct Frame {
     variables: HashMap<usize, usize>,
 }
 
@@ -48,10 +56,8 @@ impl VM {
     pub fn new(instructions: Vec<Instruction>) -> Self {
         Self {
             instructions,
-            instruction_index: 0,
-            is_halted: false,
-            stack: vec![],
-            variables: HashMap::new(),
+            frames: vec![Default::default()],
+            ..Default::default()
         }
     }
 
@@ -93,13 +99,22 @@ impl VM {
             }
 
             Instruction::Load(variable) => {
-                let a = self.variables.get(&variable).copied().unwrap_or_default();
+                let a = self
+                    .frames
+                    .last()?
+                    .variables
+                    .get(&variable)
+                    .copied()
+                    .unwrap_or_default();
                 self.stack.push(a);
             }
             Instruction::Store(variable) => {
                 let a = self.stack.pop()?;
-                self.variables.insert(variable, a);
+                self.frames.last_mut()?.variables.insert(variable, a);
             }
+
+            Instruction::Call(_) => todo!(),
+            Instruction::Return => todo!(),
 
             Instruction::Add => self.binary_op(|a, b| a + b)?,
             Instruction::Sub => self.binary_op(|a, b| a - b)?,
