@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-
+use frames::Frames;
 use thiserror::Error;
 
+pub mod frames;
 #[cfg(test)]
 mod test;
 
@@ -55,7 +55,7 @@ pub struct VM {
     current_instruction: Instruction,
     is_halted: bool,
     stack: Vec<usize>,
-    frames: Vec<Frame>,
+    frames: Frames,
 }
 
 impl Default for VM {
@@ -66,22 +66,7 @@ impl Default for VM {
             current_instruction: Instruction::Halt,
             is_halted: true,
             stack: vec![],
-            frames: vec![Default::default()],
-        }
-    }
-}
-
-#[derive(Debug, Clone, Default, PartialEq)]
-struct Frame {
-    variables: HashMap<usize, usize>,
-    return_index: usize,
-}
-
-impl Frame {
-    fn new(return_index: usize) -> Self {
-        Self {
-            return_index,
-            ..Default::default()
+            frames: Default::default(),
         }
     }
 }
@@ -135,32 +120,21 @@ impl VM {
             }
 
             Instruction::Load(variable) => {
-                let a = self
-                    .frames
-                    .last()
-                    .unwrap()
-                    .variables
-                    .get(&variable)
-                    .copied()
-                    .unwrap_or_default();
+                let a = self.frames.load(variable);
                 self.stack.push(a);
             }
             Instruction::Store(variable) => {
                 let a = self.pop()?;
-                self.frames
-                    .last_mut()
-                    .unwrap()
-                    .variables
-                    .insert(variable, a);
+                self.frames.store(variable, a);
             }
 
             Instruction::Call(index) => {
-                self.frames.push(Frame::new(self.instruction_index + 1));
+                self.frames.call(self.instruction_index + 1);
                 self.instruction_index = index;
                 return Ok(true); // Don't ++ index at end
             }
             Instruction::Return => {
-                self.instruction_index = self.frames.pop().unwrap().return_index;
+                self.instruction_index = self.frames.ret();
                 return Ok(true); // Don't ++ index at end
             }
 

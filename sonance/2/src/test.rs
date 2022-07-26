@@ -2,7 +2,11 @@ use pretty_assertions::assert_eq;
 
 use std::{collections::HashMap, vec};
 
-use crate::{Frame, Instruction::*, VM};
+use crate::{
+    frames::{Frame, Frames},
+    Instruction::*,
+    VM,
+};
 
 impl VM {
     /// Create a fresh VM with this VM's instructions, run it to completion, and assert that it reaches the same state as this VM
@@ -103,10 +107,10 @@ fn store() {
     VM {
         instructions: vec![Push(42), Store(0), Halt],
         instruction_index: 3,
-        frames: vec![Frame {
+        frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 42)]),
-        }],
+        }]),
         ..Default::default()
     }
     .run_and_asset();
@@ -118,10 +122,10 @@ fn load_store() {
         instructions: vec![Push(42), Store(0), Load(0), Halt],
         instruction_index: 4,
         stack: vec![42],
-        frames: vec![Frame {
+        frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 42)]),
-        }],
+        }]),
         ..Default::default()
     }
     .run_and_asset();
@@ -154,10 +158,10 @@ fn if_else() {
         ],
 
         instruction_index: 14,
-        frames: vec![Frame {
+        frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 4), (2, 6)]),
-        }],
+        }]),
         ..Default::default()
     }
     .run_and_asset();
@@ -200,10 +204,10 @@ fn while_mul() {
         ],
 
         instruction_index: 21,
-        frames: vec![Frame {
+        frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 0), (2, 24)]),
-        }],
+        }]),
         ..Default::default()
     }
     .run_and_asset()
