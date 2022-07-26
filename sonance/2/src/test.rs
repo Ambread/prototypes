@@ -1,3 +1,5 @@
+use pretty_assertions::assert_eq;
+
 use std::{collections::HashMap, vec};
 
 use crate::{
@@ -8,71 +10,43 @@ use crate::{
 
 fn assert_vm_state(
     instructions: Vec<Instruction>,
-    expected_instruction_index: usize,
-    expected_stack: Vec<usize>,
-    expected_variables: Vec<(usize, usize)>,
-) {
-    // Too lazy right now to convert all the old tests to use VMState
-    VMState {
-        instructions,
-        instruction_index: expected_instruction_index,
-        stack: expected_stack,
-        variables: expected_variables,
-    }
-    .assert();
-}
-
-#[derive(Debug, Clone, Default)]
-struct VMState {
-    instructions: Vec<Instruction>,
     instruction_index: usize,
     stack: Vec<usize>,
     variables: Vec<(usize, usize)>,
-}
+) {
+    // Too lazy right now to convert all the old tests to use VMState
+    let variables: HashMap<usize, usize> = variables.into_iter().collect();
 
-impl VMState {
-    #[track_caller]
-    fn assert(self) {
-        let Self {
-            instructions,
-            instruction_index,
-            stack,
+    VM {
+        instructions,
+        instruction_index,
+        stack,
+        frames: vec![Frame {
             variables,
-        } = self;
-        let variables: HashMap<usize, usize> = variables.into_iter().collect();
-
-        VM {
-            instructions,
-            instruction_index,
-            stack,
-            frames: vec![Frame {
-                variables,
-                ..Default::default()
-            }],
             ..Default::default()
-        }
-        .run_as_test();
+        }],
+        ..Default::default()
     }
+    .run_as_test();
 }
 
 impl VM {
-    fn run_as_test(mut self) {
+    fn run_as_test(self) {
         let mut vm = VM::new(self.instructions.clone());
         vm.run();
 
-        self.is_halted = true;
         assert_eq!(self, vm);
     }
 }
 
 #[test]
 fn empty_program() {
-    VMState {
+    VM {
         instructions: vec![Halt],
         instruction_index: 1,
         ..Default::default()
     }
-    .assert();
+    .run_as_test();
 }
 
 #[test]
@@ -182,29 +156,36 @@ fn load_uninitialized() {
 
 #[test]
 fn store() {
-    VMState {
+    VM {
         instructions: vec![Push(42), Store(0), Halt],
         instruction_index: 3,
-        stack: vec![],
-        variables: vec![(0, 42)],
+        frames: vec![Frame {
+            return_index: 0,
+            variables: HashMap::from([(0, 42)]),
+        }],
+        ..Default::default()
     }
-    .assert();
+    .run_as_test();
 }
 
 #[test]
 fn load_store() {
-    VMState {
+    VM {
         instructions: vec![Push(42), Store(0), Load(0), Halt],
         instruction_index: 4,
         stack: vec![42],
-        variables: vec![(0, 42)],
+        frames: vec![Frame {
+            return_index: 0,
+            variables: HashMap::from([(0, 42)]),
+        }],
+        ..Default::default()
     }
-    .assert();
+    .run_as_test();
 }
 
 #[test]
 fn if_else() {
-    VMState {
+    VM {
         instructions: vec![
             // let a
             Push(6),
@@ -229,15 +210,18 @@ fn if_else() {
         ],
 
         instruction_index: 14,
-        stack: vec![],
-        variables: vec![(0, 6), (1, 4), (2, 6)],
+        frames: vec![Frame {
+            return_index: 0,
+            variables: HashMap::from([(0, 6), (1, 4), (2, 6)]),
+        }],
+        ..Default::default()
     }
-    .assert();
+    .run_as_test();
 }
 
 #[test]
 fn while_mul() {
-    VMState {
+    VM {
         instructions: vec![
             // let a
             Push(6),
@@ -272,31 +256,34 @@ fn while_mul() {
         ],
 
         instruction_index: 21,
-        stack: vec![],
-        variables: vec![(0, 6), (1, 0), (2, 24)],
+        frames: vec![Frame {
+            return_index: 0,
+            variables: HashMap::from([(0, 6), (1, 0), (2, 24)]),
+        }],
+        ..Default::default()
     }
-    .assert()
+    .run_as_test()
 }
 
 #[test]
 fn call_ret_empty() {
-    VMState {
+    VM {
         instructions: vec![Call(2), Halt, Return],
         instruction_index: 2,
         ..Default::default()
     }
-    .assert();
+    .run_as_test();
 }
 
 #[test]
 fn call_ret_const() {
-    VMState {
+    VM {
         instructions: vec![Call(2), Halt, Push(7), Return],
         instruction_index: 2,
         stack: vec![7],
         ..Default::default()
     }
-    .assert();
+    .run_as_test();
 }
 
 #[test]

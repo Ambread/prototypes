@@ -50,10 +50,10 @@ pub struct VM {
 impl Default for VM {
     fn default() -> Self {
         Self {
-            instructions: Default::default(),
-            instruction_index: Default::default(),
-            is_halted: Default::default(),
-            stack: Default::default(),
+            instructions: vec![Instruction::Halt],
+            instruction_index: 0,
+            is_halted: true,
+            stack: vec![],
             frames: vec![Default::default()],
         }
     }
@@ -78,6 +78,7 @@ impl VM {
     pub fn new(instructions: Vec<Instruction>) -> Self {
         Self {
             instructions,
+            is_halted: false,
             ..Default::default()
         }
     }
