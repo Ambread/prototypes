@@ -16,7 +16,6 @@ pub struct VM {
     pub instructions: Vec<Instruction>,
     pub instruction_index: usize,
     pub current_instruction: Instruction,
-    pub is_halted: bool,
     pub stack: Vec<usize>,
     pub frames: Frames,
 }
@@ -27,7 +26,6 @@ impl Default for VM {
             instructions: vec![Instruction::Halt],
             instruction_index: 0,
             current_instruction: Instruction::Halt,
-            is_halted: true,
             stack: vec![],
             frames: Default::default(),
         }
@@ -38,7 +36,6 @@ impl VM {
     pub fn new(instructions: Vec<Instruction>) -> Self {
         Self {
             instructions,
-            is_halted: false,
             ..Default::default()
         }
     }

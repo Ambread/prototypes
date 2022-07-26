@@ -12,14 +12,9 @@ pub enum Step {
 
 impl VM {
     pub fn step(&mut self) -> Result<Step> {
-        if self.is_halted {
-            return Ok(Step::Halt);
-        }
-
         self.current_instruction = self.instructions[self.instruction_index];
         match self.current_instruction {
             Instruction::Halt => {
-                self.is_halted = true;
                 return Ok(Step::Halt);
             }
 
