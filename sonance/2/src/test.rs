@@ -258,33 +258,34 @@ fn while_mul() {
     .assert()
 }
 
-// #[test]
-// fn call_ret_empty() {
-//     VMState {
-//         instructions: vec![Call(2), Halt, Return],
-//         expected_instruction_index: 2,
-//         ..Default::default()
-//     }
-//     .assert();
-// }
+#[test]
+fn call_ret_empty() {
+    VMState {
+        instructions: vec![Call(2), Halt, Return],
+        expected_instruction_index: 2,
+        ..Default::default()
+    }
+    .assert();
+}
 
-// #[test]
-// fn call_ret_const() {
-//     VMState {
-//         instructions: vec![Call(2), Halt, Push(7), Return],
-//         expected_instruction_index: 2,
-//         expected_stack: vec![7],
-//         ..Default::default()
-//     }
-//     .assert();
-// }
+#[test]
+fn call_ret_const() {
+    VMState {
+        instructions: vec![Call(2), Halt, Push(7), Return],
+        expected_instruction_index: 2,
+        expected_stack: vec![7],
+        ..Default::default()
+    }
+    .assert();
+}
 
-// #[test]
-// fn call_ret_double() {
-//     VMState {
-//         instructions: vec![Push(3), Call(3), Halt, Push(2), Mul, Return],
-//         expected_instruction_index: 3,
-//         ..Default::default()
-//     }
-//     .assert();
-// }
+#[test]
+fn call_ret_double() {
+    VMState {
+        instructions: vec![Push(3), Call(3), Halt, Push(2), Mul, Return],
+        expected_instruction_index: 3,
+        expected_stack: vec![6],
+        ..Default::default()
+    }
+    .assert();
+}

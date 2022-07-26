@@ -50,6 +50,16 @@ pub struct VM {
 #[derive(Debug, Clone, Default)]
 struct Frame {
     variables: HashMap<usize, usize>,
+    return_index: usize,
+}
+
+impl Frame {
+    fn new(return_index: usize) -> Self {
+        Self {
+            return_index,
+            ..Default::default()
+        }
+    }
 }
 
 impl VM {
@@ -113,8 +123,15 @@ impl VM {
                 self.frames.last_mut()?.variables.insert(variable, a);
             }
 
-            Instruction::Call(_) => todo!(),
-            Instruction::Return => todo!(),
+            Instruction::Call(index) => {
+                self.frames.push(Frame::new(self.instruction_index + 1));
+                self.instruction_index = index;
+                return Some(true); // Don't ++ index at end
+            }
+            Instruction::Return => {
+                self.instruction_index = self.frames.pop()?.return_index;
+                return Some(true); // Don't ++ index at end
+            }
 
             Instruction::Add => self.binary_op(|a, b| a + b)?,
             Instruction::Sub => self.binary_op(|a, b| a - b)?,
