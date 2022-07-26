@@ -2,10 +2,7 @@ use pretty_assertions::assert_eq;
 
 use std::{collections::HashMap, vec};
 
-use crate::{
-    frames::{Frame, Frames},
-    vm::{Instruction::*, VM},
-};
+use crate::vm::{Frame, Frames, Instruction::*, VM};
 
 impl VM {
     /// Create a fresh VM with this VM's instructions, run it to completion, and assert that it reaches the same state as this VM

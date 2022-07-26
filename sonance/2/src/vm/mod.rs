@@ -1,11 +1,12 @@
+mod frames;
 mod instruction;
 mod step;
 
-use crate::{
-    error::{Error, Result},
-    frames::Frames,
+use crate::error::{Error, Result};
+pub use crate::vm::{
+    frames::{Frame, Frames},
+    instruction::Instruction,
 };
-pub use instruction::Instruction;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
