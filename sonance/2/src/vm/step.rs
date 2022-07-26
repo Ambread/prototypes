@@ -66,15 +66,21 @@ impl VM {
             Instruction::Mul => self.binary_op(|a, b| a * b)?,
             Instruction::Div => self.binary_op(|a, b| a / b)?,
 
-            Instruction::And => self.binary_op(|a, b| a & b)?,
-            Instruction::Or => self.binary_op(|a, b| a | b)?,
-            Instruction::Not => self.unary_op(|a| if a == 0 { 1 } else { 0 })?,
+            Instruction::BitAnd => self.binary_op(|a, b| a & b)?,
+            Instruction::BitOr => self.binary_op(|a, b| a | b)?,
+            Instruction::BitNot => self.unary_op(|a| !a)?,
+
+            Instruction::BoolAnd => self.binary_op(|a, b| (a != 0 && b != 0) as _)?,
+            Instruction::BoolOr => self.binary_op(|a, b| (a != 0 || b != 0) as _)?,
+            Instruction::BoolNot => self.unary_op(|a| (a == 0) as _)?,
 
             Instruction::Eq => self.binary_op(|a, b| (a == b) as usize)?,
             Instruction::Gt => self.binary_op(|a, b| (a > b) as usize)?,
             Instruction::Geq => self.binary_op(|a, b| (a >= b) as usize)?,
         }
 
+        // Only normal instructions should reach this
+        // Jump instructions should return early to prevent messing up
         self.instruction_index += 1;
 
         Ok(Step::Normal)

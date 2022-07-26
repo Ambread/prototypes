@@ -180,7 +180,7 @@ fn while_mul() {
             Load(1),
             Push(1),
             Geq,
-            Not,
+            BoolNot,
             JumpIf(20),
             // do
             // total += a

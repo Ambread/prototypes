@@ -20,9 +20,13 @@ pub enum Instruction {
     Mul,
     Div,
 
-    And,
-    Or,
-    Not,
+    BitAnd,
+    BitOr,
+    BitNot,
+
+    BoolAnd,
+    BoolOr,
+    BoolNot,
 
     Eq,
     Gt,
