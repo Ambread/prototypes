@@ -37,6 +37,7 @@ struct VMState {
 }
 
 impl VMState {
+    #[track_caller]
     fn assert(self) {
         let mut vm = VM::new(self.instructions);
         vm.run();
@@ -186,4 +187,80 @@ fn load_store() {
         expected_variables: vec![(0, 42)],
     }
     .assert();
+}
+
+#[test]
+fn if_else() {
+    VMState {
+        instructions: vec![
+            // let a
+            Push(6),
+            Store(0),
+            // let b
+            Push(4),
+            Store(1),
+            // a > b
+            Load(0),
+            Load(1),
+            Gt,
+            JumpIf(11),
+            // else
+            Load(1),
+            Store(2),
+            Jump(13),
+            // if
+            Load(0),
+            Store(2),
+            // done
+            Halt,
+        ],
+
+        expected_instruction_index: 14,
+        expected_stack: vec![],
+        expected_variables: vec![(0, 6), (1, 4), (2, 6)],
+    }
+    .assert();
+}
+
+#[test]
+fn while_mul() {
+    VMState {
+        instructions: vec![
+            // let a
+            Push(6),
+            Store(0),
+            // let b
+            Push(4),
+            Store(1),
+            // let total
+            Push(0),
+            Store(2),
+            // while cond
+            Load(1),
+            Push(1),
+            Geq,
+            Not,
+            JumpIf(20),
+            // while body
+            // total += a
+            Load(0),
+            Load(2),
+            Add,
+            Store(2),
+            // b -= 1
+            Load(1),
+            Push(1),
+            Sub,
+            Store(1),
+            // continue
+            Jump(6),
+            // break
+            Halt,
+        ],
+
+        expected_instruction_index: 21,
+        expected_stack: vec![],
+        expected_variables: vec![(0, 6), (1, 0), (2, 24)],
+    }
+    .assert()
 }
