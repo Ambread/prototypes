@@ -1,6 +1,7 @@
 use std::{collections::HashMap, vec};
 
 use crate::{
+    Frame,
     Instruction::{self, *},
     VM,
 };
@@ -14,9 +15,9 @@ fn assert_vm_state(
     // Too lazy right now to convert all the old tests to use VMState
     VMState {
         instructions,
-        expected_instruction_index,
-        expected_stack,
-        expected_variables,
+        instruction_index: expected_instruction_index,
+        stack: expected_stack,
+        variables: expected_variables,
     }
     .assert();
 }
@@ -24,24 +25,43 @@ fn assert_vm_state(
 #[derive(Debug, Clone, Default)]
 struct VMState {
     instructions: Vec<Instruction>,
-    expected_instruction_index: usize,
-    expected_stack: Vec<usize>,
-    expected_variables: Vec<(usize, usize)>,
+    instruction_index: usize,
+    stack: Vec<usize>,
+    variables: Vec<(usize, usize)>,
 }
 
 impl VMState {
     #[track_caller]
     fn assert(self) {
-        let mut vm = VM::new(self.instructions);
+        let Self {
+            instructions,
+            instruction_index,
+            stack,
+            variables,
+        } = self;
+        let variables: HashMap<usize, usize> = variables.into_iter().collect();
+
+        VM {
+            instructions,
+            instruction_index,
+            stack,
+            frames: vec![Frame {
+                variables,
+                ..Default::default()
+            }],
+            ..Default::default()
+        }
+        .run_as_test();
+    }
+}
+
+impl VM {
+    fn run_as_test(mut self) {
+        let mut vm = VM::new(self.instructions.clone());
         vm.run();
 
-        assert!(vm.is_halted);
-        assert_eq!(self.expected_instruction_index, vm.instruction_index);
-        assert_eq!(self.expected_stack, vm.stack);
-
-        let expected_variables: HashMap<usize, usize> =
-            self.expected_variables.into_iter().collect();
-        assert_eq!(expected_variables, vm.frames.last().unwrap().variables);
+        self.is_halted = true;
+        assert_eq!(self, vm);
     }
 }
 
@@ -49,7 +69,7 @@ impl VMState {
 fn empty_program() {
     VMState {
         instructions: vec![Halt],
-        expected_instruction_index: 1,
+        instruction_index: 1,
         ..Default::default()
     }
     .assert();
@@ -164,9 +184,9 @@ fn load_uninitialized() {
 fn store() {
     VMState {
         instructions: vec![Push(42), Store(0), Halt],
-        expected_instruction_index: 3,
-        expected_stack: vec![],
-        expected_variables: vec![(0, 42)],
+        instruction_index: 3,
+        stack: vec![],
+        variables: vec![(0, 42)],
     }
     .assert();
 }
@@ -175,9 +195,9 @@ fn store() {
 fn load_store() {
     VMState {
         instructions: vec![Push(42), Store(0), Load(0), Halt],
-        expected_instruction_index: 4,
-        expected_stack: vec![42],
-        expected_variables: vec![(0, 42)],
+        instruction_index: 4,
+        stack: vec![42],
+        variables: vec![(0, 42)],
     }
     .assert();
 }
@@ -208,9 +228,9 @@ fn if_else() {
             Halt,
         ],
 
-        expected_instruction_index: 14,
-        expected_stack: vec![],
-        expected_variables: vec![(0, 6), (1, 4), (2, 6)],
+        instruction_index: 14,
+        stack: vec![],
+        variables: vec![(0, 6), (1, 4), (2, 6)],
     }
     .assert();
 }
@@ -251,9 +271,9 @@ fn while_mul() {
             Halt,
         ],
 
-        expected_instruction_index: 21,
-        expected_stack: vec![],
-        expected_variables: vec![(0, 6), (1, 0), (2, 24)],
+        instruction_index: 21,
+        stack: vec![],
+        variables: vec![(0, 6), (1, 0), (2, 24)],
     }
     .assert()
 }
@@ -262,7 +282,7 @@ fn while_mul() {
 fn call_ret_empty() {
     VMState {
         instructions: vec![Call(2), Halt, Return],
-        expected_instruction_index: 2,
+        instruction_index: 2,
         ..Default::default()
     }
     .assert();
@@ -272,8 +292,8 @@ fn call_ret_empty() {
 fn call_ret_const() {
     VMState {
         instructions: vec![Call(2), Halt, Push(7), Return],
-        expected_instruction_index: 2,
-        expected_stack: vec![7],
+        instruction_index: 2,
+        stack: vec![7],
         ..Default::default()
     }
     .assert();
@@ -281,11 +301,11 @@ fn call_ret_const() {
 
 #[test]
 fn call_ret_double() {
-    VMState {
+    VM {
         instructions: vec![Push(3), Call(3), Halt, Push(2), Mul, Return],
-        expected_instruction_index: 3,
-        expected_stack: vec![6],
+        instruction_index: 3,
+        stack: vec![6],
         ..Default::default()
     }
-    .assert();
+    .run_as_test();
 }
