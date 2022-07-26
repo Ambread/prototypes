@@ -2,15 +2,15 @@
 pub enum Instruction {
     Halt,
 
-    Push(usize),
+    Push(u64),
     Pop,
     Dupe,
 
     Jump(usize),
     JumpIf(usize),
 
-    Load(usize),
-    Store(usize),
+    Load(u64),
+    Store(u64),
 
     Call(usize),
     Return,

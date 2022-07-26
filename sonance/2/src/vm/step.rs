@@ -67,7 +67,7 @@ impl VM {
 
             Instruction::In => {
                 let char = Term::stdout().read_char().unwrap();
-                self.stack.push(char as usize);
+                self.stack.push(char as u64);
             }
             Instruction::Out => {
                 let buffer = self.pop()?.to_ne_bytes();
@@ -88,9 +88,9 @@ impl VM {
             Instruction::BoolOr => self.binary_op(|a, b| (a != 0 || b != 0) as _)?,
             Instruction::BoolNot => self.unary_op(|a| (a == 0) as _)?,
 
-            Instruction::Eq => self.binary_op(|a, b| (a == b) as usize)?,
-            Instruction::Gt => self.binary_op(|a, b| (a > b) as usize)?,
-            Instruction::Geq => self.binary_op(|a, b| (a >= b) as usize)?,
+            Instruction::Eq => self.binary_op(|a, b| (a == b) as u64)?,
+            Instruction::Gt => self.binary_op(|a, b| (a > b) as u64)?,
+            Instruction::Geq => self.binary_op(|a, b| (a >= b) as u64)?,
         }
 
         // Only normal instructions should reach this

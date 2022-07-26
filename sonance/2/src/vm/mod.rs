@@ -16,7 +16,7 @@ pub struct VM {
     pub instructions: Vec<Instruction>,
     pub instruction_index: usize,
     pub current_instruction: Instruction,
-    pub stack: Vec<usize>,
+    pub stack: Vec<u64>,
     pub frames: Frames,
 }
 
@@ -45,13 +45,13 @@ impl VM {
         Ok(())
     }
 
-    fn pop(&mut self) -> Result<usize> {
+    fn pop(&mut self) -> Result<u64> {
         self.stack
             .pop()
             .ok_or(Error::EmptyStack(self.current_instruction))
     }
 
-    fn unary_op(&mut self, body: impl FnOnce(usize) -> usize) -> Result<()> {
+    fn unary_op(&mut self, body: impl FnOnce(u64) -> u64) -> Result<()> {
         let a = self.pop()?;
         self.stack.push(body(a));
         Ok(())
@@ -59,7 +59,7 @@ impl VM {
 
     fn binary_op<F>(&mut self, body: F) -> Result<()>
     where
-        F: FnOnce(usize, usize) -> usize,
+        F: FnOnce(u64, u64) -> u64,
     {
         let b = self.pop()?;
         let a = self.pop()?;
