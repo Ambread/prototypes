@@ -1,9 +1,16 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, vec};
 
 use crate::{
     Instruction::{self, *},
     VM,
 };
+
+fn default<T>() -> T
+where
+    T: Default,
+{
+    T::default()
+}
 
 fn assert_vm_state(
     instructions: Vec<Instruction>,
@@ -11,17 +18,17 @@ fn assert_vm_state(
     expected_stack: Vec<usize>,
     expected_variables: Vec<(usize, usize)>,
 ) {
-    let mut vm = VM::new(instructions);
-    vm.run();
-
-    assert!(vm.is_halted);
-    assert_eq!(expected_instruction_index, vm.instruction_index);
-    assert_eq!(expected_stack, vm.stack);
-    let expected_variables: HashMap<usize, usize> = expected_variables.into_iter().collect();
-    assert_eq!(expected_variables, vm.variables);
+    // Too lazy right now to convert all the old tests to use VMState
+    VMState {
+        instructions,
+        expected_instruction_index,
+        expected_stack,
+        expected_variables,
+    }
+    .assert();
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct VMState {
     instructions: Vec<Instruction>,
     expected_instruction_index: usize,
@@ -46,17 +53,12 @@ impl VMState {
 
 #[test]
 fn empty_program() {
-    let instructions = vec![Halt];
-    let expected_instruction_index = 1;
-    let expected_stack = vec![];
-    let expected_variables = vec![];
-
-    assert_vm_state(
-        instructions,
-        expected_instruction_index,
-        expected_stack,
-        expected_variables,
-    );
+    VMState {
+        instructions: vec![Halt],
+        expected_instruction_index: 1,
+        ..default()
+    }
+    .assert();
 }
 
 #[test]
@@ -162,4 +164,26 @@ fn load_uninitialized() {
         expected_stack,
         expected_variables,
     );
+}
+
+#[test]
+fn store() {
+    VMState {
+        instructions: vec![Push(42), Store(0), Halt],
+        expected_instruction_index: 3,
+        expected_stack: vec![],
+        expected_variables: vec![(0, 42)],
+    }
+    .assert();
+}
+
+#[test]
+fn load_store() {
+    VMState {
+        instructions: vec![Push(42), Store(0), Load(0), Halt],
+        expected_instruction_index: 4,
+        expected_stack: vec![42],
+        expected_variables: vec![(0, 42)],
+    }
+    .assert();
 }
