@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::{Error, Result};
+
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Frame {
     pub variables: HashMap<usize, usize>,
@@ -31,23 +33,21 @@ impl Frames {
         });
     }
 
-    pub fn ret(&mut self) -> usize {
-        self.frames.pop().unwrap().return_index
+    pub fn ret(&mut self) -> Result<usize> {
+        let frame = self.frames.pop().ok_or(Error::TopLevelReturn)?;
+        Ok(frame.return_index)
     }
 
-    fn last(&self) -> &Frame {
-        self.frames.last().unwrap()
+    pub fn load(&self, variable: usize) -> Result<usize> {
+        let frame = self.frames.last().ok_or(Error::FrameShouldExist)?;
+
+        Ok(frame.variables.get(&variable).copied().unwrap_or(0))
     }
 
-    fn last_mut(&mut self) -> &mut Frame {
-        self.frames.last_mut().unwrap()
-    }
+    pub fn store(&mut self, variable: usize, value: usize) -> Result<()> {
+        let frame = self.frames.last_mut().ok_or(Error::FrameShouldExist)?;
 
-    pub fn load(&self, variable: usize) -> usize {
-        self.last().variables.get(&variable).copied().unwrap_or(0)
-    }
-
-    pub fn store(&mut self, variable: usize, value: usize) {
-        self.last_mut().variables.insert(variable, value);
+        frame.variables.insert(variable, value);
+        Ok(())
     }
 }

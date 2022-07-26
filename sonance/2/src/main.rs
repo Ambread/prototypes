@@ -44,9 +44,13 @@ pub enum Instruction {
 pub enum Error {
     #[error("instruction {0:?} wanted a value from the stack, but it was empty")]
     EmptyStack(Instruction),
+    #[error("attempted to return outside of function call")]
+    TopLevelReturn,
+    #[error("at least one frame should exist")]
+    FrameShouldExist,
 }
 
-type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
@@ -120,12 +124,12 @@ impl VM {
             }
 
             Instruction::Load(variable) => {
-                let a = self.frames.load(variable);
+                let a = self.frames.load(variable)?;
                 self.stack.push(a);
             }
             Instruction::Store(variable) => {
                 let a = self.pop()?;
-                self.frames.store(variable, a);
+                self.frames.store(variable, a)?;
             }
 
             Instruction::Call(index) => {
@@ -134,7 +138,7 @@ impl VM {
                 return Ok(true); // Don't ++ index at end
             }
             Instruction::Return => {
-                self.instruction_index = self.frames.ret();
+                self.instruction_index = self.frames.ret()?;
                 return Ok(true); // Don't ++ index at end
             }
 
