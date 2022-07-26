@@ -2,33 +2,7 @@ use pretty_assertions::assert_eq;
 
 use std::{collections::HashMap, vec};
 
-use crate::{
-    Frame,
-    Instruction::{self, *},
-    VM,
-};
-
-fn assert_vm_state(
-    instructions: Vec<Instruction>,
-    instruction_index: usize,
-    stack: Vec<usize>,
-    variables: Vec<(usize, usize)>,
-) {
-    // Too lazy right now to convert all the old tests to use VMState
-    let variables: HashMap<usize, usize> = variables.into_iter().collect();
-
-    VM {
-        instructions,
-        instruction_index,
-        stack,
-        frames: vec![Frame {
-            variables,
-            ..Default::default()
-        }],
-        ..Default::default()
-    }
-    .run_as_test();
-}
+use crate::{Frame, Instruction::*, VM};
 
 impl VM {
     fn run_as_test(self) {
@@ -51,107 +25,76 @@ fn empty_program() {
 
 #[test]
 fn push_halt() {
-    let instructions = vec![Push(42), Push(68), Halt];
-    let expected_instruction_index = 3;
-    let expected_stack = vec![42, 68];
-    let expected_variables = vec![];
-
-    assert_vm_state(
-        instructions,
-        expected_instruction_index,
-        expected_stack,
-        expected_variables,
-    );
+    VM {
+        instructions: vec![Push(42), Push(68), Halt],
+        instruction_index: 3,
+        stack: vec![42, 68],
+        ..Default::default()
+    }
+    .run_as_test();
 }
 
 #[test]
 fn add() {
-    let instructions = vec![Push(1), Push(2), Add, Halt];
-    let expected_instruction_index = 4;
-    let expected_stack = vec![3];
-    let expected_variables = vec![];
-
-    assert_vm_state(
-        instructions,
-        expected_instruction_index,
-        expected_stack,
-        expected_variables,
-    );
+    VM {
+        instructions: vec![Push(1), Push(2), Add, Halt],
+        instruction_index: 4,
+        stack: vec![3],
+        ..Default::default()
+    }
+    .run_as_test();
 }
 
 #[test]
 fn pop() {
-    let instructions = vec![Push(42), Pop, Halt];
-    let expected_instruction_index = 3;
-    let expected_stack = vec![];
-    let expected_variables = vec![];
-
-    assert_vm_state(
-        instructions,
-        expected_instruction_index,
-        expected_stack,
-        expected_variables,
-    );
+    VM {
+        instructions: vec![Push(42), Pop, Halt],
+        instruction_index: 3,
+        ..Default::default()
+    }
+    .run_as_test();
 }
 
 #[test]
 fn dupe() {
-    let instructions = vec![Push(42), Dupe, Halt];
-    let expected_instruction_index = 3;
-    let expected_stack = vec![42, 42];
-    let expected_variables = vec![];
-
-    assert_vm_state(
-        instructions,
-        expected_instruction_index,
-        expected_stack,
-        expected_variables,
-    );
+    VM {
+        instructions: vec![Push(42), Dupe, Halt],
+        instruction_index: 3,
+        stack: vec![42, 42],
+        ..Default::default()
+    }
+    .run_as_test();
 }
 
 #[test]
 fn jump() {
-    let instructions = vec![Jump(2), Halt, Jump(1)];
-    let expected_instruction_index = 2;
-    let expected_stack = vec![];
-    let expected_variables = vec![];
-
-    assert_vm_state(
-        instructions,
-        expected_instruction_index,
-        expected_stack,
-        expected_variables,
-    );
+    VM {
+        instructions: vec![Jump(2), Halt, Jump(1)],
+        instruction_index: 2,
+        ..Default::default()
+    }
+    .run_as_test();
 }
 
 #[test]
 fn jump_if() {
-    let instructions = vec![Push(1), JumpIf(3), Pop, Push(0), JumpIf(2), Halt];
-    let expected_instruction_index = 6;
-    let expected_stack = vec![];
-    let expected_variables = vec![];
-
-    assert_vm_state(
-        instructions,
-        expected_instruction_index,
-        expected_stack,
-        expected_variables,
-    );
+    VM {
+        instructions: vec![Push(1), JumpIf(3), Pop, Push(0), JumpIf(2), Halt],
+        instruction_index: 6,
+        ..Default::default()
+    }
+    .run_as_test();
 }
 
 #[test]
 fn load_uninitialized() {
-    let instructions = vec![Load(0), Halt];
-    let expected_instruction_index = 2;
-    let expected_stack = vec![0];
-    let expected_variables = vec![];
-
-    assert_vm_state(
-        instructions,
-        expected_instruction_index,
-        expected_stack,
-        expected_variables,
-    );
+    VM {
+        instructions: vec![Load(0), Halt],
+        instruction_index: 2,
+        stack: vec![0],
+        ..Default::default()
+    }
+    .run_as_test();
 }
 
 #[test]
