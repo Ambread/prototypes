@@ -84,25 +84,36 @@ impl FromStr for Instruction {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             "halt" => Instruction::Halt,
+
+            "push" => panic!("Don't use Instruction::FromStr for Push"),
+            "pop" => Instruction::Pop,
             "dupe" => Instruction::Dupe,
+
             "jump" => Instruction::Jump,
             "jump_if" => Instruction::JumpIf,
+
             "load" => Instruction::Load,
             "store" => Instruction::Store,
+
             "call" => Instruction::Call,
             "return" => Instruction::Return,
+
             "in" => Instruction::In,
             "out" => Instruction::Out,
+
             "add" => Instruction::Add,
             "sub" => Instruction::Sub,
             "mul" => Instruction::Mul,
             "div" => Instruction::Div,
+
             "bit_and" => Instruction::BitAnd,
             "bit_or" => Instruction::BitOr,
             "bit_not" => Instruction::BitNot,
+
             "bool_and" => Instruction::BoolAnd,
             "bool_or" => Instruction::BoolOr,
             "bool_not" => Instruction::BoolNot,
+
             "eq" => Instruction::Eq,
             "gt" => Instruction::Gt,
             "geq" => Instruction::Geq,
