@@ -40,11 +40,13 @@ impl VM {
                 }
             }
 
-            Instruction::Load(variable) => {
+            Instruction::Load => {
+                let variable = self.pop()?;
                 let a = self.frames.load(variable)?;
                 self.stack.push(a);
             }
-            Instruction::Store(variable) => {
+            Instruction::Store => {
+                let variable = self.pop()?;
                 let a = self.pop()?;
                 self.frames.store(variable, a)?;
             }

@@ -11,8 +11,8 @@ pub enum Instruction {
     Jump,
     JumpIf,
 
-    Load(u64),
-    Store(u64),
+    Load,
+    Store,
 
     Call(u64),
     Return,
@@ -50,8 +50,8 @@ impl Display for Instruction {
             Instruction::Jump => write!(f, "jump"),
             Instruction::JumpIf => write!(f, "jump_if"),
 
-            Instruction::Load(key) => write!(f, "load {key}"),
-            Instruction::Store(key) => write!(f, "store {key}"),
+            Instruction::Load => write!(f, "load"),
+            Instruction::Store => write!(f, "store"),
 
             Instruction::Call(index) => write!(f, "call {index}"),
             Instruction::Return => write!(f, "return"),

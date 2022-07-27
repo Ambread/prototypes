@@ -8,9 +8,10 @@ impl VM {
     /// Create a fresh VM with this VM's instructions, run it to completion, and assert that it reaches the same state as this VM
     fn run_and_asset(self) {
         let mut vm = VM::new(self.instructions.clone());
-        vm.run().unwrap();
-
-        assert_eq!(vm, self);
+        match vm.run() {
+            Ok(()) => assert_eq!(vm, self),
+            Err(error) => panic!("{error}"),
+        }
     }
 }
 
@@ -99,8 +100,8 @@ fn jump_if() {
 #[test]
 fn load_uninitialized() {
     VM {
-        instructions: vec![Load(0), Halt],
-        instruction_index: 1,
+        instructions: vec![Push(0), Load, Halt],
+        instruction_index: 2,
         stack: vec![0],
         ..Default::default()
     }
@@ -110,8 +111,8 @@ fn load_uninitialized() {
 #[test]
 fn store() {
     VM {
-        instructions: vec![Push(42), Store(0), Halt],
-        instruction_index: 2,
+        instructions: vec![Push(42), Push(0), Store, Halt],
+        instruction_index: 3,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 42)]),
@@ -124,8 +125,8 @@ fn store() {
 #[test]
 fn load_store() {
     VM {
-        instructions: vec![Push(42), Store(0), Load(0), Halt],
-        instruction_index: 3,
+        instructions: vec![Push(42), Push(0), Store, Push(0), Load, Halt],
+        instruction_index: 5,
         stack: vec![42],
         frames: Frames::new(vec![Frame {
             return_index: 0,
@@ -141,30 +142,38 @@ fn if_else() {
     VM {
         instructions: vec![
             // let a
-            Push(6),
-            Store(0),
+            Push(6), // 0
+            Push(0), // 1
+            Store,   // 2
             // let b
-            Push(4),
-            Store(1),
+            Push(4), // 3
+            Push(1), // 4
+            Store,   // 5
             // a > b
-            Load(0),
-            Load(1),
-            Gt,
-            Push(13),
-            JumpIf,
+            Push(0),  // 6
+            Load,     // 7
+            Push(1),  // 8
+            Load,     // 9
+            Gt,       // 10
+            Push(19), // 11
+            JumpIf,   // 12
             // else
-            Load(1),
-            Store(2),
-            Push(15),
-            Jump,
+            Push(1),  // 13
+            Load,     // 14
+            Push(2),  // 15
+            Store,    // 16
+            Push(24), // 17
+            Jump,     // 18
             // if
-            Load(0),
-            Store(2),
+            Push(0), // 19
+            Load,    // 20
+            Push(2), // 21
+            Store,   // 22
             // done
-            Halt,
+            Halt, // 23
         ],
 
-        instruction_index: 15,
+        instruction_index: 23,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 4), (2, 6)]),
@@ -179,40 +188,49 @@ fn while_mul() {
     VM {
         instructions: vec![
             // let a
-            Push(6),
-            Store(0),
+            Push(6), // 0
+            Push(0), // 1
+            Store,   // 2
             // let b
-            Push(4),
-            Store(1),
+            Push(4), // 3
+            Push(1), // 4
+            Store,   // 5
             // let total
-            Push(0),
-            Store(2),
+            Push(0), // 6
+            Push(2), // 7
+            Store,   // 8
             // while
-            Load(1),
-            Push(1),
-            Geq,
-            BoolNot,
-            Push(22),
-            JumpIf,
+            Push(1),  // 9
+            Load,     // 10
+            Push(1),  // 11
+            Geq,      // 12
+            BoolNot,  // 13
+            Push(31), // 14
+            JumpIf,   // 15
             // do
             // total += a
-            Load(0),
-            Load(2),
-            Add,
-            Store(2),
+            Push(0), // 16
+            Load,    // 17
+            Push(2), // 18
+            Load,    // 19
+            Add,     // 20
+            Push(2), // 21
+            Store,   // 22
             // b -= 1
-            Load(1),
-            Push(1),
-            Sub,
-            Store(1),
+            Push(1), // 23
+            Load,    // 24
+            Push(1), // 25
+            Sub,     // 26
+            Push(1), // 27
+            Store,   // 28
             // continue
-            Push(6),
-            Jump,
+            Push(9), // 29
+            Jump,    // 30
             // break
-            Halt,
+            Halt, // 31
         ],
 
-        instruction_index: 22,
+        instruction_index: 31,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 0), (2, 24)]),
@@ -258,25 +276,31 @@ fn call_ret_double() {
 fn max() {
     VM {
         instructions: vec![
-            Push(6),
-            Push(4),
-            Call(4),
-            Halt,
+            Push(6), // 0
+            Push(4), // 1
+            Call(4), // 2
+            Halt,    // 3
             // fn max
-            Store(1),
-            Store(0),
+            Push(1), // 4
+            Store,   // 5
+            Push(0), // 6
+            Store,   // 7
             // if
-            Load(0),
-            Load(1),
-            Gt,
-            Push(13),
-            JumpIf,
+            Push(0),  // 8
+            Load,     // 9
+            Push(1),  // 10
+            Load,     // 11
+            Gt,       // 12
+            Push(18), // 13
+            JumpIf,   // 14
             // then
-            Load(1),
-            Return,
+            Push(1), // 15
+            Load,    // 16
+            Return,  // 17
             // else
-            Load(0),
-            Return,
+            Push(0), // 18
+            Load,    // 19
+            Return,  // 20
         ],
         instruction_index: 3,
         stack: vec![6],
