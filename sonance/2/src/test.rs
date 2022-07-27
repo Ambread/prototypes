@@ -70,8 +70,8 @@ fn dupe() {
 #[test]
 fn jump() {
     VM {
-        instructions: vec![Jump(2), Halt, Jump(1)],
-        instruction_index: 1,
+        instructions: vec![Push(3), Jump, Halt, Push(2), Jump],
+        instruction_index: 2,
         ..Default::default()
     }
     .run_and_asset();
@@ -80,8 +80,17 @@ fn jump() {
 #[test]
 fn jump_if() {
     VM {
-        instructions: vec![Push(1), JumpIf(3), Pop, Push(0), JumpIf(2), Halt],
-        instruction_index: 5,
+        instructions: vec![
+            Push(1),
+            Push(4),
+            JumpIf,
+            Pop,
+            Push(0),
+            Push(3),
+            JumpIf,
+            Halt,
+        ],
+        instruction_index: 7,
         ..Default::default()
     }
     .run_and_asset();
@@ -141,11 +150,13 @@ fn if_else() {
             Load(0),
             Load(1),
             Gt,
-            JumpIf(11),
+            Push(13),
+            JumpIf,
             // else
             Load(1),
             Store(2),
-            Jump(13),
+            Push(15),
+            Jump,
             // if
             Load(0),
             Store(2),
@@ -153,7 +164,7 @@ fn if_else() {
             Halt,
         ],
 
-        instruction_index: 13,
+        instruction_index: 15,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 4), (2, 6)]),
@@ -181,7 +192,8 @@ fn while_mul() {
             Push(1),
             Geq,
             BoolNot,
-            JumpIf(20),
+            Push(22),
+            JumpIf,
             // do
             // total += a
             Load(0),
@@ -194,12 +206,13 @@ fn while_mul() {
             Sub,
             Store(1),
             // continue
-            Jump(6),
+            Push(6),
+            Jump,
             // break
             Halt,
         ],
 
-        instruction_index: 20,
+        instruction_index: 22,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 0), (2, 24)]),
@@ -256,7 +269,8 @@ fn max() {
             Load(0),
             Load(1),
             Gt,
-            JumpIf(12),
+            Push(13),
+            JumpIf,
             // then
             Load(1),
             Return,

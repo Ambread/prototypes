@@ -17,6 +17,7 @@ pub enum Step {
 impl VM {
     pub fn step(&mut self) -> Result<Step> {
         self.current_instruction = self.instructions[self.instruction_index];
+
         match self.current_instruction {
             Instruction::Halt => {
                 return Ok(Step::Halt);
@@ -34,11 +35,13 @@ impl VM {
                 self.stack.push(a);
             }
 
-            Instruction::Jump(index) => {
+            Instruction::Jump => {
+                let index = self.pop()? as usize;
                 self.instruction_index = index;
                 return Ok(Step::Jump);
             }
-            Instruction::JumpIf(index) => {
+            Instruction::JumpIf => {
+                let index = self.pop()? as usize;
                 let a = self.pop()?;
                 if a != 0 {
                     self.instruction_index = index;

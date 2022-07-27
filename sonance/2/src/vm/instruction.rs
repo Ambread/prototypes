@@ -6,8 +6,8 @@ pub enum Instruction {
     Pop,
     Dupe,
 
-    Jump(usize),
-    JumpIf(usize),
+    Jump,
+    JumpIf,
 
     Load(u64),
     Store(u64),
