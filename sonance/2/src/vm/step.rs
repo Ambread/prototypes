@@ -7,20 +7,13 @@ use crate::{
     vm::{Instruction, VM},
 };
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Step {
-    Normal,
-    Jump,
-    Halt,
-}
-
 impl VM {
-    pub fn step(&mut self) -> Result<Step> {
-        self.current_instruction = self.instructions[self.instruction_index];
+    pub fn step(&mut self) -> Result<bool> {
+        self.current_instruction = self.instructions[self.instruction_index as usize];
 
         match self.current_instruction {
             Instruction::Halt => {
-                return Ok(Step::Halt);
+                return Ok(true);
             }
 
             Instruction::Push(value) => {
@@ -36,16 +29,14 @@ impl VM {
             }
 
             Instruction::Jump => {
-                let index = self.pop()? as usize;
-                self.instruction_index = index;
-                return Ok(Step::Jump);
+                let index = self.pop()?;
+                self.jump(index);
             }
             Instruction::JumpIf => {
-                let index = self.pop()? as usize;
+                let index = self.pop()?;
                 let a = self.pop()?;
                 if a != 0 {
-                    self.instruction_index = index;
-                    return Ok(Step::Jump);
+                    self.jump(index);
                 }
             }
 
@@ -60,12 +51,11 @@ impl VM {
 
             Instruction::Call(index) => {
                 self.frames.call(self.instruction_index + 1);
-                self.instruction_index = index;
-                return Ok(Step::Jump);
+                self.jump(index);
             }
             Instruction::Return => {
-                self.instruction_index = self.frames.ret()?;
-                return Ok(Step::Jump);
+                let index = self.frames.ret()?;
+                self.jump(index);
             }
 
             Instruction::In => {
@@ -96,10 +86,12 @@ impl VM {
             Instruction::Geq => self.binary_op(|a, b| (a >= b) as u64)?,
         }
 
-        // Only normal instructions should reach this
-        // Jump instructions should return early to prevent messing up
-        self.instruction_index += 1;
+        // Avoid incrementing if a instruction jumped to avoid off-by-one situations
+        if !self.has_jumped {
+            self.instruction_index += 1;
+        }
+        self.has_jumped = false;
 
-        Ok(Step::Normal)
+        Ok(false)
     }
 }

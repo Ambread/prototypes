@@ -14,7 +14,7 @@ pub enum Instruction {
     Load(u64),
     Store(u64),
 
-    Call(usize),
+    Call(u64),
     Return,
 
     In,

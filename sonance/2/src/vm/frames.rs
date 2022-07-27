@@ -5,7 +5,7 @@ use crate::error::{Error, Result};
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Frame {
     pub variables: HashMap<u64, u64>,
-    pub return_index: usize,
+    pub return_index: u64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -26,14 +26,14 @@ impl Frames {
         Self { frames }
     }
 
-    pub fn call(&mut self, return_index: usize) {
+    pub fn call(&mut self, return_index: u64) {
         self.frames.push(Frame {
             return_index,
             ..Default::default()
         });
     }
 
-    pub fn ret(&mut self) -> Result<usize> {
+    pub fn ret(&mut self) -> Result<u64> {
         let frame = self.frames.pop().ok_or(Error::TopLevelReturn)?;
         Ok(frame.return_index)
     }

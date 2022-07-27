@@ -2,20 +2,18 @@ mod frames;
 mod instruction;
 mod step;
 
+use crate::error::{Error, Result};
 pub use crate::vm::{
     frames::{Frame, Frames},
     instruction::Instruction,
-};
-use crate::{
-    error::{Error, Result},
-    vm::step::Step,
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
     pub instructions: Vec<Instruction>,
-    pub instruction_index: usize,
+    pub instruction_index: u64,
     pub current_instruction: Instruction,
+    pub has_jumped: bool,
     pub stack: Vec<u64>,
     pub frames: Frames,
 }
@@ -26,6 +24,7 @@ impl Default for VM {
             instructions: vec![Instruction::Halt],
             instruction_index: 0,
             current_instruction: Instruction::Halt,
+            has_jumped: false,
             stack: vec![],
             frames: Default::default(),
         }
@@ -41,7 +40,7 @@ impl VM {
     }
 
     pub fn run(&mut self) -> Result<()> {
-        while self.step()? != Step::Halt {}
+        while !self.step()? {}
         Ok(())
     }
 
@@ -49,6 +48,11 @@ impl VM {
         self.stack
             .pop()
             .ok_or(Error::EmptyStack(self.current_instruction))
+    }
+
+    fn jump(&mut self, index: u64) {
+        self.instruction_index = index;
+        self.has_jumped = true;
     }
 
     fn unary_op(&mut self, body: impl FnOnce(u64) -> u64) -> Result<()> {
