@@ -14,7 +14,7 @@ pub enum Instruction {
     Load,
     Store,
 
-    Call(u64),
+    Call,
     Return,
 
     In,
@@ -53,7 +53,7 @@ impl Display for Instruction {
             Instruction::Load => write!(f, "load"),
             Instruction::Store => write!(f, "store"),
 
-            Instruction::Call(index) => write!(f, "call {index}"),
+            Instruction::Call => write!(f, "call"),
             Instruction::Return => write!(f, "return"),
 
             Instruction::In => write!(f, "in"),

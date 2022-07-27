@@ -243,8 +243,8 @@ fn while_mul() {
 #[test]
 fn call_ret_empty() {
     VM {
-        instructions: vec![Call(2), Halt, Return],
-        instruction_index: 1,
+        instructions: vec![Push(3), Call, Halt, Return],
+        instruction_index: 2,
         ..Default::default()
     }
     .run_and_asset();
@@ -253,8 +253,8 @@ fn call_ret_empty() {
 #[test]
 fn call_ret_const() {
     VM {
-        instructions: vec![Call(2), Halt, Push(7), Return],
-        instruction_index: 1,
+        instructions: vec![Push(3), Call, Halt, Push(7), Return],
+        instruction_index: 2,
         stack: vec![7],
         ..Default::default()
     }
@@ -264,8 +264,8 @@ fn call_ret_const() {
 #[test]
 fn call_ret_double() {
     VM {
-        instructions: vec![Push(3), Call(3), Halt, Push(2), Mul, Return],
-        instruction_index: 2,
+        instructions: vec![Push(3), Push(4), Call, Halt, Push(2), Mul, Return],
+        instruction_index: 3,
         stack: vec![6],
         ..Default::default()
     }
@@ -278,31 +278,32 @@ fn max() {
         instructions: vec![
             Push(6), // 0
             Push(4), // 1
-            Call(4), // 2
-            Halt,    // 3
+            Push(5), // 2
+            Call,    // 3
+            Halt,    // 4
             // fn max
-            Push(1), // 4
-            Store,   // 5
-            Push(0), // 6
-            Store,   // 7
+            Push(1), // 5
+            Store,   // 6
+            Push(0), // 7
+            Store,   // 8
             // if
-            Push(0),  // 8
-            Load,     // 9
-            Push(1),  // 10
-            Load,     // 11
-            Gt,       // 12
-            Push(18), // 13
-            JumpIf,   // 14
+            Push(0),  // 9
+            Load,     // 10
+            Push(1),  // 11
+            Load,     // 12
+            Gt,       // 13
+            Push(19), // 14
+            JumpIf,   // 15
             // then
-            Push(1), // 15
-            Load,    // 16
-            Return,  // 17
+            Push(1), // 16
+            Load,    // 17
+            Return,  // 18
             // else
-            Push(0), // 18
-            Load,    // 19
-            Return,  // 20
+            Push(0), // 19
+            Load,    // 20
+            Return,  // 21
         ],
-        instruction_index: 3,
+        instruction_index: 4,
         stack: vec![6],
         ..Default::default()
     }

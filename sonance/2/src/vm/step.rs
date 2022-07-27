@@ -51,7 +51,8 @@ impl VM {
                 self.frames.store(variable, a)?;
             }
 
-            Instruction::Call(index) => {
+            Instruction::Call => {
+                let index = self.pop()?;
                 self.frames.call(self.instruction_index + 1);
                 self.jump(index);
             }
