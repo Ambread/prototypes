@@ -362,3 +362,19 @@ fn max() {
     }
     .run_and_asset()
 }
+
+#[test]
+fn large_number() {
+    VM {
+        instructions: parse(
+            "
+            push 4_294_967_295_u32
+            halt
+        ",
+        ),
+        instruction_index: 8,
+        stack: vec![255, 255, 255, 255],
+        ..Default::default()
+    }
+    .run_and_asset()
+}
