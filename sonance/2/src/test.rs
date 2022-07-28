@@ -4,7 +4,11 @@ use std::{collections::HashMap, vec};
 
 use crate::{
     builder::InstructionBuilder,
-    vm::{Frame, Frames, Instruction::*, VM},
+    vm::{
+        Frame, Frames,
+        Instruction::{self, *},
+        VM,
+    },
 };
 
 impl VM {
@@ -16,6 +20,10 @@ impl VM {
             Err(error) => panic!("{error}"),
         }
     }
+}
+
+fn parse(src: &str) -> Vec<Instruction> {
+    src.parse::<InstructionBuilder>().unwrap().build()
 }
 
 #[test]
@@ -161,6 +169,45 @@ fn if_else() {
             .label("done")
             .just(Halt)
             .build(),
+
+        instruction_index: 23,
+        frames: Frames::new(vec![Frame {
+            return_index: 0,
+            variables: HashMap::from([(0, 6), (1, 4), (2, 6)]),
+        }]),
+        ..Default::default()
+    }
+    .run_and_asset();
+}
+
+#[test]
+fn if_else_bad() {
+    VM {
+        instructions: parse(
+            "
+            push 6
+            store 0
+
+            push 4
+            store 1
+
+            load 0
+            load 1
+            gt
+            jump_if else
+
+            load 0
+            store 2
+            jump done
+
+            else:
+            load 1
+            store 2
+
+            done:
+            halt
+        ",
+        ),
 
         instruction_index: 23,
         frames: Frames::new(vec![Frame {
