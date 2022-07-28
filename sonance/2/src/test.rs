@@ -200,11 +200,9 @@ fn if_else_bad() {
     VM {
         instructions: parse(
             "
-            push 6
-            store 0
+            store 0 6
 
-            push 4
-            store 1
+            store 1 4
 
             load 0
             load 1

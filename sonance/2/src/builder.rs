@@ -79,30 +79,29 @@ impl FromStr for InstructionBuilder {
 
         for line in src.lines() {
             let line = line.trim();
+
             if line.is_empty() {
                 continue;
             }
 
-            let args: Vec<_> = line.split_whitespace().collect();
+            if line.ends_with(':') {
+                builder = builder.label(line.trim_end_matches(':'));
+                continue;
+            }
 
-            builder = if line.ends_with(':') {
-                builder.label(line.trim_end_matches(':'))
-            } else if args[0] == "push" {
-                match args[1].parse::<u8>() {
-                    Ok(number) => builder.push(number),
-                    Err(_) => builder.push(args[1]),
-                }
-            } else {
-                let instruction = args[0].parse::<Instruction>().unwrap();
+            let mut args = line.split_whitespace();
+            let instruction = args.next().unwrap();
 
-                if let Some(arg) = args.get(1) {
-                    match arg.parse::<u8>() {
-                        Ok(number) => builder.then(instruction, number),
-                        Err(_) => builder.then(instruction, *arg),
-                    }
-                } else {
-                    builder.just(instruction)
+            for arg in args.rev() {
+                match arg.parse::<u8>() {
+                    Ok(number) => builder = builder.push(number),
+                    Err(_) => builder = builder.push(arg),
                 }
+            }
+
+            if instruction != "push" {
+                let instruction = instruction.parse::<Instruction>().unwrap();
+                builder = builder.just(instruction);
             }
         }
 
