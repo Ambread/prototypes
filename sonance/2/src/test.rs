@@ -22,6 +22,10 @@ impl VM {
     }
 }
 
+fn builder() -> InstructionBuilder {
+    InstructionBuilder::new()
+}
+
 fn parse(src: &str) -> Vec<Instruction> {
     src.parse::<InstructionBuilder>().unwrap().build()
 }
@@ -29,7 +33,7 @@ fn parse(src: &str) -> Vec<Instruction> {
 #[test]
 fn empty_program() {
     VM {
-        instructions: vec![Halt],
+        instructions: builder().just(Halt).build(),
         instruction_index: 0,
         ..Default::default()
     }
@@ -39,7 +43,7 @@ fn empty_program() {
 #[test]
 fn push_halt() {
     VM {
-        instructions: vec![Push(42), Push(68), Halt],
+        instructions: builder().push(42).push(68).just(Halt).build(),
         instruction_index: 2,
         stack: vec![42, 68],
         ..Default::default()
@@ -50,7 +54,7 @@ fn push_halt() {
 #[test]
 fn add() {
     VM {
-        instructions: vec![Push(1), Push(2), Add, Halt],
+        instructions: builder().push(1).push(2).just(Add).just(Halt).build(),
         instruction_index: 3,
         stack: vec![3],
         ..Default::default()
@@ -61,7 +65,7 @@ fn add() {
 #[test]
 fn pop() {
     VM {
-        instructions: vec![Push(42), Pop, Halt],
+        instructions: builder().then(Pop, 42).just(Halt).build(),
         instruction_index: 2,
         ..Default::default()
     }
@@ -71,7 +75,7 @@ fn pop() {
 #[test]
 fn dupe() {
     VM {
-        instructions: vec![Push(42), Dupe, Halt],
+        instructions: builder().then(Dupe, 42).just(Halt).build(),
         instruction_index: 2,
         stack: vec![42, 42],
         ..Default::default()
@@ -82,7 +86,13 @@ fn dupe() {
 #[test]
 fn jump() {
     VM {
-        instructions: vec![Push(3), Jump, Halt, Push(2), Jump],
+        instructions: builder()
+            .then(Jump, "end")
+            .label("middle")
+            .just(Halt)
+            .label("end")
+            .then(Jump, "middle")
+            .build(),
         instruction_index: 2,
         ..Default::default()
     }
@@ -92,16 +102,16 @@ fn jump() {
 #[test]
 fn jump_if() {
     VM {
-        instructions: vec![
-            Push(0),
-            Push(4),
-            JumpIf,
-            Pop,
-            Push(1),
-            Push(3),
-            JumpIf,
-            Halt,
-        ],
+        instructions: builder()
+            .push(0)
+            .then(JumpIf, "foo")
+            .label("bar")
+            .just(Pop)
+            .label("foo")
+            .push(1)
+            .then(JumpIf, "bar")
+            .just(Halt)
+            .build(),
         instruction_index: 7,
         ..Default::default()
     }
@@ -111,7 +121,7 @@ fn jump_if() {
 #[test]
 fn load_uninitialized() {
     VM {
-        instructions: vec![Push(0), Load, Halt],
+        instructions: builder().then(Load, 0).just(Halt).build(),
         instruction_index: 2,
         stack: vec![0],
         ..Default::default()
@@ -122,7 +132,7 @@ fn load_uninitialized() {
 #[test]
 fn store() {
     VM {
-        instructions: vec![Push(42), Push(0), Store, Halt],
+        instructions: builder().push(42).then(Store, 0).just(Halt).build(),
         instruction_index: 3,
         frames: Frames::new(vec![Frame {
             return_index: 0,
@@ -136,7 +146,12 @@ fn store() {
 #[test]
 fn load_store() {
     VM {
-        instructions: vec![Push(42), Push(0), Store, Push(0), Load, Halt],
+        instructions: builder()
+            .push(42)
+            .then(Store, 0)
+            .then(Load, 0)
+            .just(Halt)
+            .build(),
         instruction_index: 5,
         stack: vec![42],
         frames: Frames::new(vec![Frame {
@@ -265,7 +280,12 @@ fn while_mul() {
 #[test]
 fn call_ret_empty() {
     VM {
-        instructions: vec![Push(3), Call, Halt, Return],
+        instructions: builder()
+            .then(Call, "func")
+            .just(Halt)
+            .label("func")
+            .just(Return)
+            .build(),
         instruction_index: 2,
         ..Default::default()
     }
@@ -275,7 +295,12 @@ fn call_ret_empty() {
 #[test]
 fn call_ret_const() {
     VM {
-        instructions: vec![Push(3), Call, Halt, Push(7), Return],
+        instructions: builder()
+            .then(Call, "func")
+            .just(Halt)
+            .label("func")
+            .then(Return, 7)
+            .build(),
         instruction_index: 2,
         stack: vec![7],
         ..Default::default()
@@ -286,7 +311,14 @@ fn call_ret_const() {
 #[test]
 fn call_ret_double() {
     VM {
-        instructions: vec![Push(3), Push(4), Call, Halt, Push(2), Mul, Return],
+        instructions: builder()
+            .push(3)
+            .then(Call, "func")
+            .just(Halt)
+            .label("func")
+            .then(Mul, 2)
+            .just(Return)
+            .build(),
         instruction_index: 3,
         stack: vec![6],
         ..Default::default()
