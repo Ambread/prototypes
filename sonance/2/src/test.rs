@@ -2,7 +2,10 @@ use pretty_assertions::assert_eq;
 
 use std::{collections::HashMap, vec};
 
-use crate::vm::{Frame, Frames, Instruction::*, VM};
+use crate::{
+    builder::InstructionBuilder,
+    vm::{Frame, Frames, Instruction::*, VM},
+};
 
 impl VM {
     /// Create a fresh VM with this VM's instructions, run it to completion, and assert that it reaches the same state as this VM
@@ -140,38 +143,34 @@ fn load_store() {
 #[test]
 fn if_else() {
     VM {
-        instructions: vec![
-            // let a
-            Push(6), // 0
-            Push(0), // 1
-            Store,   // 2
-            // let b
-            Push(4), // 3
-            Push(1), // 4
-            Store,   // 5
-            // a > b
-            Push(0),  // 6
-            Load,     // 7
-            Push(1),  // 8
-            Load,     // 9
-            Gt,       // 10
-            Push(19), // 11
-            JumpIf,   // 12
-            // else
-            Push(1),  // 13
-            Load,     // 14
-            Push(2),  // 15
-            Store,    // 16
-            Push(24), // 17
-            Jump,     // 18
-            // if
-            Push(0), // 19
-            Load,    // 20
-            Push(2), // 21
-            Store,   // 22
-            // done
-            Halt, // 23
-        ],
+        instructions: InstructionBuilder::new()
+            .push(6)
+            .push(0)
+            .then(Store)
+            .push(4)
+            .push(1)
+            .then(Store)
+            .push(0)
+            .then(Load)
+            .push(1)
+            .then(Load)
+            .then(Gt)
+            .push("else")
+            .then(JumpIf)
+            .push(1)
+            .then(Load)
+            .push(2)
+            .then(Store)
+            .push("done")
+            .then(Jump)
+            .label("else")
+            .push(0)
+            .then(Load)
+            .push(2)
+            .then(Store)
+            .label("done")
+            .then(Halt)
+            .build(),
 
         instruction_index: 23,
         frames: Frames::new(vec![Frame {
