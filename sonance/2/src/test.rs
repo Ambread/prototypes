@@ -372,7 +372,7 @@ fn large_number() {
             halt
         ",
         ),
-        instruction_index: 8,
+        instruction_index: 5,
         stack: vec![255, 255, 255, 255],
         ..Default::default()
     }

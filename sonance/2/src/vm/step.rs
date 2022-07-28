@@ -33,6 +33,36 @@ impl VM {
                     .ok_or(VMError::InstructionIndexOutOfBounds(self.instruction_index))?;
                 self.stack.push(value);
             }
+            Instruction::PushU16 => {
+                for _ in 0..2 {
+                    self.instruction_index += 1;
+                    let value = *self
+                        .instructions
+                        .get(self.instruction_index as usize)
+                        .ok_or(VMError::InstructionIndexOutOfBounds(self.instruction_index))?;
+                    self.stack.push(value);
+                }
+            }
+            Instruction::PushU32 => {
+                for _ in 0..4 {
+                    self.instruction_index += 1;
+                    let value = *self
+                        .instructions
+                        .get(self.instruction_index as usize)
+                        .ok_or(VMError::InstructionIndexOutOfBounds(self.instruction_index))?;
+                    self.stack.push(value);
+                }
+            }
+            Instruction::PushU64 => {
+                for _ in 0..8 {
+                    self.instruction_index += 1;
+                    let value = *self
+                        .instructions
+                        .get(self.instruction_index as usize)
+                        .ok_or(VMError::InstructionIndexOutOfBounds(self.instruction_index))?;
+                    self.stack.push(value);
+                }
+            }
             Instruction::Pop => {
                 self.pop()?;
             }

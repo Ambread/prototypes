@@ -48,7 +48,7 @@ impl InstructionParser {
         }
 
         let mut args = line.split_whitespace();
-        let instruction = args
+        let instruction_str = args
             .next()
             .expect("split should always give at least one str");
 
@@ -56,8 +56,8 @@ impl InstructionParser {
             self.parse_arg(arg)?;
         }
 
-        let instruction = instruction.parse()?;
-        if instruction != Instruction::Push {
+        let instruction = instruction_str.parse()?;
+        if !instruction_str.starts_with("push") {
             self.items.push(Item::Instruction(instruction));
         }
 
@@ -94,8 +94,8 @@ impl InstructionParser {
 
         if let Some(number) = self.parse_suffixed(arg, "u16") {
             let number: u16 = number.parse()?;
+            self.items.push(Item::Instruction(Instruction::PushU16));
             for raw in number.to_le_bytes() {
-                self.items.push(Item::Instruction(Instruction::Push));
                 self.items.push(Item::Raw(raw));
             }
             return Ok(());
@@ -103,8 +103,8 @@ impl InstructionParser {
 
         if let Some(number) = self.parse_suffixed(arg, "u32") {
             let number: u32 = number.parse()?;
+            self.items.push(Item::Instruction(Instruction::PushU32));
             for raw in number.to_le_bytes() {
-                self.items.push(Item::Instruction(Instruction::Push));
                 self.items.push(Item::Raw(raw));
             }
             return Ok(());
@@ -112,8 +112,8 @@ impl InstructionParser {
 
         if let Some(number) = self.parse_suffixed(arg, "u64") {
             let number: u64 = number.parse()?;
+            self.items.push(Item::Instruction(Instruction::PushU64));
             for raw in number.to_le_bytes() {
-                self.items.push(Item::Instruction(Instruction::Push));
                 self.items.push(Item::Raw(raw));
             }
             return Ok(());

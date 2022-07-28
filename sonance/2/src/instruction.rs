@@ -55,6 +55,9 @@ generate_instructions! {
         Halt,
 
         Push,
+        PushU16,
+        PushU32,
+        PushU64,
         Pop,
         Dupe,
 
