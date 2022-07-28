@@ -101,7 +101,7 @@ impl InstructionParser {
             .map(|item| match item {
                 Item::Instruction(instruction) => instruction as u8,
                 Item::Raw(raw) => raw,
-                Item::LabelReference(label) => self.labels[&label],
+                Item::LabelReference(label) => self.labels[&label] - 1,
             })
             .collect()
     }

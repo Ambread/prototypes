@@ -27,7 +27,10 @@ impl VM {
 
             Instruction::Push => {
                 self.instruction_index += 1;
-                let value = self.instructions[self.instruction_index as usize];
+                let value = *self
+                    .instructions
+                    .get(self.instruction_index as usize)
+                    .ok_or(VMError::InstructionIndexOutOfBounds(self.instruction_index))?;
                 self.stack.push(value);
             }
             Instruction::Pop => {
@@ -41,13 +44,14 @@ impl VM {
 
             Instruction::Jump => {
                 let index = self.pop()?;
-                self.jump(index);
+
+                self.instruction_index = index;
             }
             Instruction::JumpIf => {
                 let index = self.pop()?;
                 let a = self.pop()?;
                 if a == 0 {
-                    self.jump(index);
+                    self.instruction_index = index;
                 }
             }
 
@@ -72,15 +76,17 @@ impl VM {
 
             Instruction::Call => {
                 let index = self.pop()?;
-                self.frames.call(self.instruction_index + 1);
-                self.jump(index);
+                self.frames.call(self.instruction_index);
+
+                self.instruction_index = index;
             }
             Instruction::Return => {
                 let index = self
                     .frames
                     .ret()
                     .ok_or(VMError::TopLevelReturn(self.instruction_index))?;
-                self.jump(index);
+
+                self.instruction_index = index;
             }
 
             Instruction::Add => self.binary_op(|a, b| a + b)?,
@@ -101,11 +107,7 @@ impl VM {
             Instruction::Geq => self.binary_op(|a, b| (a >= b) as _)?,
         }
 
-        // Avoid incrementing if a instruction jumped to avoid off-by-one situations
-        if !self.has_jumped {
-            self.instruction_index += 1;
-        }
-        self.has_jumped = false;
+        self.instruction_index += 1;
 
         Ok(false)
     }
