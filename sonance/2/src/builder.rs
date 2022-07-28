@@ -25,7 +25,13 @@ impl InstructionBuilder {
         self
     }
 
-    pub fn then(mut self, instruction: Instruction) -> Self {
+    pub fn just(mut self, instruction: Instruction) -> Self {
+        self.instructions.push(BuildItem::Instruction(instruction));
+        self
+    }
+
+    pub fn then<T: IntoPush>(mut self, instruction: Instruction, thing: T) -> Self {
+        self.instructions.push(thing.into_push());
         self.instructions.push(BuildItem::Instruction(instruction));
         self
     }

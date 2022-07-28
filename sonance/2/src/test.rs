@@ -145,31 +145,21 @@ fn if_else() {
     VM {
         instructions: InstructionBuilder::new()
             .push(6)
-            .push(0)
-            .then(Store)
+            .then(Store, 0)
             .push(4)
-            .push(1)
-            .then(Store)
-            .push(0)
-            .then(Load)
-            .push(1)
-            .then(Load)
-            .then(Gt)
-            .push("else")
-            .then(JumpIf)
-            .push(1)
-            .then(Load)
-            .push(2)
-            .then(Store)
-            .push("done")
-            .then(Jump)
+            .then(Store, 1)
+            .then(Load, 0)
+            .then(Load, 1)
+            .just(Gt)
+            .then(JumpIf, "else")
+            .then(Load, 1)
+            .then(Store, 2)
+            .then(Jump, "done")
             .label("else")
-            .push(0)
-            .then(Load)
-            .push(2)
-            .then(Store)
+            .then(Load, 0)
+            .then(Store, 2)
             .label("done")
-            .then(Halt)
+            .just(Halt)
             .build(),
 
         instruction_index: 23,
@@ -185,49 +175,36 @@ fn if_else() {
 #[test]
 fn while_mul() {
     VM {
-        instructions: vec![
+        instructions: InstructionBuilder::new()
             // let a
-            Push(6), // 0
-            Push(0), // 1
-            Store,   // 2
+            .push(6)
+            .then(Store, 0)
             // let b
-            Push(4), // 3
-            Push(1), // 4
-            Store,   // 5
-            // let total
-            Push(0), // 6
-            Push(2), // 7
-            Store,   // 8
+            .push(4)
+            .then(Store, 1)
+            // let c
+            .push(0)
+            .then(Store, 2)
             // while
-            Push(1),  // 9
-            Load,     // 10
-            Push(1),  // 11
-            Geq,      // 12
-            BoolNot,  // 13
-            Push(31), // 14
-            JumpIf,   // 15
-            // do
+            .label("while")
+            .then(Load, 1)
+            .then(Geq, 1)
+            .just(BoolNot)
+            .then(JumpIf, "break")
             // total += a
-            Push(0), // 16
-            Load,    // 17
-            Push(2), // 18
-            Load,    // 19
-            Add,     // 20
-            Push(2), // 21
-            Store,   // 22
+            .then(Load, 0)
+            .then(Load, 2)
+            .just(Add)
+            .then(Store, 2)
             // b -= 1
-            Push(1), // 23
-            Load,    // 24
-            Push(1), // 25
-            Sub,     // 26
-            Push(1), // 27
-            Store,   // 28
-            // continue
-            Push(9), // 29
-            Jump,    // 30
+            .then(Load, 1)
+            .then(Sub, 1)
+            .then(Store, 1)
+            .then(Jump, "while")
             // break
-            Halt, // 31
-        ],
+            .label("break")
+            .just(Halt)
+            .build(),
 
         instruction_index: 31,
         frames: Frames::new(vec![Frame {
@@ -274,34 +251,29 @@ fn call_ret_double() {
 #[test]
 fn max() {
     VM {
-        instructions: vec![
-            Push(6), // 0
-            Push(4), // 1
-            Push(5), // 2
-            Call,    // 3
-            Halt,    // 4
+        instructions: InstructionBuilder::new()
+            .push(6)
+            .push(4)
+            .then(Call, "max")
+            .just(Halt)
             // fn max
-            Push(1), // 5
-            Store,   // 6
-            Push(0), // 7
-            Store,   // 8
+            .label("max")
+            .then(Store, 1)
+            .then(Store, 0)
             // if
-            Push(0),  // 9
-            Load,     // 10
-            Push(1),  // 11
-            Load,     // 12
-            Gt,       // 13
-            Push(19), // 14
-            JumpIf,   // 15
+            .then(Load, 0)
+            .then(Load, 1)
+            .just(Gt)
+            .then(JumpIf, "else")
             // then
-            Push(1), // 16
-            Load,    // 17
-            Return,  // 18
+            .then(Load, 1)
+            .just(Return)
             // else
-            Push(0), // 19
-            Load,    // 20
-            Return,  // 21
-        ],
+            .label("else")
+            .then(Load, 0)
+            .just(Return)
+            .build(),
+
         instruction_index: 4,
         stack: vec![6],
         ..Default::default()
