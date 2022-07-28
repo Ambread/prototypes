@@ -3,7 +3,7 @@ use pretty_assertions::assert_eq;
 use std::{collections::HashMap, vec};
 
 use crate::{
-    parser::parse,
+    parser,
     vm::{Frame, Frames, VM},
 };
 
@@ -16,6 +16,10 @@ impl VM {
             Err(error) => panic!("{error}"),
         }
     }
+}
+
+fn parse(src: &str) -> Vec<u8> {
+    parser::parse(src).unwrap()
 }
 
 #[test]

@@ -1,5 +1,8 @@
+pub mod error;
+
 use std::collections::HashMap;
 
+pub use crate::parser::error::{ParseError, Result};
 use crate::vm::Instruction;
 
 #[derive(Debug, Clone)]
@@ -17,48 +20,58 @@ struct InstructionParser {
     variable_counter: u8,
 }
 
-pub fn parse(src: &str) -> Vec<u8> {
+pub fn parse(src: &str) -> Result<Vec<u8>> {
     let mut parser = InstructionParser::default();
 
     for line in src.lines() {
-        parser.parse_line(line);
+        parser.parse_line(line)?;
     }
 
-    parser.build()
+    Ok(parser.build())
 }
 
 impl InstructionParser {
-    fn parse_line(&mut self, line: &str) {
-        let line = line.split(';').next().unwrap().trim();
+    fn parse_line(&mut self, line: &str) -> Result<()> {
+        let line = line
+            .split(';')
+            .next()
+            .expect("split should always give at least one str")
+            .trim();
 
         if line.is_empty() {
-            return;
+            return Ok(());
         }
 
         if let Some(label) = self.parse_prefixed('#', line) {
             self.labels.insert(label, self.items.len() as _);
-            return;
+            return Ok(());
         }
 
         let mut args = line.split_whitespace();
-        let instruction = args.next().unwrap();
+        let instruction = args
+            .next()
+            .expect("split should always give at least one str");
 
         for arg in args.rev() {
-            self.parse_arg(arg);
+            self.parse_arg(arg)?;
         }
 
-        let instruction = instruction.parse().unwrap();
+        let instruction = instruction
+            .parse()
+            .map_err(|_| ParseError::InvalidInstruction)?;
         if instruction != Instruction::Push {
             self.items.push(Item::Instruction(instruction));
         }
+
+        Ok(())
     }
 
-    fn parse_arg(&mut self, arg: &str) {
+    fn parse_arg(&mut self, arg: &str) -> Result<()> {
         self.items.push(Item::Instruction(Instruction::Push));
 
         if let Some(label) = self.parse_prefixed('#', arg) {
             self.items.push(Item::LabelReference(label));
-            return;
+            return Ok(());
         }
 
         if let Some(variable) = self.parse_prefixed('&', arg) {
@@ -69,11 +82,13 @@ impl InstructionParser {
             });
 
             self.items.push(Item::Raw(variable));
-            return;
+            return Ok(());
         }
 
-        let number = arg.parse().unwrap();
+        let number = arg.parse()?;
         self.items.push(Item::Raw(number));
+
+        Ok(())
     }
 
     fn parse_prefixed(&mut self, prefix: char, ident: &str) -> Option<String> {
