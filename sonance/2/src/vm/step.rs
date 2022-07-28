@@ -17,7 +17,7 @@ impl VM {
 
         println!(
             "{: >3}  {}",
-            self.current_instruction, self.instruction_index
+            self.instruction_index, self.current_instruction,
         );
 
         match self.current_instruction {
