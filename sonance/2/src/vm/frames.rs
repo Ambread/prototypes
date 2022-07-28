@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use crate::vm::error::{Result, VMError};
-
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Frame {
     pub variables: HashMap<u8, u8>,
@@ -33,21 +31,21 @@ impl Frames {
         });
     }
 
-    pub fn ret(&mut self) -> Result<u8> {
-        let frame = self.frames.pop().ok_or(VMError::TopLevelReturn)?;
-        Ok(frame.return_index)
+    pub fn ret(&mut self) -> Option<u8> {
+        let frame = self.frames.pop()?;
+        Some(frame.return_index)
     }
 
-    pub fn load(&self, variable: u8) -> Result<u8> {
-        let frame = self.frames.last().ok_or(VMError::ExpectedFrame)?;
+    pub fn load(&self, variable: u8) -> Option<u8> {
+        let frame = self.frames.last()?;
 
-        Ok(frame.variables.get(&variable).copied().unwrap_or(0))
+        Some(frame.variables.get(&variable).copied().unwrap_or(0))
     }
 
-    pub fn store(&mut self, variable: u8, value: u8) -> Result<()> {
-        let frame = self.frames.last_mut().ok_or(VMError::ExpectedFrame)?;
+    pub fn store(&mut self, variable: u8, value: u8) -> Option<()> {
+        let frame = self.frames.last_mut()?;
 
         frame.variables.insert(variable, value);
-        Ok(())
+        Some(())
     }
 }

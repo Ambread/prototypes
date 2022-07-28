@@ -45,9 +45,10 @@ impl VM {
     }
 
     fn pop(&mut self) -> Result<u8> {
-        self.stack
-            .pop()
-            .ok_or(VMError::EmptyStack(self.current_instruction))
+        self.stack.pop().ok_or(VMError::EmptyStack(
+            self.current_instruction,
+            self.instruction_index,
+        ))
     }
 
     fn jump(&mut self, index: u8) {

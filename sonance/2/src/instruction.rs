@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::{parser::ParseError, vm::VMError};
+use crate::parser::ParseError;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Instruction {
@@ -44,7 +44,7 @@ impl PartialEq<Instruction> for u8 {
 }
 
 impl TryFrom<u8> for Instruction {
-    type Error = VMError;
+    type Error = ();
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(match value {
@@ -80,7 +80,7 @@ impl TryFrom<u8> for Instruction {
             _ if value == Instruction::Gt => Instruction::Gt,
             _ if value == Instruction::Geq => Instruction::Geq,
 
-            _ => return Err(VMError::InvalidInstruction(value)),
+            _ => return Err(()),
         })
     }
 }

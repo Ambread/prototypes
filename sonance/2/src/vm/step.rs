@@ -6,13 +6,13 @@ use crate::vm::{
 impl VM {
     pub fn step(&mut self) -> Result<bool> {
         self.current_instruction = {
-            let instruction = self
+            let code = *self
                 .instructions
                 .get(self.instruction_index as usize)
                 .ok_or(VMError::InstructionIndexOutOfBounds(self.instruction_index))?;
 
-            let instruction: Result<Instruction, _> = (*instruction).try_into();
-            instruction?
+            let instruction: Result<Instruction, _> = code.try_into();
+            instruction.map_err(|_| VMError::InvalidInstruction(code, self.instruction_index))?
         };
 
         println!(
@@ -53,13 +53,21 @@ impl VM {
 
             Instruction::Load => {
                 let variable = self.pop()?;
-                let a = self.frames.load(variable)?;
+                let a = self.frames.load(variable).ok_or(VMError::ExpectedFrame(
+                    self.current_instruction,
+                    self.instruction_index,
+                ))?;
                 self.stack.push(a);
             }
             Instruction::Store => {
                 let variable = self.pop()?;
                 let a = self.pop()?;
-                self.frames.store(variable, a)?;
+                self.frames
+                    .store(variable, a)
+                    .ok_or(VMError::ExpectedFrame(
+                        self.current_instruction,
+                        self.instruction_index,
+                    ))?;
             }
 
             Instruction::Call => {
@@ -68,7 +76,10 @@ impl VM {
                 self.jump(index);
             }
             Instruction::Return => {
-                let index = self.frames.ret()?;
+                let index = self
+                    .frames
+                    .ret()
+                    .ok_or(VMError::TopLevelReturn(self.instruction_index))?;
                 self.jump(index);
             }
 
