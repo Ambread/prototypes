@@ -4,14 +4,17 @@ use crate::vm::Instruction;
 
 #[derive(Debug, Clone)]
 enum Item {
-    Instruction(u8),
-    PushLabel(String),
+    Instruction(Instruction),
+    Raw(u8),
+    LabelReference(String),
 }
 
 #[derive(Debug, Clone, Default)]
 struct InstructionParser {
     items: Vec<Item>,
     labels: HashMap<String, u8>,
+    variables: HashMap<String, u8>,
+    variable_counter: u8,
 }
 
 pub fn parse(src: &str) -> Vec<u8> {
@@ -26,13 +29,13 @@ pub fn parse(src: &str) -> Vec<u8> {
 
 impl InstructionParser {
     fn parse_line(&mut self, line: &str) {
-        let line = line.trim();
+        let line = line.split(';').next().unwrap().trim();
 
         if line.is_empty() {
             return;
         }
 
-        if let Some(label) = self.parse_label(line) {
+        if let Some(label) = self.parse_prefixed('#', line) {
             self.labels.insert(label, self.items.len() as _);
             return;
         }
@@ -44,36 +47,48 @@ impl InstructionParser {
             self.parse_arg(arg);
         }
 
-        if instruction != "push" {
-            let instruction: Instruction = instruction.parse().unwrap();
-            self.items.push(Item::Instruction(instruction as u8));
+        let instruction = instruction.parse().unwrap();
+        if instruction != Instruction::Push {
+            self.items.push(Item::Instruction(instruction));
         }
     }
 
     fn parse_arg(&mut self, arg: &str) {
-        self.items.push(Item::Instruction(Instruction::Push as u8));
+        self.items.push(Item::Instruction(Instruction::Push));
 
-        if let Some(label) = self.parse_label(arg) {
-            self.items.push(Item::PushLabel(label));
+        if let Some(label) = self.parse_prefixed('#', arg) {
+            self.items.push(Item::LabelReference(label));
+            return;
+        }
+
+        if let Some(variable) = self.parse_prefixed('&', arg) {
+            let variable = *self.variables.entry(variable).or_insert_with(|| {
+                let variable = self.variable_counter;
+                self.variable_counter += 1;
+                variable
+            });
+
+            self.items.push(Item::Raw(variable));
             return;
         }
 
         let number = arg.parse().unwrap();
-        self.items.push(Item::Instruction(number));
+        self.items.push(Item::Raw(number));
     }
 
-    fn parse_label(&mut self, thing: &str) -> Option<String> {
-        thing
-            .starts_with('#')
-            .then(|| thing.trim_start_matches('#').into())
+    fn parse_prefixed(&mut self, prefix: char, ident: &str) -> Option<String> {
+        ident
+            .starts_with(prefix)
+            .then(|| ident.trim_start_matches(prefix).into())
     }
 
     fn build(self) -> Vec<u8> {
         self.items
             .into_iter()
             .map(|item| match item {
-                Item::Instruction(instruction) => instruction,
-                Item::PushLabel(label) => self.labels[&label],
+                Item::Instruction(instruction) => instruction as u8,
+                Item::Raw(raw) => raw,
+                Item::LabelReference(label) => self.labels[&label],
             })
             .collect()
     }

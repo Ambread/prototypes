@@ -141,7 +141,7 @@ fn load_uninitialized() {
     VM {
         instructions: parse(
             "
-            load 0
+            load &a
             halt
         ",
         ),
@@ -158,7 +158,7 @@ fn store() {
     VM {
         instructions: parse(
             "
-            store 0 42
+            store &a 42
             halt
         ",
         ),
@@ -178,8 +178,8 @@ fn load_store() {
     VM {
         instructions: parse(
             "
-            store 0 42
-            load 0
+            store &a 42
+            load &a
             halt
         ",
         ),
@@ -200,21 +200,21 @@ fn if_else() {
     VM {
         instructions: parse(
             "
-            store 0 6
-            store 1 4
+            store &a 6
+            store &b 4
 
-            load 0
-            load 1
+            load &a
+            load &b
             gt
             jump_if #else
 
-            load 0
-            store 2
+            load &a
+            store &c
             jump #done
 
             #else
-            load 1
-            store 2
+            load &b
+            store &c
 
             #done
             halt
@@ -236,23 +236,23 @@ fn while_mul() {
     VM {
         instructions: parse(
             "
-            store 0 6
-            store 1 4
-            store 2 0
+            store &a 6
+            store &b 4
+            store &total 0
 
             #while
-            load 1
+            load &b
             geq 1
             jump_if #break
 
-            load 0
-            load 2
+            load &a
+            load &total
             add
-            store 2
+            store &total
 
-            load 1
+            load &b
             sub 1
-            store 1
+            store &b
             jump #while
 
             #break
@@ -335,19 +335,19 @@ fn max() {
             halt
 
             #max
-            store 1
+            store &b
             store 0
 
-            load 0
-            load 1
+            load &a
+            load &b
             gt
             jump_if #else
 
-            load 0
+            load &a
             return
 
             #else
-            load 1
+            load &b
             return
         ",
         ),
