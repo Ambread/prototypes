@@ -1,9 +1,10 @@
+use casey::snake;
 use std::{fmt::Display, str::FromStr};
 
 use crate::parser::ParseError;
 
-macro_rules! instruction {
-    (enum $ty:ident { $($number:literal $ident:ident $name:ident,)* }) => {
+macro_rules! generate_instructions {
+    (enum $ty:ident { $($ident:ident,)* }) => {
         #[derive(Debug, Clone, Copy, PartialEq)]
         pub enum $ty {
             $($ident,)*
@@ -11,18 +12,18 @@ macro_rules! instruction {
 
         impl From<$ty> for u8 {
             fn from(value: $ty) -> Self {
-                match value {
-                    $($ty::$ident => $number,)*
-                }
+                value as u8
             }
         }
 
         impl TryFrom<u8> for $ty {
             type Error = ();
 
+            #[allow(non_upper_case_globals)]
             fn try_from(value: u8) -> Result<Self, Self::Error> {
+                $(const $ident: u8 = $ty::$ident as u8;)*
                 Ok(match value {
-                    $($number => $ty::$ident,)*
+                    $($ident => $ty::$ident,)*
                     _ => return Err(()),
                 })
             }
@@ -31,7 +32,7 @@ macro_rules! instruction {
         impl Display for $ty {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match self {
-                    $($ty::$ident => write!(f, stringify!($name)),)*
+                    $($ty::$ident => write!(f, stringify!(snake!($ident))),)*
                 }
             }
         }
@@ -41,7 +42,7 @@ macro_rules! instruction {
 
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 Ok(match s {
-                    $(stringify!($name) => $ty::$ident,)*
+                    $(snake!(stringify!($ident)) => $ty::$ident,)*
                     _ => return Err(ParseError::InvalidInstruction(s.into())),
                 })
             }
@@ -49,38 +50,38 @@ macro_rules! instruction {
     };
 }
 
-instruction! {
+generate_instructions! {
     enum Instruction {
-        0 Halt halt,
+        Halt,
 
-        1 Push push,
-        2 Pop pop,
-        3 Dupe dupe,
+        Push,
+        Pop,
+        Dupe,
 
-        4 Jump jump,
-        5 JumpIf jump_if,
+        Jump,
+        JumpIf,
 
-        6 Load load,
-        7 Store store,
+        Load,
+        Store,
 
-        8 Call call,
-        9 Return return,
+        Call,
+        Return,
 
-        10 Add add,
-        11 Sub sub,
-        12 Mul mul,
-        13 Div div,
+        Add,
+        Sub,
+        Mul,
+        Div,
 
-        14 BitAnd bit_and,
-        15 BitOr bit_or,
-        16 BitNot bit_not,
+        BitAnd,
+        BitOr,
+        BitNot,
 
-        17 BoolAnd bool_and,
-        18 BoolOr bool_or,
-        19 BoolNot bool_not,
+        BoolAnd,
+        BoolOr,
+        BoolNot,
 
-        20 Eq eq,
-        21 Gt gt,
-        22 Geq geq,
+        Eq,
+        Gt,
+        Geq,
     }
 }
