@@ -1,12 +1,11 @@
-pub mod error;
+mod error;
 mod frames;
-mod instruction;
 mod step;
 
-use crate::vm::error::{Result, VMError};
+use crate::instruction::Instruction;
 pub use crate::vm::{
+    error::{Result, VMError},
     frames::{Frame, Frames},
-    instruction::Instruction,
 };
 
 #[derive(Debug, Clone, PartialEq)]

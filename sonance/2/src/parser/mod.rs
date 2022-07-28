@@ -1,9 +1,9 @@
-pub mod error;
+mod error;
 
 use std::collections::HashMap;
 
+use crate::instruction::Instruction;
 pub use crate::parser::error::{ParseError, Result};
-use crate::vm::Instruction;
 
 #[derive(Debug, Clone)]
 enum Item {

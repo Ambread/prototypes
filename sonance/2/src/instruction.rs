@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::{parser::ParseError, vm::error::VMError};
+use crate::{parser::ParseError, vm::VMError};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Instruction {
