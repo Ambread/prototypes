@@ -2,14 +2,17 @@ use std::io::Write;
 
 use console::Term;
 
-use crate::{
-    error::Result,
-    vm::{Instruction, VM},
+use crate::vm::{
+    error::{Result, VMError},
+    Instruction, VM,
 };
 
 impl VM {
     pub fn step(&mut self) -> Result<bool> {
-        self.current_instruction = self.instructions[self.instruction_index as usize];
+        self.current_instruction = *self
+            .instructions
+            .get(self.instruction_index as usize)
+            .ok_or(VMError::InstructionIndexOutOfBounds(self.instruction_index))?;
 
         match self.current_instruction {
             Instruction::Halt => {

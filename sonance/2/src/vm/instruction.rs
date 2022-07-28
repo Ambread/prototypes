@@ -117,6 +117,7 @@ impl FromStr for Instruction {
             "eq" => Instruction::Eq,
             "gt" => Instruction::Gt,
             "geq" => Instruction::Geq,
+
             _ => return Err(()),
         })
     }

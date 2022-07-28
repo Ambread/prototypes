@@ -1,8 +1,9 @@
+pub mod error;
 mod frames;
 mod instruction;
 mod step;
 
-use crate::error::{Error, Result};
+use crate::vm::error::{Result, VMError};
 pub use crate::vm::{
     frames::{Frame, Frames},
     instruction::Instruction,
@@ -47,7 +48,7 @@ impl VM {
     fn pop(&mut self) -> Result<u64> {
         self.stack
             .pop()
-            .ok_or(Error::EmptyStack(self.current_instruction))
+            .ok_or(VMError::EmptyStack(self.current_instruction))
     }
 
     fn jump(&mut self, index: u64) {
