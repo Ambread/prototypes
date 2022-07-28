@@ -4,7 +4,7 @@ use std::{fmt::Display, str::FromStr};
 pub enum Instruction {
     Halt,
 
-    Push(u64),
+    Push(u8),
     Pop,
     Dupe,
 
@@ -16,9 +16,6 @@ pub enum Instruction {
 
     Call,
     Return,
-
-    In,
-    Out,
 
     Add,
     Sub,
@@ -55,9 +52,6 @@ impl Display for Instruction {
 
             Instruction::Call => write!(f, "call"),
             Instruction::Return => write!(f, "return"),
-
-            Instruction::In => write!(f, "in"),
-            Instruction::Out => write!(f, "out"),
 
             Instruction::Add => write!(f, "add"),
             Instruction::Sub => write!(f, "sub"),
@@ -97,9 +91,6 @@ impl FromStr for Instruction {
 
             "call" => Instruction::Call,
             "return" => Instruction::Return,
-
-            "in" => Instruction::In,
-            "out" => Instruction::Out,
 
             "add" => Instruction::Add,
             "sub" => Instruction::Sub,

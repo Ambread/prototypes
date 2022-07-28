@@ -11,7 +11,7 @@ pub enum BuildItem {
 #[derive(Debug, Clone, Default)]
 pub struct InstructionBuilder {
     instructions: Vec<BuildItem>,
-    labels: HashMap<String, u64>,
+    labels: HashMap<String, u8>,
 }
 
 impl InstructionBuilder {
@@ -21,7 +21,7 @@ impl InstructionBuilder {
 
     pub fn label<S: Into<String>>(mut self, label: S) -> Self {
         self.labels
-            .insert(label.into(), self.instructions.len() as u64);
+            .insert(label.into(), self.instructions.len() as _);
         self
     }
 
@@ -59,7 +59,7 @@ pub trait IntoPush: Sized {
     fn into_push(self) -> BuildItem;
 }
 
-impl IntoPush for u64 {
+impl IntoPush for u8 {
     fn into_push(self) -> BuildItem {
         BuildItem::Instruction(Instruction::Push(self))
     }

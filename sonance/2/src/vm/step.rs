@@ -1,7 +1,3 @@
-use std::io::Write;
-
-use console::Term;
-
 use crate::vm::{
     error::{Result, VMError},
     Instruction, VM,
@@ -64,16 +60,6 @@ impl VM {
                 self.jump(index);
             }
 
-            Instruction::In => {
-                let char = Term::stdout().read_char().unwrap();
-                self.stack.push(char as u64);
-            }
-            Instruction::Out => {
-                let buffer = self.pop()?.to_ne_bytes();
-                std::io::stdout().write_all(&buffer).unwrap();
-                std::io::stdout().flush().unwrap();
-            }
-
             Instruction::Add => self.binary_op(|a, b| a + b)?,
             Instruction::Sub => self.binary_op(|a, b| a - b)?,
             Instruction::Mul => self.binary_op(|a, b| a * b)?,
@@ -87,9 +73,9 @@ impl VM {
             Instruction::BoolOr => self.binary_op(|a, b| (a != 0 || b != 0) as _)?,
             Instruction::BoolNot => self.unary_op(|a| (a == 0) as _)?,
 
-            Instruction::Eq => self.binary_op(|a, b| (a == b) as u64)?,
-            Instruction::Gt => self.binary_op(|a, b| (a > b) as u64)?,
-            Instruction::Geq => self.binary_op(|a, b| (a >= b) as u64)?,
+            Instruction::Eq => self.binary_op(|a, b| (a == b) as _)?,
+            Instruction::Gt => self.binary_op(|a, b| (a > b) as _)?,
+            Instruction::Geq => self.binary_op(|a, b| (a >= b) as _)?,
         }
 
         // Avoid incrementing if a instruction jumped to avoid off-by-one situations

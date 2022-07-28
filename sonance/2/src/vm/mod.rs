@@ -12,10 +12,10 @@ pub use crate::vm::{
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
     pub instructions: Vec<Instruction>,
-    pub instruction_index: u64,
+    pub instruction_index: u8,
     pub current_instruction: Instruction,
     pub has_jumped: bool,
-    pub stack: Vec<u64>,
+    pub stack: Vec<u8>,
     pub frames: Frames,
 }
 
@@ -45,18 +45,18 @@ impl VM {
         Ok(())
     }
 
-    fn pop(&mut self) -> Result<u64> {
+    fn pop(&mut self) -> Result<u8> {
         self.stack
             .pop()
             .ok_or(VMError::EmptyStack(self.current_instruction))
     }
 
-    fn jump(&mut self, index: u64) {
+    fn jump(&mut self, index: u8) {
         self.instruction_index = index;
         self.has_jumped = true;
     }
 
-    fn unary_op(&mut self, body: impl FnOnce(u64) -> u64) -> Result<()> {
+    fn unary_op(&mut self, body: impl FnOnce(u8) -> u8) -> Result<()> {
         let a = self.pop()?;
         self.stack.push(body(a));
         Ok(())
@@ -64,7 +64,7 @@ impl VM {
 
     fn binary_op<F>(&mut self, body: F) -> Result<()>
     where
-        F: FnOnce(u64, u64) -> u64,
+        F: FnOnce(u8, u8) -> u8,
     {
         let b = self.pop()?;
         let a = self.pop()?;

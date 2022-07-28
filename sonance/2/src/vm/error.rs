@@ -13,5 +13,5 @@ pub enum VMError {
     #[error("attempted to access frame, but none exist")]
     ExpectedFrame,
     #[error("attempted to access instruction index {0}, but it was out of bounds")]
-    InstructionIndexOutOfBounds(u64),
+    InstructionIndexOutOfBounds(u8),
 }
