@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 
 use crate::vm::Instruction;
 
@@ -68,43 +68,5 @@ impl IntoPush for u8 {
 impl IntoPush for &str {
     fn into_push(self) -> BuildItem {
         BuildItem::PushLabel(self.into())
-    }
-}
-
-impl FromStr for InstructionBuilder {
-    type Err = ();
-
-    fn from_str(src: &str) -> Result<Self, Self::Err> {
-        let mut builder = Self::new();
-
-        for line in src.lines() {
-            let line = line.trim();
-
-            if line.is_empty() {
-                continue;
-            }
-
-            if line.ends_with(':') {
-                builder = builder.label(line.trim_end_matches(':'));
-                continue;
-            }
-
-            let mut args = line.split_whitespace();
-            let instruction = args.next().unwrap();
-
-            for arg in args.rev() {
-                match arg.parse::<u8>() {
-                    Ok(number) => builder = builder.push(number),
-                    Err(_) => builder = builder.push(arg),
-                }
-            }
-
-            if instruction != "push" {
-                let instruction = instruction.parse::<Instruction>().unwrap();
-                builder = builder.just(instruction);
-            }
-        }
-
-        Ok(builder)
     }
 }
