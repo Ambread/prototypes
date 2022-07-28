@@ -4,7 +4,7 @@ use std::{fmt::Display, str::FromStr};
 pub enum Instruction {
     Halt,
 
-    Push(u8),
+    Push,
     Pop,
     Dupe,
 
@@ -35,12 +35,59 @@ pub enum Instruction {
     Geq,
 }
 
+impl PartialEq<Instruction> for u8 {
+    fn eq(&self, other: &Instruction) -> bool {
+        *self == *other as u8
+    }
+}
+
+impl TryFrom<u8> for Instruction {
+    type Error = ();
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        Ok(match value {
+            _ if value == Instruction::Halt => Instruction::Halt,
+
+            _ if value == Instruction::Push => Instruction::Push,
+            _ if value == Instruction::Pop => Instruction::Pop,
+            _ if value == Instruction::Dupe => Instruction::Dupe,
+
+            _ if value == Instruction::Jump => Instruction::Jump,
+            _ if value == Instruction::JumpIf => Instruction::JumpIf,
+
+            _ if value == Instruction::Load => Instruction::Load,
+            _ if value == Instruction::Store => Instruction::Store,
+
+            _ if value == Instruction::Call => Instruction::Call,
+            _ if value == Instruction::Return => Instruction::Return,
+
+            _ if value == Instruction::Add => Instruction::Add,
+            _ if value == Instruction::Sub => Instruction::Sub,
+            _ if value == Instruction::Mul => Instruction::Mul,
+            _ if value == Instruction::Div => Instruction::Div,
+
+            _ if value == Instruction::BitAnd => Instruction::BitAnd,
+            _ if value == Instruction::BitOr => Instruction::BitOr,
+            _ if value == Instruction::BitNot => Instruction::BitNot,
+
+            _ if value == Instruction::BoolAnd => Instruction::BoolAnd,
+            _ if value == Instruction::BoolOr => Instruction::BoolOr,
+            _ if value == Instruction::BoolNot => Instruction::BoolNot,
+
+            _ if value == Instruction::Eq => Instruction::Eq,
+            _ if value == Instruction::Gt => Instruction::Gt,
+            _ if value == Instruction::Geq => Instruction::Geq,
+
+            _ => return Err(()),
+        })
+    }
+}
+
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Instruction::Halt => write!(f, "halt"),
 
-            Instruction::Push(value) => write!(f, "push {value}"),
+            Instruction::Push => write!(f, "push"),
             Instruction::Pop => write!(f, "pop"),
             Instruction::Dupe => write!(f, "dupe"),
 
@@ -79,7 +126,7 @@ impl FromStr for Instruction {
         Ok(match s {
             "halt" => Instruction::Halt,
 
-            "push" => panic!("Don't use Instruction::FromStr for Push"),
+            "push" => Instruction::Push,
             "pop" => Instruction::Pop,
             "dupe" => Instruction::Dupe,
 

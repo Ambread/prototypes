@@ -11,7 +11,7 @@ pub use crate::vm::{
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
-    pub instructions: Vec<Instruction>,
+    pub instructions: Vec<u8>,
     pub instruction_index: u8,
     pub current_instruction: Instruction,
     pub has_jumped: bool,
@@ -22,7 +22,7 @@ pub struct VM {
 impl Default for VM {
     fn default() -> Self {
         Self {
-            instructions: vec![Instruction::Halt],
+            instructions: vec![Instruction::Halt as u8],
             instruction_index: 0,
             current_instruction: Instruction::Halt,
             has_jumped: false,
@@ -33,7 +33,7 @@ impl Default for VM {
 }
 
 impl VM {
-    pub fn new(instructions: Vec<Instruction>) -> Self {
+    pub fn new(instructions: Vec<u8>) -> Self {
         Self {
             instructions,
             ..Default::default()

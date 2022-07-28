@@ -5,17 +5,29 @@ use crate::vm::{
 
 impl VM {
     pub fn step(&mut self) -> Result<bool> {
-        self.current_instruction = *self
-            .instructions
-            .get(self.instruction_index as usize)
-            .ok_or(VMError::InstructionIndexOutOfBounds(self.instruction_index))?;
+        self.current_instruction = {
+            let instruction = self
+                .instructions
+                .get(self.instruction_index as usize)
+                .ok_or(VMError::InstructionIndexOutOfBounds(self.instruction_index))?;
+
+            let instruction: Result<Instruction, ()> = (*instruction).try_into();
+            instruction.unwrap()
+        };
+
+        println!(
+            "{: >3}  {}",
+            self.current_instruction, self.instruction_index
+        );
 
         match self.current_instruction {
             Instruction::Halt => {
                 return Ok(true);
             }
 
-            Instruction::Push(value) => {
+            Instruction::Push => {
+                self.instruction_index += 1;
+                let value = self.instructions[self.instruction_index as usize];
                 self.stack.push(value);
             }
             Instruction::Pop => {

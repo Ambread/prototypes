@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use crate::vm::Instruction;
 
-pub type Result<T> = std::result::Result<T, VMError>;
+pub type Result<T, E = VMError> = std::result::Result<T, E>;
 
 #[derive(Debug, Clone, Error)]
 pub enum VMError {

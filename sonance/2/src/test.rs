@@ -34,10 +34,10 @@ fn empty_program() {
 }
 
 #[test]
-fn push_halt() {
+fn push() {
     VM {
         instructions: builder().push(42).push(68).just(Halt).build(),
-        instruction_index: 2,
+        instruction_index: 4,
         stack: vec![42, 68],
         ..Default::default()
     }
@@ -48,7 +48,7 @@ fn push_halt() {
 fn add() {
     VM {
         instructions: builder().push(1).push(2).just(Add).just(Halt).build(),
-        instruction_index: 3,
+        instruction_index: 5,
         stack: vec![3],
         ..Default::default()
     }
@@ -59,7 +59,7 @@ fn add() {
 fn pop() {
     VM {
         instructions: builder().then(Pop, 42).just(Halt).build(),
-        instruction_index: 2,
+        instruction_index: 3,
         ..Default::default()
     }
     .run_and_asset();
@@ -69,7 +69,7 @@ fn pop() {
 fn dupe() {
     VM {
         instructions: builder().then(Dupe, 42).just(Halt).build(),
-        instruction_index: 2,
+        instruction_index: 3,
         stack: vec![42, 42],
         ..Default::default()
     }
@@ -86,7 +86,7 @@ fn jump() {
             .label("end")
             .then(Jump, "middle")
             .build(),
-        instruction_index: 2,
+        instruction_index: 3,
         ..Default::default()
     }
     .run_and_asset();
@@ -105,7 +105,7 @@ fn jump_if() {
             .then(JumpIf, "bar")
             .just(Halt)
             .build(),
-        instruction_index: 7,
+        instruction_index: 11,
         ..Default::default()
     }
     .run_and_asset();
@@ -115,7 +115,7 @@ fn jump_if() {
 fn load_uninitialized() {
     VM {
         instructions: builder().then(Load, 0).just(Halt).build(),
-        instruction_index: 2,
+        instruction_index: 3,
         stack: vec![0],
         ..Default::default()
     }
@@ -126,7 +126,7 @@ fn load_uninitialized() {
 fn store() {
     VM {
         instructions: builder().push(42).then(Store, 0).just(Halt).build(),
-        instruction_index: 3,
+        instruction_index: 5,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 42)]),
@@ -145,7 +145,8 @@ fn load_store() {
             .then(Load, 0)
             .just(Halt)
             .build(),
-        instruction_index: 5,
+
+        instruction_index: 8,
         stack: vec![42],
         frames: Frames::new(vec![Frame {
             return_index: 0,
@@ -178,7 +179,7 @@ fn if_else() {
             .just(Halt)
             .build(),
 
-        instruction_index: 23,
+        instruction_index: 35,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 4), (2, 6)]),
@@ -215,7 +216,7 @@ fn if_else_bad() {
         ",
         ),
 
-        instruction_index: 23,
+        instruction_index: 35,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 4), (2, 6)]),
@@ -258,7 +259,7 @@ fn while_mul() {
             .just(Halt)
             .build(),
 
-        instruction_index: 30,
+        instruction_index: 46,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 0), (2, 24)]),
@@ -277,7 +278,7 @@ fn call_ret_empty() {
             .label("func")
             .just(Return)
             .build(),
-        instruction_index: 2,
+        instruction_index: 3,
         ..Default::default()
     }
     .run_and_asset();
@@ -292,7 +293,8 @@ fn call_ret_const() {
             .label("func")
             .then(Return, 7)
             .build(),
-        instruction_index: 2,
+
+        instruction_index: 3,
         stack: vec![7],
         ..Default::default()
     }
@@ -310,7 +312,8 @@ fn call_ret_double() {
             .then(Mul, 2)
             .just(Return)
             .build(),
-        instruction_index: 3,
+
+        instruction_index: 5,
         stack: vec![6],
         ..Default::default()
     }
@@ -343,7 +346,7 @@ fn max() {
             .just(Return)
             .build(),
 
-        instruction_index: 4,
+        instruction_index: 7,
         stack: vec![6],
         ..Default::default()
     }
