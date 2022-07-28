@@ -56,9 +56,7 @@ impl InstructionParser {
             self.parse_arg(arg)?;
         }
 
-        let instruction = instruction
-            .parse()
-            .map_err(|_| ParseError::InvalidInstruction)?;
+        let instruction = instruction.parse()?;
         if instruction != Instruction::Push {
             self.items.push(Item::Instruction(instruction));
         }

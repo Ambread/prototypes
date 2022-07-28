@@ -6,8 +6,8 @@ pub type Result<T, E = ParseError> = std::result::Result<T, E>;
 
 #[derive(Debug, Clone, Error)]
 pub enum ParseError {
-    #[error("Invalid instruction")]
-    InvalidInstruction,
-    #[error("Invalid constant")]
+    #[error("string {0} is not a valid instruction")]
+    InvalidInstruction(String),
+    #[error("invalid constant")]
     InvalidConstant(#[from] ParseIntError),
 }

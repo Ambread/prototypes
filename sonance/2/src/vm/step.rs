@@ -11,8 +11,8 @@ impl VM {
                 .get(self.instruction_index as usize)
                 .ok_or(VMError::InstructionIndexOutOfBounds(self.instruction_index))?;
 
-            let instruction: Result<Instruction, ()> = (*instruction).try_into();
-            instruction.unwrap()
+            let instruction: Result<Instruction, _> = (*instruction).try_into();
+            instruction?
         };
 
         println!(

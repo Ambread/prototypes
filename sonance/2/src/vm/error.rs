@@ -14,4 +14,6 @@ pub enum VMError {
     ExpectedFrame,
     #[error("attempted to access instruction index {0}, but it was out of bounds")]
     InstructionIndexOutOfBounds(u8),
+    #[error("{0} is not a valid instruction")]
+    InvalidInstruction(u8),
 }

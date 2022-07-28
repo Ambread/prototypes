@@ -1,5 +1,7 @@
 use std::{fmt::Display, str::FromStr};
 
+use crate::{parser::ParseError, vm::error::VMError};
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Instruction {
     Halt,
@@ -42,7 +44,8 @@ impl PartialEq<Instruction> for u8 {
 }
 
 impl TryFrom<u8> for Instruction {
-    type Error = ();
+    type Error = VMError;
+
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(match value {
             _ if value == Instruction::Halt => Instruction::Halt,
@@ -77,7 +80,7 @@ impl TryFrom<u8> for Instruction {
             _ if value == Instruction::Gt => Instruction::Gt,
             _ if value == Instruction::Geq => Instruction::Geq,
 
-            _ => return Err(()),
+            _ => return Err(VMError::InvalidInstruction(value)),
         })
     }
 }
@@ -121,7 +124,8 @@ impl Display for Instruction {
 }
 
 impl FromStr for Instruction {
-    type Err = ();
+    type Err = ParseError;
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             "halt" => Instruction::Halt,
@@ -156,7 +160,7 @@ impl FromStr for Instruction {
             "gt" => Instruction::Gt,
             "geq" => Instruction::Geq,
 
-            _ => return Err(()),
+            _ => return Err(ParseError::InvalidInstruction(s.into())),
         })
     }
 }
