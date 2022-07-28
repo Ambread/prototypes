@@ -160,7 +160,7 @@ fn load_store() {
 #[test]
 fn if_else() {
     VM {
-        instructions: InstructionBuilder::new()
+        instructions: builder()
             .push(6)
             .then(Store, 0)
             .push(4)
@@ -229,7 +229,7 @@ fn if_else_bad() {
 #[test]
 fn while_mul() {
     VM {
-        instructions: InstructionBuilder::new()
+        instructions: builder()
             // let a
             .push(6)
             .then(Store, 0)
@@ -323,7 +323,7 @@ fn call_ret_double() {
 #[test]
 fn max() {
     VM {
-        instructions: InstructionBuilder::new()
+        instructions: builder()
             .push(6)
             .push(4)
             .then(Call, "max")
