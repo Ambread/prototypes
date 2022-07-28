@@ -38,7 +38,7 @@ impl VM {
             Instruction::JumpIf => {
                 let index = self.pop()?;
                 let a = self.pop()?;
-                if a != 0 {
+                if a == 0 {
                     self.jump(index);
                 }
             }

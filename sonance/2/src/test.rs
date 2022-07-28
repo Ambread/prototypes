@@ -85,11 +85,11 @@ fn jump() {
 fn jump_if() {
     VM {
         instructions: vec![
-            Push(1),
+            Push(0),
             Push(4),
             JumpIf,
             Pop,
-            Push(0),
+            Push(1),
             Push(3),
             JumpIf,
             Halt,
@@ -152,11 +152,11 @@ fn if_else() {
             .then(Load, 1)
             .just(Gt)
             .then(JumpIf, "else")
-            .then(Load, 1)
+            .then(Load, 0)
             .then(Store, 2)
             .then(Jump, "done")
             .label("else")
-            .then(Load, 0)
+            .then(Load, 1)
             .then(Store, 2)
             .label("done")
             .just(Halt)
@@ -189,7 +189,6 @@ fn while_mul() {
             .label("while")
             .then(Load, 1)
             .then(Geq, 1)
-            .just(BoolNot)
             .then(JumpIf, "break")
             // total += a
             .then(Load, 0)
@@ -206,7 +205,7 @@ fn while_mul() {
             .just(Halt)
             .build(),
 
-        instruction_index: 31,
+        instruction_index: 30,
         frames: Frames::new(vec![Frame {
             return_index: 0,
             variables: HashMap::from([(0, 6), (1, 0), (2, 24)]),
@@ -266,11 +265,11 @@ fn max() {
             .just(Gt)
             .then(JumpIf, "else")
             // then
-            .then(Load, 1)
+            .then(Load, 0)
             .just(Return)
             // else
             .label("else")
-            .then(Load, 0)
+            .then(Load, 1)
             .just(Return)
             .build(),
 
