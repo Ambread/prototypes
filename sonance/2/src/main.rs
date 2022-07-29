@@ -2,10 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Parser;
-use sonance::{
-    parser,
-    vm::{Memory, VM},
-};
+use sonance::{device::memory::Memory, parser, vm::VM};
 
 #[derive(Parser)]
 struct Args {

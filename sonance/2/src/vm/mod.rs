@@ -1,14 +1,15 @@
-mod device;
 mod error;
 mod frames;
 mod step;
 
 pub use crate::vm::{
-    device::{DeviceManager, Memory},
     error::{Result, VMError},
     frames::{Frame, Frames},
 };
-use crate::{instruction::Instruction, vm::device::Device};
+use crate::{
+    device::{Device, DeviceManager},
+    instruction::Instruction,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
