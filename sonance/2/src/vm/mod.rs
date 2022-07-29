@@ -4,7 +4,7 @@ mod frames;
 mod step;
 
 pub use crate::vm::{
-    device::DeviceManager,
+    device::{DeviceManager, Memory},
     error::{Result, VMError},
     frames::{Frame, Frames},
 };

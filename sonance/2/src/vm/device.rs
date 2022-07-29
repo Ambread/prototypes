@@ -45,58 +45,72 @@ pub trait Device {
     fn write(&mut self, index: u32, value: u8);
 }
 
-/// Memory layout:
+/// A Device for storing data or performing IO
 ///
-/// # 0: IO Register
-/// Read: Invalid
-/// Write:
-/// - 0: read stdin
-/// - 1: write stdout
-/// - 2: write stderr
+/// - 0: IO Register
+///     - Read: Invalid
+///     - Write:
+///         - 0: Read stdin
+///         - 1: Write stdout
+///         - 2: Write stderr
 ///
-/// # 1: Size Register
-/// Read: current length
-/// Write: set length to value (filling with 0 if necessary)
+/// - 1: Length Register
+///     - Read: Get length
+///     - Write: Set length (filling new empty space with 0)
 ///
-/// # 2..9: Reserved
+/// - 2..9: Reserved
+/// - 10..: Memory
 ///
-/// # 10..: Memory
-///
-impl Device for Vec<u8> {
+#[derive(Debug, Clone, Default)]
+pub struct Memory {
+    memory: Vec<u8>,
+}
+
+impl Memory {
+    const IO_REGISTER: u32 = 0;
+    const LEN_REGISTER: u32 = 1;
+    const MEM_START: usize = 10;
+
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl Device for Memory {
     fn read(&mut self, index: u32) -> u8 {
-        if index == 0 {
+        if index == Self::IO_REGISTER {
             panic!("Cannot read from IO register (also todo add proper error handling)");
         }
 
-        if index == 1 {
-            return self.len() as u8;
+        if index == Self::LEN_REGISTER {
+            return self.memory.len() as u8;
         }
 
-        self[index as usize - 10]
+        self.memory[index as usize - Self::MEM_START]
     }
 
     fn write(&mut self, index: u32, value: u8) {
-        if index == 0 {
+        if index == Self::IO_REGISTER {
             match value {
                 0 => {
-                    stdin().read_exact(self).unwrap();
+                    stdin().read_exact(&mut self.memory).unwrap();
                 }
                 1 => {
-                    stdout().write_all(self).unwrap();
+                    stdout().write_all(&self.memory).unwrap();
                 }
                 2 => {
-                    stderr().write_all(self).unwrap();
+                    stderr().write_all(&self.memory).unwrap();
                 }
                 _ => {}
             }
             return;
         }
 
-        if index == 1 {
-            self.resize(value as usize, 0);
+        if index == Self::LEN_REGISTER {
+            self.memory.resize(value as usize, 0);
             return;
         }
 
-        self[index as usize - 10] = value;
+        self.memory[index as usize - Self::MEM_START] = value;
     }
 }

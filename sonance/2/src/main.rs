@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Parser;
-use sonance::{parser, vm::VM};
+use sonance::{
+    parser,
+    vm::{Memory, VM},
+};
 
 #[derive(Parser)]
 struct Args {
@@ -15,7 +18,7 @@ fn main() -> Result<()> {
     let instructions = parser::parse(&src)?;
 
     let mut vm = VM::new(instructions);
-    vm.attach(vec![]);
+    vm.attach(Memory::new());
     vm.run()?;
 
     Ok(())
