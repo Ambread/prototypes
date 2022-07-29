@@ -28,14 +28,16 @@ pub struct Memory {
     fill_value: u8,
 }
 
-impl Memory {
-    const IO_REGISTER: u32 = 0;
-    const LEN_REGISTER: u32 = 1;
-    const IO_START_REGISTER: u32 = 2;
-    const IO_END_REGISTER: u32 = 3;
-    const FILL_VALUE_REGISTER: u32 = 4;
-    const MEM_START: usize = 10;
+mod register {
+    pub const IO: u32 = 0;
+    pub const LEN: u32 = 1;
+    pub const IO_START: u32 = 2;
+    pub const IO_END: u32 = 3;
+    pub const FILL_VALUE: u32 = 4;
+    pub const MEMORY: usize = 10;
+}
 
+impl Memory {
     pub fn new() -> Self {
         Self::default()
     }
@@ -80,19 +82,19 @@ impl Memory {
 impl Device for Memory {
     fn read(&mut self, index: u32) -> u8 {
         match index {
-            Self::IO_REGISTER => self.io_result,
-            Self::LEN_REGISTER => self.memory.len() as u8,
-            Self::IO_START_REGISTER => self.io_start,
-            Self::IO_END_REGISTER => self.io_end,
-            Self::FILL_VALUE_REGISTER => self.fill_value,
+            register::IO => self.io_result,
+            register::LEN => self.memory.len() as u8,
+            register::IO_START => self.io_start,
+            register::IO_END => self.io_end,
+            register::FILL_VALUE => self.fill_value,
 
-            _ => self.memory[index as usize - Self::MEM_START],
+            _ => self.memory[index as usize - register::MEMORY],
         }
     }
 
     fn write(&mut self, index: u32, value: u8) {
         match index {
-            Self::IO_REGISTER => {
+            register::IO => {
                 if let Some(mut perform_io) = self.perform_io.take() {
                     self.io_result = perform_io(self, value);
                     self.perform_io = Some(perform_io);
@@ -101,12 +103,12 @@ impl Device for Memory {
                 }
             }
 
-            Self::LEN_REGISTER => self.memory.resize(value as usize, self.fill_value),
-            Self::IO_START_REGISTER => self.io_start = value,
-            Self::IO_END_REGISTER => self.io_end = value,
-            Self::FILL_VALUE_REGISTER => self.fill_value = value,
+            register::LEN => self.memory.resize(value as usize, self.fill_value),
+            register::IO_START => self.io_start = value,
+            register::IO_END => self.io_end = value,
+            register::FILL_VALUE => self.fill_value = value,
 
-            _ => self.memory[index as usize - Self::MEM_START] = value,
+            _ => self.memory[index as usize - register::MEMORY] = value,
         }
     }
 }
