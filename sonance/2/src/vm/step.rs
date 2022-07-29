@@ -120,13 +120,6 @@ impl VM {
                 let value = self.pop()?;
                 self.devices.write(device, index, value);
             }
-            Instruction::Resize => {
-                let device = self.pop()?;
-
-                let size = self.pop_u32()?;
-                let value = self.pop()?;
-                self.devices.resize(device, size, value);
-            }
 
             Instruction::Call => {
                 let index = self.pop()?;

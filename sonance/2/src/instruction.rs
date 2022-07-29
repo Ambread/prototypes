@@ -71,7 +71,6 @@ generate_instructions! {
 
         Read,
         Write,
-        Resize,
 
         Call,
         Return,
