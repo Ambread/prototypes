@@ -1,4 +1,4 @@
-use std::io::{stdin, stdout, Read, Write};
+use std::io::{stderr, stdin, stdout, Read, Write};
 
 use crate::device::Device;
 
@@ -70,9 +70,14 @@ impl Memory {
                 stdout().write_all(self.io_slice()).unwrap();
                 self.memory.len()
             }
+            3 => {
+                stderr().write_all(self.io_slice()).unwrap();
+                self.memory.len()
+            }
 
             10 => stdin().read(self.io_slice_mut()).unwrap(),
             11 => stdout().write(self.io_slice()).unwrap(),
+            13 => stderr().write(self.io_slice()).unwrap(),
 
             _ => return self.io_result,
         }) as u8
