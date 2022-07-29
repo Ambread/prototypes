@@ -4,7 +4,7 @@ use crate::device::Device;
 
 /// A Device for storing data or performing IO
 ///
-/// - `0`: IO Register
+/// - `0`: Perform IO
 ///     - Read: Result of previous IO
 ///     - Write:
 ///         - `0`: Read all stdin
@@ -12,12 +12,9 @@ use crate::device::Device;
 ///         - `10`: Read any stdin
 ///         - `11`: Write any stdout
 ///
-/// - `1`: Length Register
-///     - Read: Get length
-///     - Write: Set length (filling new empty space with 0)
-///
-/// - `2`: IO Start
-/// - `3`: IO End
+/// - `1`: Memory Length
+/// - `2`: IO Slice Start
+/// - `3`: IO Slice End
 /// - `4..9`: Reserved
 /// - `10..`: Memory
 ///
@@ -28,6 +25,7 @@ pub struct Memory {
     io_result: u8,
     io_start: u8,
     io_end: u8,
+    fill_value: u8,
 }
 
 impl Memory {
@@ -35,6 +33,7 @@ impl Memory {
     const LEN_REGISTER: u32 = 1;
     const IO_START_REGISTER: u32 = 2;
     const IO_END_REGISTER: u32 = 3;
+    const FILL_VALUE_REGISTER: u32 = 4;
     const MEM_START: usize = 10;
 
     pub fn new() -> Self {
@@ -85,6 +84,7 @@ impl Device for Memory {
             Self::LEN_REGISTER => self.memory.len() as u8,
             Self::IO_START_REGISTER => self.io_start,
             Self::IO_END_REGISTER => self.io_end,
+            Self::FILL_VALUE_REGISTER => self.fill_value,
 
             _ => self.memory[index as usize - Self::MEM_START],
         }
@@ -101,9 +101,10 @@ impl Device for Memory {
                 }
             }
 
-            Self::LEN_REGISTER => self.memory.resize(value as usize, 0),
+            Self::LEN_REGISTER => self.memory.resize(value as usize, self.fill_value),
             Self::IO_START_REGISTER => self.io_start = value,
             Self::IO_END_REGISTER => self.io_end = value,
+            Self::FILL_VALUE_REGISTER => self.fill_value = value,
 
             _ => self.memory[index as usize - Self::MEM_START] = value,
         }
