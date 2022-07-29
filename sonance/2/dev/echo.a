@@ -1,5 +1,6 @@
 // initialize memory
 write 0 1u32 2
+write 0 3u32 2
 write 0 11u32 '\n'
 
 #loop

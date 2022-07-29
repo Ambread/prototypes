@@ -22,13 +22,17 @@ use crate::device::Device;
 #[derive(Default)]
 pub struct Memory {
     pub memory: Vec<u8>,
-    io_result: u8,
     perform_io: Option<Box<dyn FnMut(&mut Memory, u8) -> u8>>,
+    io_result: u8,
+    io_start: u8,
+    io_end: u8,
 }
 
 impl Memory {
     const IO_REGISTER: u32 = 0;
     const LEN_REGISTER: u32 = 1;
+    const IO_START_REGISTER: u32 = 2;
+    const IO_END_REGISTER: u32 = 3;
     const MEM_START: usize = 10;
 
     pub fn new() -> Self {
@@ -45,19 +49,27 @@ impl Memory {
         }
     }
 
+    pub fn io_slice(&self) -> &[u8] {
+        &self.memory[self.io_start as usize..self.io_end as usize]
+    }
+
+    pub fn io_slice_mut(&mut self) -> &mut [u8] {
+        &mut self.memory[self.io_start as usize..self.io_end as usize]
+    }
+
     fn standard_perform_io(&mut self, instruction: u8) -> u8 {
         (match instruction {
             0 => {
-                stdin().read_exact(&mut self.memory).unwrap();
+                stdin().read_exact(self.io_slice_mut()).unwrap();
                 self.memory.len()
             }
             1 => {
-                stdout().write_all(&self.memory).unwrap();
+                stdout().write_all(self.io_slice()).unwrap();
                 self.memory.len()
             }
 
-            10 => stdin().read(&mut self.memory).unwrap(),
-            11 => stdout().write(&self.memory).unwrap(),
+            10 => stdin().read(self.io_slice_mut()).unwrap(),
+            11 => stdout().write(self.io_slice()).unwrap(),
 
             _ => return self.io_result,
         }) as u8
@@ -72,6 +84,14 @@ impl Device for Memory {
 
         if index == Self::LEN_REGISTER {
             return self.memory.len() as u8;
+        }
+
+        if index == Self::IO_START_REGISTER {
+            return self.io_start;
+        }
+
+        if index == Self::IO_END_REGISTER {
+            return self.io_end;
         }
 
         self.memory[index as usize - Self::MEM_START]
@@ -91,6 +111,16 @@ impl Device for Memory {
 
         if index == Self::LEN_REGISTER {
             self.memory.resize(value as usize, 0);
+            return;
+        }
+
+        if index == Self::IO_START_REGISTER {
+            self.io_start = value;
+            return;
+        }
+
+        if index == Self::IO_END_REGISTER {
+            self.io_end = value;
             return;
         }
 

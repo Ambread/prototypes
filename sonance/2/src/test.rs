@@ -386,7 +386,7 @@ fn hello_world() {
 
     let io_mock = |memory: &mut Memory, instruction| {
         assert_eq!(instruction, 1);
-        assert!(memory.memory.starts_with(b"Hello world!\n"));
+        assert_eq!(memory.io_slice(), b"Hello world!\n");
         memory.memory.len() as u8
     };
 
