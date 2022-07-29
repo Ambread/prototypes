@@ -1,12 +1,12 @@
 write 0 1u32 2
 write 0 3u32 2
-write 0 11u32 '\n'
 
 write 0 0u32 0
 read 0 10u32
 eq '0'
 jump_if #else
 
+write 0 11u32 '\n'
 write 0 0u32 1
 halt
 

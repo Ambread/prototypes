@@ -9,8 +9,11 @@ use crate::device::Device;
 ///     - Write:
 ///         - `0`: Read all stdin
 ///         - `1`: Write all stdout
+///         - `2`: Write all stderr
 ///         - `10`: Read any stdin
 ///         - `11`: Write any stdout
+///         - `12`: Write any stderr
+///         - `20`: Reset IO range
 ///
 /// - `1`: Memory Length
 /// - `2`: IO Slice Start
@@ -78,6 +81,12 @@ impl Memory {
             10 => stdin().read(self.io_slice_mut()).unwrap(),
             11 => stdout().write(self.io_slice()).unwrap(),
             13 => stderr().write(self.io_slice()).unwrap(),
+
+            20 => {
+                let fill_value = self.fill_value;
+                self.io_slice_mut().fill(fill_value);
+                self.io_slice_mut().len()
+            }
 
             _ => return self.io_result,
         }) as u8

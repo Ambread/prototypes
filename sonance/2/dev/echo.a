@@ -1,12 +1,12 @@
 // initialize memory
-write 0 1u32 2
-write 0 3u32 2
-write 0 11u32 '\n'
+write 0 1u32 100
+write 0 3u32 100
 
 #loop
 
 // input then output
-write 0 0u32 0
+write 0 0u32 10
 write 0 0u32 1
+write 0 0u32 20
 
 jump #loop
