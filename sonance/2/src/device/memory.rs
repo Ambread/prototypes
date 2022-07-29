@@ -1,15 +1,16 @@
-use std::io::{stderr, stdin, stdout, Read, Write};
+use std::io::{stdin, stdout, Read, Write};
 
 use crate::device::Device;
 
 /// A Device for storing data or performing IO
 ///
 /// - 0: IO Register
-///     - Read: Invalid
+///     - Read: Result of previous IO
 ///     - Write:
-///         - 0: Read stdin
-///         - 1: Write stdout
-///         - 2: Write stderr
+///         - 0: Read all stdin
+///         - 1: Write all stdout
+///         - 10: Read any stdin
+///         - 11: Write any stdout
 ///
 /// - 1: Length Register
 ///     - Read: Get length
@@ -21,6 +22,7 @@ use crate::device::Device;
 #[derive(Debug, Clone, Default)]
 pub struct Memory {
     memory: Vec<u8>,
+    io_result: u8,
 }
 
 impl Memory {
@@ -36,7 +38,7 @@ impl Memory {
 impl Device for Memory {
     fn read(&mut self, index: u32) -> u8 {
         if index == Self::IO_REGISTER {
-            panic!("Cannot read from IO register (also todo add proper error handling)");
+            return self.io_result;
         }
 
         if index == Self::LEN_REGISTER {
@@ -51,12 +53,17 @@ impl Device for Memory {
             match value {
                 0 => {
                     stdin().read_exact(&mut self.memory).unwrap();
+                    self.io_result = self.memory.len() as u8;
                 }
                 1 => {
                     stdout().write_all(&self.memory).unwrap();
+                    self.io_result = self.memory.len() as u8;
                 }
-                2 => {
-                    stderr().write_all(&self.memory).unwrap();
+                10 => {
+                    self.io_result = stdin().read(&mut self.memory).unwrap() as u8;
+                }
+                11 => {
+                    self.io_result = stdout().write(&self.memory).unwrap() as u8;
                 }
                 _ => {}
             }
