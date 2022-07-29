@@ -33,7 +33,7 @@ pub fn parse(src: &str) -> Result<Vec<u8>> {
 impl InstructionParser {
     fn parse_line(&mut self, line: &str) -> Result<()> {
         let line = line
-            .split(';')
+            .split("//")
             .next()
             .expect("split should always give at least one str")
             .trim();
@@ -80,6 +80,19 @@ impl InstructionParser {
 
             self.items.push(Item::Instruction(Instruction::Push));
             self.items.push(Item::Raw(variable));
+            return Ok(());
+        }
+
+        if let Some(char) = self.parse_wrapped("'", arg) {
+            self.items.push(Item::Instruction(Instruction::Push));
+
+            if char == "\\n" {
+                self.items.push(Item::Raw(b'\n'));
+                return Ok(());
+            }
+
+            self.items
+                .push(Item::Raw(char.chars().next().unwrap() as u8));
             return Ok(());
         }
 
@@ -136,6 +149,15 @@ impl InstructionParser {
         ident
             .ends_with(suffix)
             .then(|| ident.trim_end_matches(suffix).into())
+    }
+
+    fn parse_wrapped(&mut self, delimiter: &str, ident: &str) -> Option<String> {
+        (ident.starts_with(delimiter) && ident.ends_with(delimiter)).then(|| {
+            ident
+                .trim_start_matches(delimiter)
+                .trim_end_matches(delimiter)
+                .into()
+        })
     }
 
     fn build(self) -> Vec<u8> {

@@ -1,12 +1,15 @@
-resize 0 2u32 10 ;input with len 2
-resize 1 2u32 10 ;output with len 2
+// initialize input and output
+resize 0 2u32 '\n'
+resize 1 2u32 '\n'
 
 #loop
 
+// read from input
 flush 0 0
-read 0 0u32 ;read to input[0]
+read 0 0u32
 
-write 1 0u32 ;write to output[0]
+// write to output
+write 1 0u32
 flush 1 1
 
 jump #loop
