@@ -22,10 +22,6 @@ impl DeviceManager {
     pub fn resize(&mut self, device: u8, size: u32, value: u8) {
         self.devices[device as usize].resize(size, value);
     }
-
-    pub fn flush(&mut self, device: u8, mode: u8) {
-        self.devices[device as usize].flush(mode);
-    }
 }
 
 impl Debug for DeviceManager {
@@ -52,34 +48,38 @@ pub trait Device {
     fn read(&mut self, index: u32) -> u8;
     fn write(&mut self, index: u32, value: u8);
     fn resize(&mut self, size: u32, value: u8);
-    fn flush(&mut self, mode: u8);
 }
 
 impl Device for Vec<u8> {
     fn read(&mut self, index: u32) -> u8 {
-        self[index as usize]
+        if index == 0 {
+            panic!("Cannot read from IO register (also todo add proper error handling)");
+        }
+
+        self[index as usize - 1]
     }
 
     fn write(&mut self, index: u32, value: u8) {
-        self[index as usize] = value;
+        if index == 0 {
+            match value {
+                0 => {
+                    stdin().read_exact(self).unwrap();
+                }
+                1 => {
+                    stdout().write_all(self).unwrap();
+                }
+                2 => {
+                    stderr().write_all(self).unwrap();
+                }
+                _ => {}
+            }
+            return;
+        }
+
+        self[index as usize - 1] = value;
     }
 
     fn resize(&mut self, size: u32, value: u8) {
         self.resize(size as usize, value);
-    }
-
-    fn flush(&mut self, mode: u8) {
-        match mode {
-            0 => {
-                stdin().read_exact(self).unwrap();
-            }
-            1 => {
-                stdout().write_all(self).unwrap();
-            }
-            2 => {
-                stderr().write_all(self).unwrap();
-            }
-            _ => {}
-        }
     }
 }

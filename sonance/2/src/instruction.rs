@@ -72,7 +72,6 @@ generate_instructions! {
         Read,
         Write,
         Resize,
-        Flush,
 
         Call,
         Return,

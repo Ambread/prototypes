@@ -127,11 +127,6 @@ impl VM {
                 let value = self.pop()?;
                 self.devices.resize(device, size, value);
             }
-            Instruction::Flush => {
-                let device = self.pop()?;
-                let mode = self.pop()?;
-                self.devices.flush(device, mode);
-            }
 
             Instruction::Call => {
                 let index = self.pop()?;

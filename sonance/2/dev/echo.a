@@ -1,15 +1,10 @@
-// initialize input and output
+// initialize device
 resize 0 2u32 '\n'
-resize 1 2u32 '\n'
 
 #loop
 
-// read from input
-flush 0 0
-read 0 0u32
-
-// write to output
-write 1 0u32
-flush 1 1
+// read then write
+write 0 0u32 0
+write 0 0u32 1
 
 jump #loop
