@@ -27,7 +27,7 @@ pub fn parse(src: &str) -> Result<Vec<u8>> {
         parser.parse_line(line)?;
     }
 
-    Ok(parser.build())
+    parser.build()
 }
 
 impl InstructionParser {
@@ -159,13 +159,17 @@ impl InstructionParser {
         })
     }
 
-    fn build(self) -> Vec<u8> {
+    fn build(self) -> Result<Vec<u8>> {
         self.items
             .into_iter()
             .map(|item| match item {
-                Item::Instruction(instruction) => instruction as u8,
-                Item::Raw(raw) => raw,
-                Item::LabelReference(label) => self.labels[&label] - 1,
+                Item::Instruction(instruction) => Ok(instruction as u8),
+                Item::Raw(raw) => Ok(raw),
+                Item::LabelReference(label) => self
+                    .labels
+                    .get(&label)
+                    .map(|index| index - 1)
+                    .ok_or(ParseError::LabelNotFound(label)),
             })
             .collect()
     }

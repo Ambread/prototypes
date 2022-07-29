@@ -10,4 +10,6 @@ pub enum ParseError {
     InvalidInstruction(String),
     #[error("invalid constant")]
     InvalidConstant(#[from] ParseIntError),
+    #[error("label {0} not found")]
+    LabelNotFound(String),
 }
