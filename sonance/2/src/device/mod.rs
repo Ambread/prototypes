@@ -10,6 +10,7 @@ pub trait Device {
 #[derive(Default)]
 pub struct DeviceManager {
     devices: Vec<Box<dyn Device>>,
+    selected: usize,
 }
 
 impl DeviceManager {
@@ -17,12 +18,16 @@ impl DeviceManager {
         self.devices.push(Box::new(device));
     }
 
-    pub fn read(&mut self, device: u8, index: u32) -> u8 {
-        self.devices[device as usize].read(index)
+    pub fn select(&mut self, device: u8) {
+        self.selected = device as usize;
     }
 
-    pub fn write(&mut self, device: u8, index: u32, value: u8) {
-        self.devices[device as usize].write(index, value);
+    pub fn read(&mut self, index: u32) -> u8 {
+        self.devices[self.selected].read(index)
+    }
+
+    pub fn write(&mut self, index: u32, value: u8) {
+        self.devices[self.selected].write(index, value);
     }
 }
 

@@ -1,20 +1,21 @@
-write 0 1u32 13 // resize memory to fit
-write 0 3u32 13 // set io length
+select 0
+write 1u32 13 // resize memory to fit
+write 3u32 13 // set io length
 
 // write chars
-write 0 10u32 'H'
-write 0 11u32 'e'
-write 0 12u32 'l'
-write 0 13u32 'l'
-write 0 14u32 'o'
-write 0 15u32 ' '
-write 0 16u32 'w'
-write 0 17u32 'o'
-write 0 18u32 'r'
-write 0 19u32 'l'
-write 0 20u32 'd'
-write 0 21u32 '!'
-write 0 22u32 '\n'
+write 10u32 'H'
+write 11u32 'e'
+write 12u32 'l'
+write 13u32 'l'
+write 14u32 'o'
+write 15u32 ' '
+write 16u32 'w'
+write 17u32 'o'
+write 18u32 'r'
+write 19u32 'l'
+write 20u32 'd'
+write 21u32 '!'
+write 22u32 '\n'
 
-write 0 0u32 1 // write to stdout
+write 0u32 1 // write to stdout
 halt

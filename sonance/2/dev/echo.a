@@ -1,10 +1,11 @@
-write 0 1u32 100 // set length
-write 0 3u32 100 // set io_end
+select 0
+write 1u32 100 // set length
+write 3u32 100 // set io_end
 
 #loop
 
-write 0 0u32 10 // read any stdin
-write 0 0u32 1  // write all stdout
-write 0 0u32 20 // clear
+write 0u32 10 // read any stdin
+write 0u32 1  // write all stdout
+write 0u32 20 // clear
 
 jump #loop

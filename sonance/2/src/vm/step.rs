@@ -108,17 +108,19 @@ impl VM {
                     ))?;
             }
 
-            Instruction::Read => {
+            Instruction::Select => {
                 let device = self.pop()?;
+                self.devices.select(device);
+            }
+            Instruction::Read => {
                 let index = self.pop_u32()?;
-                let value = self.devices.read(device, index);
+                let value = self.devices.read(index);
                 self.stack.push(value)
             }
             Instruction::Write => {
-                let device = self.pop()?;
                 let index = self.pop_u32()?;
                 let value = self.pop()?;
-                self.devices.write(device, index, value);
+                self.devices.write(index, value);
             }
 
             Instruction::Call => {
