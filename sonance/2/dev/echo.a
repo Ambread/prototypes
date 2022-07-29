@@ -1,10 +1,10 @@
-// initialize device
+// initialize memory
 write 0 1u32 2
 write 0 11u32 '\n'
 
 #loop
 
-// read then write
+// input then output
 write 0 0u32 0
 write 0 0u32 1
 
