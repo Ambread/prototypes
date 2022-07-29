@@ -3,6 +3,7 @@ use pretty_assertions::assert_eq;
 use std::{collections::HashMap, vec};
 
 use crate::{
+    device::memory::Memory,
     parser,
     vm::{Frame, Frames, VM},
 };
@@ -377,4 +378,19 @@ fn large_number() {
         ..Default::default()
     }
     .run_and_asset()
+}
+
+#[test]
+fn hello_world() {
+    const SRC: &str = include_str!("../dev/hello_world.a");
+
+    let io_mock = |memory: &mut Memory, instruction| {
+        assert_eq!(instruction, 1);
+        assert!(memory.memory.starts_with(b"Hello world!\n"));
+        memory.memory.len() as u8
+    };
+
+    let mut vm = VM::new(parse(SRC));
+    vm.attach(Memory::with_io_mock(io_mock));
+    vm.run().unwrap();
 }
