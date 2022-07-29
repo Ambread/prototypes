@@ -86,13 +86,12 @@ impl InstructionParser {
         if let Some(char) = self.parse_wrapped("'", arg) {
             self.items.push(Item::Instruction(Instruction::Push));
 
-            if char == "\\n" {
-                self.items.push(Item::Raw(b'\n'));
-                return Ok(());
-            }
+            let char = match char.as_str() {
+                "\\n" => b'\n',
+                char => char.chars().next().unwrap_or(' ') as u8,
+            };
 
-            self.items
-                .push(Item::Raw(char.chars().next().unwrap() as u8));
+            self.items.push(Item::Raw(char));
             return Ok(());
         }
 

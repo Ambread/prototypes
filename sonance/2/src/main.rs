@@ -16,7 +16,6 @@ fn main() -> Result<()> {
 
     let mut vm = VM::new(instructions);
     vm.attach(vec![]);
-    vm.attach(vec![]);
     vm.run()?;
 
     Ok(())
