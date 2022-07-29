@@ -27,6 +27,7 @@ impl VM {
             Instruction::Debug => {
                 eprintln!("{:?}", self.stack);
             }
+            Instruction::Noop => {}
 
             Instruction::Push => {
                 self.instruction_index += 1;

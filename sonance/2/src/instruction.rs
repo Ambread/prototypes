@@ -54,6 +54,7 @@ generate_instructions! {
     enum Instruction {
         Halt,
         Debug,
+        Noop,
 
         Push,
         PushU16,
