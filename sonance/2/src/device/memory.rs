@@ -19,10 +19,11 @@ use crate::device::Device;
 /// - 2..9: Reserved
 /// - 10..: Memory
 ///
-#[derive(Debug, Clone, Default)]
+#[derive(Default)]
 pub struct Memory {
-    memory: Vec<u8>,
+    pub memory: Vec<u8>,
     io_result: u8,
+    perform_io: Option<Box<dyn FnMut(&mut Memory, u8) -> u8>>,
 }
 
 impl Memory {
@@ -32,6 +33,34 @@ impl Memory {
 
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_io_mock<F>(perform_io: F) -> Self
+    where
+        F: FnMut(&mut Memory, u8) -> u8 + 'static,
+    {
+        Self {
+            perform_io: Some(Box::new(perform_io)),
+            ..Default::default()
+        }
+    }
+
+    fn standard_perform_io(&mut self, instruction: u8) -> u8 {
+        (match instruction {
+            0 => {
+                stdin().read_exact(&mut self.memory).unwrap();
+                self.memory.len()
+            }
+            1 => {
+                stdout().write_all(&self.memory).unwrap();
+                self.memory.len()
+            }
+
+            10 => stdin().read(&mut self.memory).unwrap(),
+            11 => stdout().write(&self.memory).unwrap(),
+
+            _ => return self.io_result,
+        }) as u8
     }
 }
 
@@ -50,23 +79,13 @@ impl Device for Memory {
 
     fn write(&mut self, index: u32, value: u8) {
         if index == Self::IO_REGISTER {
-            match value {
-                0 => {
-                    stdin().read_exact(&mut self.memory).unwrap();
-                    self.io_result = self.memory.len() as u8;
-                }
-                1 => {
-                    stdout().write_all(&self.memory).unwrap();
-                    self.io_result = self.memory.len() as u8;
-                }
-                10 => {
-                    self.io_result = stdin().read(&mut self.memory).unwrap() as u8;
-                }
-                11 => {
-                    self.io_result = stdout().write(&self.memory).unwrap() as u8;
-                }
-                _ => {}
+            if let Some(mut perform_io) = self.perform_io.take() {
+                self.io_result = perform_io(self, value);
+                self.perform_io = Some(perform_io);
+                return;
             }
+
+            self.io_result = self.standard_perform_io(value);
             return;
         }
 
