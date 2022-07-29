@@ -15,14 +15,17 @@ impl VM {
             instruction.map_err(|_| VMError::InvalidInstruction(code, self.instruction_index))?
         };
 
-        println!(
-            "{: >3}  {}",
-            self.instruction_index, self.current_instruction,
-        );
+        // eprintln!(
+        //     "{: >3}  {}",
+        //     self.instruction_index, self.current_instruction,
+        // );
 
         match self.current_instruction {
             Instruction::Halt => {
                 return Ok(true);
+            }
+            Instruction::Debug => {
+                eprintln!("{:?}", self.stack);
             }
 
             Instruction::Push => {
@@ -102,6 +105,31 @@ impl VM {
                         self.current_instruction,
                         self.instruction_index,
                     ))?;
+            }
+
+            Instruction::Read => {
+                let device = self.pop()?;
+                let index = self.pop_u32()?;
+                let value = self.devices.read(device, index);
+                self.stack.push(value)
+            }
+            Instruction::Write => {
+                let device = self.pop()?;
+                let index = self.pop_u32()?;
+                let value = self.pop()?;
+                self.devices.write(device, index, value);
+            }
+            Instruction::Resize => {
+                let device = self.pop()?;
+
+                let size = self.pop_u32()?;
+                let value = self.pop()?;
+                self.devices.resize(device, size, value);
+            }
+            Instruction::Flush => {
+                let device = self.pop()?;
+                let mode = self.pop()?;
+                self.devices.flush(device, mode);
             }
 
             Instruction::Call => {

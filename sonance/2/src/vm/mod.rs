@@ -1,12 +1,14 @@
+mod device;
 mod error;
 mod frames;
 mod step;
 
-use crate::instruction::Instruction;
 pub use crate::vm::{
+    device::DeviceManager,
     error::{Result, VMError},
     frames::{Frame, Frames},
 };
+use crate::{instruction::Instruction, vm::device::Device};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VM {
@@ -15,6 +17,7 @@ pub struct VM {
     pub current_instruction: Instruction,
     pub stack: Vec<u8>,
     pub frames: Frames,
+    pub devices: DeviceManager,
 }
 
 impl Default for VM {
@@ -25,6 +28,7 @@ impl Default for VM {
             current_instruction: Instruction::Halt,
             stack: vec![],
             frames: Default::default(),
+            devices: Default::default(),
         }
     }
 }
@@ -37,6 +41,10 @@ impl VM {
         }
     }
 
+    pub fn attach<T: Device + 'static>(&mut self, device: T) {
+        self.devices.attach(device);
+    }
+
     pub fn run(&mut self) -> Result<()> {
         while !self.step()? {}
         Ok(())
@@ -47,6 +55,16 @@ impl VM {
             self.current_instruction,
             self.instruction_index,
         ))
+    }
+
+    fn pop_u32(&mut self) -> Result<u32> {
+        // They're stored in le byte order, but because popping is reversing them, we can cheese it by loading as if they were be byte order
+        Ok(u32::from_be_bytes([
+            self.pop()?,
+            self.pop()?,
+            self.pop()?,
+            self.pop()?,
+        ]))
     }
 
     fn unary_op(&mut self, body: impl FnOnce(u8) -> u8) -> Result<()> {

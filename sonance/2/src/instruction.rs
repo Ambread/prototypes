@@ -53,6 +53,7 @@ macro_rules! generate_instructions {
 generate_instructions! {
     enum Instruction {
         Halt,
+        Debug,
 
         Push,
         PushU16,
@@ -66,6 +67,11 @@ generate_instructions! {
 
         Load,
         Store,
+
+        Read,
+        Write,
+        Resize,
+        Flush,
 
         Call,
         Return,
