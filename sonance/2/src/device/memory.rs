@@ -4,20 +4,22 @@ use crate::device::Device;
 
 /// A Device for storing data or performing IO
 ///
-/// - 0: IO Register
+/// - `0`: IO Register
 ///     - Read: Result of previous IO
 ///     - Write:
-///         - 0: Read all stdin
-///         - 1: Write all stdout
-///         - 10: Read any stdin
-///         - 11: Write any stdout
+///         - `0`: Read all stdin
+///         - `1`: Write all stdout
+///         - `10`: Read any stdin
+///         - `11`: Write any stdout
 ///
-/// - 1: Length Register
+/// - `1`: Length Register
 ///     - Read: Get length
 ///     - Write: Set length (filling new empty space with 0)
 ///
-/// - 2..9: Reserved
-/// - 10..: Memory
+/// - `2`: IO Start
+/// - `3`: IO End
+/// - `4..9`: Reserved
+/// - `10..`: Memory
 ///
 #[derive(Default)]
 pub struct Memory {
@@ -78,52 +80,32 @@ impl Memory {
 
 impl Device for Memory {
     fn read(&mut self, index: u32) -> u8 {
-        if index == Self::IO_REGISTER {
-            return self.io_result;
-        }
+        match index {
+            Self::IO_REGISTER => self.io_result,
+            Self::LEN_REGISTER => self.memory.len() as u8,
+            Self::IO_START_REGISTER => self.io_start,
+            Self::IO_END_REGISTER => self.io_end,
 
-        if index == Self::LEN_REGISTER {
-            return self.memory.len() as u8;
+            _ => self.memory[index as usize - Self::MEM_START],
         }
-
-        if index == Self::IO_START_REGISTER {
-            return self.io_start;
-        }
-
-        if index == Self::IO_END_REGISTER {
-            return self.io_end;
-        }
-
-        self.memory[index as usize - Self::MEM_START]
     }
 
     fn write(&mut self, index: u32, value: u8) {
-        if index == Self::IO_REGISTER {
-            if let Some(mut perform_io) = self.perform_io.take() {
-                self.io_result = perform_io(self, value);
-                self.perform_io = Some(perform_io);
-                return;
+        match index {
+            Self::IO_REGISTER => {
+                if let Some(mut perform_io) = self.perform_io.take() {
+                    self.io_result = perform_io(self, value);
+                    self.perform_io = Some(perform_io);
+                } else {
+                    self.io_result = self.standard_perform_io(value);
+                }
             }
 
-            self.io_result = self.standard_perform_io(value);
-            return;
-        }
+            Self::LEN_REGISTER => self.memory.resize(value as usize, 0),
+            Self::IO_START_REGISTER => self.io_start = value,
+            Self::IO_END_REGISTER => self.io_end = value,
 
-        if index == Self::LEN_REGISTER {
-            self.memory.resize(value as usize, 0);
-            return;
+            _ => self.memory[index as usize - Self::MEM_START] = value,
         }
-
-        if index == Self::IO_START_REGISTER {
-            self.io_start = value;
-            return;
-        }
-
-        if index == Self::IO_END_REGISTER {
-            self.io_end = value;
-            return;
-        }
-
-        self.memory[index as usize - Self::MEM_START] = value;
     }
 }
