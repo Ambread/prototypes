@@ -1,16 +1,15 @@
-select 0
-write 1u32 2 // set length
-write 3u32 2 // set io_end
+write 2u32 2 // set length
+write 4u32 2 // set io_end
 
-write 0u32 0 // read all stdin
+write 1u32 0 // read all stdin
 read 10u32   // push first char
 eq '0'
 jump_if #else
 
 write 11u32 '\n' // add newline
-write 0u32 1     // write all to stdout
+write 1u32 1     // write all to stdout
 halt
 
 #else
-write 0u32 1 // write all to stdout
+write 1u32 1 // write all to stdout
 jump #else
