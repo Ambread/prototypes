@@ -3,8 +3,8 @@ write 4u32 100 // set io_end
 
 #loop
 
-write 1u32 10 // read any stdin
-write 1u32 1  // write all stdout
+write 1u32 0 // read any stdin
+write 1u32 3  // write all stdout
 write 1u32 20 // clear
 
 jump #loop

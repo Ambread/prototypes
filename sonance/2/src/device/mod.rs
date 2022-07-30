@@ -8,14 +8,14 @@ pub trait Device {
 }
 
 #[derive(Default)]
-pub struct DeviceManager {
-    devices: Vec<Box<dyn Device>>,
+pub struct DeviceManager<'a> {
+    devices: Vec<&'a mut dyn Device>,
     selected: u8,
 }
 
-impl DeviceManager {
-    pub fn attach<T: Device + 'static>(&mut self, device: T) {
-        self.devices.push(Box::new(device));
+impl<'a> DeviceManager<'a> {
+    pub fn add<T: Device + 'a>(&mut self, device: &'a mut T) {
+        self.devices.push(device);
     }
 
     pub fn read(&mut self, index: u32) -> u8 {
@@ -35,7 +35,7 @@ impl DeviceManager {
     }
 }
 
-impl Debug for DeviceManager {
+impl Debug for DeviceManager<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DebugWrapper")
             .field("devices", &self.devices.len())
@@ -43,13 +43,13 @@ impl Debug for DeviceManager {
     }
 }
 
-impl Clone for DeviceManager {
+impl Clone for DeviceManager<'_> {
     fn clone(&self) -> Self {
         Self::default()
     }
 }
 
-impl PartialEq for DeviceManager {
+impl PartialEq for DeviceManager<'_> {
     fn eq(&self, _: &Self) -> bool {
         true
     }

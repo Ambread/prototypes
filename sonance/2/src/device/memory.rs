@@ -1,4 +1,4 @@
-use std::io::{stderr, stdin, stdout, Read, Write};
+use std::io::{Read, Write};
 
 use crate::device::Device;
 
@@ -7,29 +7,32 @@ use crate::device::Device;
 /// - `1`: Perform command on slice
 ///     - Read: Result of previous command
 ///     - Write:
-///         - `0`: Read all stdin
-///         - `1`: Write all stdout
-///         - `2`: Write all stderr
-///         - `10`: Read any stdin
-///         - `11`: Write any stdout
-///         - `12`: Write any stderr
-///         - `20`: Reset range
+///         - `0`: Read from input
+///         - `1`: Read all from input
+///         - `2`: Write to output
+///         - `3`: Write all to output
+///         - `4`: Reset
 ///
 /// - `2`: Memory Length
 /// - `3`: Slice Start
 /// - `4`: Slice End
 /// - `5`: Default Value
-/// - `6..9`: Reserved
+/// - `6`: IO Index
+/// - `7..9`: Reserved
 /// - `10..`: Memory
 ///
 #[derive(Default)]
-pub struct Memory {
+pub struct Memory<'a> {
     pub memory: Vec<u8>,
-    run_command: Option<Box<dyn FnMut(&mut Memory, u8) -> u8>>,
-    io_result: u8,
-    io_start: u8,
-    io_end: u8,
-    fill_value: u8,
+
+    inputs: Option<Vec<Box<dyn Read + 'a>>>,
+    outputs: Option<Vec<Box<dyn Write + 'a>>>,
+
+    command_result: u8,
+    slice_start: u8,
+    slice_end: u8,
+    default_value: u8,
+    io_index: u8,
 }
 
 mod register {
@@ -38,70 +41,86 @@ mod register {
     pub const SLICE_START: u32 = 3;
     pub const SLICE_END: u32 = 4;
     pub const DEFAULT_VALUE: u32 = 5;
+    pub const IO_INDEX: u32 = 6;
     pub const MEMORY: usize = 10;
 }
 
-impl Memory {
-    pub fn new() -> Self {
-        Default::default()
+impl<'a> Memory<'a> {
+    pub fn empty_io() -> Self {
+        Self::default()
     }
 
-    pub fn with_command_mock<F>(mut self, run_command: F) -> Self
-    where
-        F: FnMut(&mut Memory, u8) -> u8 + 'static,
-    {
-        self.run_command = Some(Box::new(run_command));
-        self
+    pub fn standard_io() -> Self {
+        let mut memory = Self::default();
+        memory.add_input(std::io::stdin());
+        memory.add_output(std::io::stdout());
+        memory.add_output(std::io::stderr());
+        memory
     }
 
-    pub fn io_slice(&self) -> &[u8] {
-        &self.memory[self.io_start as usize..self.io_end as usize]
+    pub fn add_input<T: Read + 'a>(&mut self, input: T) {
+        let mut inputs = self.inputs.take().unwrap_or_default();
+        inputs.push(Box::new(input));
+        self.inputs = Some(inputs);
     }
 
-    pub fn io_slice_mut(&mut self) -> &mut [u8] {
-        &mut self.memory[self.io_start as usize..self.io_end as usize]
+    pub fn add_output<T: Write + 'a>(&mut self, output: T) {
+        let mut outputs = self.outputs.take().unwrap_or_default();
+        outputs.push(Box::new(output));
+        self.outputs = Some(outputs);
     }
 
-    fn run_standard_command(&mut self, instruction: u8) -> u8 {
-        (match instruction {
-            0 => {
-                stdin().read_exact(self.io_slice_mut()).unwrap();
-                self.memory.len()
-            }
+    pub fn slice(&self) -> &[u8] {
+        &self.memory[self.slice_start as usize..self.slice_end as usize]
+    }
+
+    pub fn slice_mut(&mut self) -> &mut [u8] {
+        &mut self.memory[self.slice_start as usize..self.slice_end as usize]
+    }
+
+    fn run_command(&mut self, instruction: u8) {
+        let io_index = self.io_index as usize;
+        let mut inputs = self.inputs.take().unwrap_or_default();
+        let mut outputs = self.outputs.take().unwrap_or_default();
+
+        self.command_result = (match instruction {
+            0 => inputs[io_index].read(self.slice_mut()).unwrap(),
             1 => {
-                stdout().write_all(self.io_slice()).unwrap();
+                inputs[io_index].read_exact(self.slice_mut()).unwrap();
                 self.memory.len()
             }
+
+            2 => outputs[io_index].write(self.slice()).unwrap(),
             3 => {
-                stderr().write_all(self.io_slice()).unwrap();
+                outputs[io_index].write_all(self.slice()).unwrap();
                 self.memory.len()
             }
 
-            10 => stdin().read(self.io_slice_mut()).unwrap(),
-            11 => stdout().write(self.io_slice()).unwrap(),
-            13 => stderr().write(self.io_slice()).unwrap(),
-
-            20 => {
-                let fill_value = self.fill_value;
-                self.io_slice_mut().fill(fill_value);
-                self.io_slice_mut().len()
+            4 => {
+                let fill_value = self.default_value;
+                self.slice_mut().fill(fill_value);
+                self.slice_mut().len()
             }
 
-            _ => return self.io_result,
-        }) as u8
+            _ => self.command_result as usize,
+        }) as u8;
+
+        self.inputs = Some(inputs);
+        self.outputs = Some(outputs);
     }
 }
 
-impl Device for Memory {
+impl<'a> Device for Memory<'a> {
     fn read(&mut self, index: u32) -> u8 {
         match index {
             0 => todo!(),
 
-            register::COMMAND => self.io_result,
+            register::COMMAND => self.command_result,
             register::LENGTH => self.memory.len() as u8,
-            register::SLICE_START => self.io_start,
-            register::SLICE_END => self.io_end,
-            register::DEFAULT_VALUE => self.fill_value,
+            register::SLICE_START => self.slice_start,
+            register::SLICE_END => self.slice_end,
+            register::DEFAULT_VALUE => self.default_value,
+            register::IO_INDEX => self.io_index,
 
             _ => self.memory[index as usize - register::MEMORY],
         }
@@ -111,19 +130,12 @@ impl Device for Memory {
         match index {
             0 => todo!(),
 
-            register::COMMAND => {
-                if let Some(mut run_command) = self.run_command.take() {
-                    self.io_result = run_command(self, value);
-                    self.run_command = Some(run_command);
-                } else {
-                    self.io_result = self.run_standard_command(value);
-                }
-            }
-
-            register::LENGTH => self.memory.resize(value as usize, self.fill_value),
-            register::SLICE_START => self.io_start = value,
-            register::SLICE_END => self.io_end = value,
-            register::DEFAULT_VALUE => self.fill_value = value,
+            register::COMMAND => self.run_command(value),
+            register::LENGTH => self.memory.resize(value as usize, self.default_value),
+            register::SLICE_START => self.slice_start = value,
+            register::SLICE_END => self.slice_end = value,
+            register::DEFAULT_VALUE => self.default_value = value,
+            register::IO_INDEX => self.io_index = value,
 
             _ => self.memory[index as usize - register::MEMORY] = value,
         }

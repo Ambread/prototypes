@@ -16,5 +16,5 @@ write 20u32 'd'
 write 21u32 '!'
 write 22u32 '\n'
 
-write 1u32 1 // write to stdout
+write 1u32 3 // write to stdout
 halt

@@ -3,7 +3,7 @@ use crate::vm::{
     Instruction, VM,
 };
 
-impl VM {
+impl VM<'_> {
     pub fn step(&mut self) -> Result<bool> {
         self.current_instruction = {
             let code = *self

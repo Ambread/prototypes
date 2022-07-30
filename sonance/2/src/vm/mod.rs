@@ -12,16 +12,16 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct VM {
+pub struct VM<'a> {
     pub instructions: Vec<u8>,
     pub instruction_index: u8,
     pub current_instruction: Instruction,
     pub stack: Vec<u8>,
     pub frames: Frames,
-    pub devices: DeviceManager,
+    pub devices: DeviceManager<'a>,
 }
 
-impl Default for VM {
+impl Default for VM<'_> {
     fn default() -> Self {
         Self {
             instructions: vec![Instruction::Halt as u8],
@@ -34,7 +34,7 @@ impl Default for VM {
     }
 }
 
-impl VM {
+impl<'a> VM<'a> {
     pub fn new(instructions: Vec<u8>) -> Self {
         Self {
             instructions,
@@ -42,8 +42,8 @@ impl VM {
         }
     }
 
-    pub fn attach<T: Device + 'static>(&mut self, device: T) {
-        self.devices.attach(device);
+    pub fn add_device<T: Device + 'a>(&mut self, device: &'a mut T) {
+        self.devices.add(device);
     }
 
     pub fn run(&mut self) -> Result<()> {
