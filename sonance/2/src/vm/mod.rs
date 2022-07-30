@@ -6,22 +6,19 @@ pub use crate::vm::{
     error::{Result, VMError},
     frames::{Frame, Frames},
 };
-use crate::{
-    device::{Device, DeviceManager},
-    instruction::Instruction,
-};
+use crate::{device::Device, instruction::Instruction};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct VM {
+pub struct VM<D: Device> {
     pub instructions: Vec<u8>,
     pub instruction_index: u8,
     pub current_instruction: Instruction,
     pub stack: Vec<u8>,
     pub frames: Frames,
-    pub devices: DeviceManager,
+    pub device: Option<D>,
 }
 
-impl Default for VM {
+impl<D: Device> Default for VM<D> {
     fn default() -> Self {
         Self {
             instructions: vec![Instruction::Halt as u8],
@@ -29,12 +26,12 @@ impl Default for VM {
             current_instruction: Instruction::Halt,
             stack: vec![],
             frames: Default::default(),
-            devices: Default::default(),
+            device: None,
         }
     }
 }
 
-impl VM {
+impl<D: Device> VM<D> {
     pub fn new(instructions: Vec<u8>) -> Self {
         Self {
             instructions,
@@ -42,13 +39,18 @@ impl VM {
         }
     }
 
-    pub fn attach<T: Device + 'static>(&mut self, device: T) {
-        self.devices.attach(device);
+    pub fn with_device(mut self, device: D) -> Self {
+        self.device = Some(device);
+        self
     }
 
     pub fn run(&mut self) -> Result<()> {
         while !self.step()? {}
         Ok(())
+    }
+
+    fn device(&mut self) -> Result<&mut D> {
+        Ok(self.device.as_mut().unwrap())
     }
 
     fn pop(&mut self) -> Result<u8> {

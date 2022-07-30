@@ -8,7 +8,7 @@ use crate::{
     vm::{Frame, Frames, VM},
 };
 
-impl VM {
+impl VM<Memory> {
     /// Create a fresh VM with this VM's instructions, run it to completion, and assert that it reaches the same state as this VM
     fn run_and_asset(self) {
         let mut vm = VM::new(self.instructions.clone());
@@ -378,19 +378,4 @@ fn large_number() {
         ..Default::default()
     }
     .run_and_asset()
-}
-
-#[test]
-fn hello_world() {
-    const SRC: &str = include_str!("../dev/hello_world.a");
-
-    let io_mock = |memory: &mut Memory, instruction| {
-        assert_eq!(instruction, 1);
-        assert_eq!(memory.io_slice(), b"Hello world!\n");
-        memory.memory.len() as u8
-    };
-
-    let mut vm = VM::new(parse(SRC));
-    vm.attach(Memory::with_io_mock(io_mock));
-    vm.run().unwrap();
 }
