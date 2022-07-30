@@ -43,17 +43,15 @@ mod register {
 
 impl Memory {
     pub fn new() -> Self {
-        Self::default()
+        Default::default()
     }
 
-    pub fn with_command_mock<F>(run_command: F) -> Self
+    pub fn with_command_mock<F>(mut self, run_command: F) -> Self
     where
         F: FnMut(&mut Memory, u8) -> u8 + 'static,
     {
-        Self {
-            run_command: Some(Box::new(run_command)),
-            ..Default::default()
-        }
+        self.run_command = Some(Box::new(run_command));
+        self
     }
 
     pub fn io_slice(&self) -> &[u8] {

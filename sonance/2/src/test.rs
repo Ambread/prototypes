@@ -391,6 +391,6 @@ fn hello_world() {
     };
 
     let mut vm = VM::new(parse(SRC));
-    vm.attach(Memory::with_command_mock(io_mock));
+    vm.attach(Memory::new().with_command_mock(io_mock));
     vm.run().unwrap();
 }
