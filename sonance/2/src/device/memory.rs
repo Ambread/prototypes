@@ -21,9 +21,10 @@ use crate::device::Device;
 /// - `4..9`: Reserved
 /// - `10..`: Memory
 ///
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Default)]
 pub struct Memory {
     pub memory: Vec<u8>,
+    perform_io: Option<Box<dyn FnMut(&mut Memory, u8) -> u8>>,
     io_result: u8,
     io_start: u8,
     io_end: u8,
@@ -44,6 +45,16 @@ impl Memory {
         Self::default()
     }
 
+    pub fn with_io_mock<F>(perform_io: F) -> Self
+    where
+        F: FnMut(&mut Memory, u8) -> u8 + 'static,
+    {
+        Self {
+            perform_io: Some(Box::new(perform_io)),
+            ..Default::default()
+        }
+    }
+
     pub fn io_slice(&self) -> &[u8] {
         &self.memory[self.io_start as usize..self.io_end as usize]
     }
@@ -52,7 +63,7 @@ impl Memory {
         &mut self.memory[self.io_start as usize..self.io_end as usize]
     }
 
-    fn perform_io(&mut self, instruction: u8) -> u8 {
+    fn standard_perform_io(&mut self, instruction: u8) -> u8 {
         (match instruction {
             0 => {
                 stdin().read_exact(self.io_slice_mut()).unwrap();
@@ -97,7 +108,15 @@ impl Device for Memory {
 
     fn write(&mut self, index: u32, value: u8) {
         match index {
-            register::IO => self.io_result = self.perform_io(value),
+            register::IO => {
+                if let Some(mut perform_io) = self.perform_io.take() {
+                    self.io_result = perform_io(self, value);
+                    self.perform_io = Some(perform_io);
+                } else {
+                    self.io_result = self.standard_perform_io(value);
+                }
+            }
+
             register::LEN => self.memory.resize(value as usize, self.fill_value),
             register::IO_START => self.io_start = value,
             register::IO_END => self.io_end = value,

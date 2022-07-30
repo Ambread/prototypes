@@ -1,12 +1,9 @@
-use crate::{
-    device::Device,
-    vm::{
-        error::{Result, VMError},
-        Instruction, VM,
-    },
+use crate::vm::{
+    error::{Result, VMError},
+    Instruction, VM,
 };
 
-impl<D: Device> VM<D> {
+impl VM {
     pub fn step(&mut self) -> Result<bool> {
         self.current_instruction = {
             let code = *self
@@ -111,15 +108,19 @@ impl<D: Device> VM<D> {
                     ))?;
             }
 
+            Instruction::Select => {
+                let device = self.pop()?;
+                self.devices.select(device);
+            }
             Instruction::Read => {
                 let index = self.pop_u32()?;
-                let value = self.device()?.read(index);
+                let value = self.devices.read(index);
                 self.stack.push(value)
             }
             Instruction::Write => {
                 let index = self.pop_u32()?;
                 let value = self.pop()?;
-                self.device()?.write(index, value);
+                self.devices.write(index, value);
             }
 
             Instruction::Call => {

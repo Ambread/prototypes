@@ -14,7 +14,8 @@ fn main() -> Result<()> {
     let src = std::fs::read_to_string(args.input)?;
     let instructions = parser::parse(&src)?;
 
-    let mut vm = VM::new(instructions).with_device(Memory::new());
+    let mut vm = VM::new(instructions);
+    vm.attach(Memory::new());
     vm.run()?;
 
     Ok(())
