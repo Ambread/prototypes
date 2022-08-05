@@ -46,13 +46,17 @@ fn setup_scene(
         ..default()
     });
 
-    // camera
+    // Player
     commands
-        .spawn_bundle(Camera3dBundle {
-            transform: Transform::from_xyz(-2.0, 2.5, 5.0),
+        .spawn()
+        .insert(Player::default())
+        .insert_bundle(SpatialBundle {
+            transform: Transform::from_xyz(-2.0, 1.0, 5.0),
             ..default()
         })
-        .insert(Player::default());
+        .with_children(|children| {
+            children.spawn_bundle(Camera3dBundle { ..default() });
+        });
 }
 
 #[derive(Component, Default)]
@@ -91,21 +95,23 @@ fn player_movement(
 
 fn player_rotation(
     mut mouse_motion_events: EventReader<MouseMotion>,
-    mut query: Query<(&mut Transform, &mut Player)>,
+    mut player: Query<(&mut Transform, &mut Player)>,
+    mut camera: Query<&mut Transform, (With<Camera3d>, Without<Player>)>,
 ) {
-    let (mut transform, mut player) = query.get_single_mut().unwrap();
+    let (mut transform, mut player) = player.get_single_mut().unwrap();
+    let mut camera = camera.get_single_mut().unwrap();
 
     let mut delta = Vec2::default();
     for event in mouse_motion_events.iter() {
         delta += event.delta;
     }
 
-    let sensitivity = 0.001;
+    let sensitivity = 0.1;
     player.yaw -= delta.x * sensitivity;
     player.pitch += delta.y * sensitivity;
 
     player.pitch = player.pitch.clamp(-89.0, 89.9);
 
-    transform.rotation =
-        Quat::from_axis_angle(Vec3::Y, player.yaw) * Quat::from_axis_angle(-Vec3::X, player.pitch);
+    camera.rotation = Quat::from_axis_angle(-Vec3::X, player.pitch.to_radians());
+    transform.rotation = Quat::from_axis_angle(Vec3::Y, player.yaw.to_radians());
 }
