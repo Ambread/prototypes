@@ -61,14 +61,16 @@ fn setup_scene(
 
 #[derive(Component, Default)]
 struct Player {
-    pitch: f32,
-    yaw: f32,
+    mouse: Vec2,
 }
 
 fn player_movement(
+    time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<&mut Transform, With<Player>>,
 ) {
+    const SPEED: f32 = 5.0;
+
     let mut player = query.get_single_mut().unwrap();
 
     let mut movement = Vec3::default();
@@ -84,8 +86,8 @@ fn player_movement(
             movement += direction;
         }
     }
-    let speed = 0.1;
-    let movement = movement.normalize_or_zero() * speed;
+
+    let movement = movement.normalize_or_zero() * SPEED * time.delta_seconds();
 
     let forward = player.forward();
     let right = player.right();
@@ -94,10 +96,13 @@ fn player_movement(
 }
 
 fn player_rotation(
+    time: Res<Time>,
     mut mouse_motion_events: EventReader<MouseMotion>,
     mut player: Query<(&mut Transform, &mut Player)>,
     mut camera: Query<&mut Transform, (With<Camera3d>, Without<Player>)>,
 ) {
+    const SENSITIVITY: f32 = 5.0;
+
     let (mut transform, mut player) = player.get_single_mut().unwrap();
     let mut camera = camera.get_single_mut().unwrap();
 
@@ -105,13 +110,10 @@ fn player_rotation(
     for event in mouse_motion_events.iter() {
         delta += event.delta;
     }
+    player.mouse += delta * SENSITIVITY * time.delta_seconds();
 
-    let sensitivity = 0.1;
-    player.yaw -= delta.x * sensitivity;
-    player.pitch += delta.y * sensitivity;
+    player.mouse.y = player.mouse.y.clamp(-89.0, 89.9);
 
-    player.pitch = player.pitch.clamp(-89.0, 89.9);
-
-    camera.rotation = Quat::from_axis_angle(-Vec3::X, player.pitch.to_radians());
-    transform.rotation = Quat::from_axis_angle(Vec3::Y, player.yaw.to_radians());
+    camera.rotation = Quat::from_axis_angle(-Vec3::X, player.mouse.y.to_radians());
+    transform.rotation = Quat::from_axis_angle(-Vec3::Y, player.mouse.x.to_radians());
 }
