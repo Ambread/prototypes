@@ -42,8 +42,8 @@ impl InstructionParser {
             return Ok(());
         }
 
-        if let Some(label) = self.parse_prefixed("#", line) {
-            self.labels.insert(label, self.items.len() as _);
+        if let Some(label) = line.strip_prefix('#') {
+            self.labels.insert(label.to_owned(), self.items.len() as _);
             return Ok(());
         }
 
@@ -65,28 +65,34 @@ impl InstructionParser {
     }
 
     fn parse_arg(&mut self, arg: &str) -> Result<()> {
-        if let Some(label) = self.parse_prefixed("#", arg) {
+        if let Some(label) = arg.strip_prefix('#') {
             self.items.push(Item::Instruction(Instruction::Push));
-            self.items.push(Item::LabelReference(label));
+            self.items.push(Item::LabelReference(label.to_owned()));
             return Ok(());
         }
 
-        if let Some(variable) = self.parse_prefixed("&", arg) {
-            let variable = *self.variables.entry(variable).or_insert_with(|| {
-                let variable = self.variable_counter;
-                self.variable_counter += 1;
-                variable
-            });
+        if let Some(variable) = arg.strip_prefix('&') {
+            let variable = *self
+                .variables
+                .entry(variable.to_owned())
+                .or_insert_with(|| {
+                    let variable = self.variable_counter;
+                    self.variable_counter += 1;
+                    variable
+                });
 
             self.items.push(Item::Instruction(Instruction::Push));
             self.items.push(Item::Raw(variable));
             return Ok(());
         }
 
-        if let Some(char) = self.parse_wrapped("'", arg) {
+        if let Some(char) = arg
+            .strip_prefix('\'')
+            .and_then(|arg| arg.strip_suffix('\''))
+        {
             self.items.push(Item::Instruction(Instruction::Push));
 
-            let char = match char.as_str() {
+            let char = match char {
                 "\\n" => b'\n',
                 char => char.chars().next().unwrap_or(' ') as u8,
             };
@@ -97,14 +103,14 @@ impl InstructionParser {
 
         let arg = &arg.replace('_', "");
 
-        if let Some(number) = self.parse_suffixed(arg, "u8") {
+        if let Some(number) = arg.strip_suffix("u8") {
             let number = number.parse()?;
             self.items.push(Item::Instruction(Instruction::Push));
             self.items.push(Item::Raw(number));
             return Ok(());
         }
 
-        if let Some(number) = self.parse_suffixed(arg, "u16") {
+        if let Some(number) = arg.strip_suffix("u16") {
             let number: u16 = number.parse()?;
             self.items.push(Item::Instruction(Instruction::PushU16));
             for raw in number.to_le_bytes() {
@@ -113,7 +119,7 @@ impl InstructionParser {
             return Ok(());
         }
 
-        if let Some(number) = self.parse_suffixed(arg, "u32") {
+        if let Some(number) = arg.strip_suffix("u32") {
             let number: u32 = number.parse()?;
             self.items.push(Item::Instruction(Instruction::PushU32));
             for raw in number.to_le_bytes() {
@@ -122,7 +128,7 @@ impl InstructionParser {
             return Ok(());
         }
 
-        if let Some(number) = self.parse_suffixed(arg, "u64") {
+        if let Some(number) = arg.strip_suffix("u64") {
             let number: u64 = number.parse()?;
             self.items.push(Item::Instruction(Instruction::PushU64));
             for raw in number.to_le_bytes() {
@@ -136,27 +142,6 @@ impl InstructionParser {
         self.items.push(Item::Raw(number));
 
         Ok(())
-    }
-
-    fn parse_prefixed(&mut self, prefix: &str, ident: &str) -> Option<String> {
-        ident
-            .starts_with(prefix)
-            .then(|| ident.trim_start_matches(prefix).into())
-    }
-
-    fn parse_suffixed(&mut self, ident: &str, suffix: &str) -> Option<String> {
-        ident
-            .ends_with(suffix)
-            .then(|| ident.trim_end_matches(suffix).into())
-    }
-
-    fn parse_wrapped(&mut self, delimiter: &str, ident: &str) -> Option<String> {
-        (ident.starts_with(delimiter) && ident.ends_with(delimiter)).then(|| {
-            ident
-                .trim_start_matches(delimiter)
-                .trim_end_matches(delimiter)
-                .into()
-        })
     }
 
     fn build(self) -> Result<Vec<u8>> {
