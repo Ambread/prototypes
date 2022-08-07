@@ -3,12 +3,11 @@ use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 
 use crate::{
-    device::memory::Memory,
     parser,
     vm::{Frame, Frames, VM},
 };
 
-impl VM<'_> {
+impl VM {
     /// Create a fresh VM with this VM's instructions, run it to completion, and assert that it reaches the same state as this VM
     fn run_and_asset(self) {
         let mut vm = VM::new(self.instructions.clone());
@@ -378,21 +377,4 @@ fn large_number() {
         ..Default::default()
     }
     .run_and_asset()
-}
-
-#[test]
-fn hello_world() {
-    const SRC: &str = include_str!("../dev/hello_world.a");
-
-    let mut output = vec![];
-
-    let mut memory = Memory::empty_io();
-    memory.add_output(&mut output);
-
-    let mut vm = VM::new(parse(SRC));
-    vm.add_device(&mut memory);
-    vm.run().unwrap();
-
-    drop(memory);
-    assert_eq!(output, b"Hello world!\n");
 }

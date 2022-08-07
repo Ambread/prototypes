@@ -69,9 +69,6 @@ generate_instructions! {
         Load,
         Store,
 
-        Read,
-        Write,
-
         Call,
         Return,
 
