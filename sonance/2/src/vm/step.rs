@@ -3,7 +3,7 @@ use crate::vm::{
     Instruction, VM,
 };
 
-impl VM {
+impl VM<'_> {
     pub fn step(&mut self) -> Result<bool> {
         self.current_instruction = {
             let code = *self
@@ -106,6 +106,17 @@ impl VM {
                         self.current_instruction,
                         self.instruction_index,
                     ))?;
+            }
+
+            Instruction::Read => {
+                let index = self.pop_u32()?;
+                let value = self.devices.read(index);
+                self.stack.push(value)
+            }
+            Instruction::Write => {
+                let index = self.pop_u32()?;
+                let value = self.pop()?;
+                self.devices.write(index, value);
             }
 
             Instruction::Call => {
