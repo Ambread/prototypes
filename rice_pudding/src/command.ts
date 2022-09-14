@@ -1,8 +1,11 @@
 import { PrismaClient } from '@prisma/client';
-import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import {
+    ChatInputCommandInteraction,
+    SharedNameAndDescription,
+} from 'discord.js';
 
 export interface Command {
-    builder: SlashCommandBuilder;
+    builder: SharedNameAndDescription;
     execute(
         interaction: ChatInputCommandInteraction,
         prisma: PrismaClient,
@@ -10,8 +13,9 @@ export interface Command {
 }
 
 import { ping } from './commands/ping';
+import { give } from './commands/give';
 
-export const commands: Record<string, Command> = { ping };
+export const commands: Record<string, Command> = { ping, give };
 
 for (const [name, command] of Object.entries(commands)) {
     command.builder.setName(name);
