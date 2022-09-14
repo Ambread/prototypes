@@ -4,23 +4,26 @@ import { commands } from './command';
 import { PrismaClient } from '@prisma/client';
 
 export const prisma = new PrismaClient();
-const client = new Client({
-    intents: [GatewayIntentBits.Guilds],
-    allowedMentions: {
-        users: [],
-        roles: [],
-        parse: [],
-    },
-});
 
-client.on('ready', () => {
-    console.log('Ready!');
-});
+if (require.main === module) {
+    const client = new Client({
+        intents: [GatewayIntentBits.Guilds],
+        allowedMentions: {
+            users: [],
+            roles: [],
+            parse: [],
+        },
+    });
 
-client.on('interactionCreate', (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
+    client.on('ready', () => {
+        console.log('Ready!');
+    });
 
-    commands[interaction.commandName].execute(interaction, prisma);
-});
+    client.on('interactionCreate', (interaction) => {
+        if (!interaction.isChatInputCommand()) return;
 
-client.login(config.token);
+        commands[interaction.commandName].execute(interaction, prisma);
+    });
+
+    client.login(config.token);
+}
