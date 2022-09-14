@@ -1,6 +1,10 @@
+import { User } from '@prisma/client';
 import { SlashCommandBuilder } from 'discord.js';
 import { Command } from '../command';
 import { ordinal } from '../util';
+
+const format = (data: User, index: number) =>
+    `• \`${ordinal(index + 1)}\`  |  <@${data.id}>  (${data.pudding})`;
 
 export const top: Command = {
     builder: new SlashCommandBuilder().setDescription(
@@ -15,15 +19,10 @@ export const top: Command = {
             },
         });
 
-        interaction.reply(
-            top
-                .map(
-                    (data, index) =>
-                        `• \`${ordinal(index + 1)}\`  |  <@${data.id}>  (${
-                            data.pudding
-                        })`,
-                )
-                .join('\n'),
-        );
+        if (top.length === 0) {
+            return interaction.reply('No one has any rice pudding!');
+        }
+
+        interaction.reply(top.map(format).join('\n'));
     },
 };
