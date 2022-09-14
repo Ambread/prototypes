@@ -11,3 +11,4 @@
 .pnp.*
 
 config.ts
+data/

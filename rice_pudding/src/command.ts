@@ -1,8 +1,12 @@
+import { PrismaClient } from '@prisma/client';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 
 export interface Command {
     builder: SlashCommandBuilder;
-    execute(interaction: ChatInputCommandInteraction): Promise<unknown>;
+    execute(
+        interaction: ChatInputCommandInteraction,
+        prisma: PrismaClient,
+    ): Promise<unknown>;
 }
 
 import { ping } from './commands/ping';

@@ -5,16 +5,19 @@
     "scripts": {
         "dev": "ts-node --files .",
         "deploy": "ts-node --files src/deploy.ts",
-        "lint": "eslint . --ext .js,.ts"
+        "lint": "eslint . --ext .js,.ts",
+        "prisma": "pnpify prisma"
     },
     "dependencies": {
         "@discordjs/rest": "^1.1.0",
+        "@prisma/client": "^4.3.1",
         "discord.js": "^14.3.0"
     },
     "devDependencies": {
         "@types/node": "^18.7.18",
         "@typescript-eslint/eslint-plugin": "^5.37.0",
         "@typescript-eslint/parser": "^5.37.0",
+        "@yarnpkg/pnpify": "^4.0.0-rc.18",
         "eslint": "^8.23.1",
         "eslint-config-prettier": "^8.5.0",
         "eslint-plugin-prettier": "^4.2.1",
@@ -23,5 +26,13 @@
         "ts-node": "^10.9.1",
         "ts-node-dev": "^2.0.0",
         "typescript": "^4.8.3"
+    },
+    "dependenciesMeta": {
+        "@prisma/client@4.3.1": {
+            "unplugged": true
+        },
+        "prisma@4.3.1": {
+            "unplugged": true
+        }
     }
 }
