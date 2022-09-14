@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "lib": ["esnext"],
+        "locale": "en",
+        "module": "commonjs",
+        "strict": true,
+        "esModuleInterop": true,
+        "target": "es2020"
+    },
+    "include": ["./src/**/*", "config.ts"]
+}
