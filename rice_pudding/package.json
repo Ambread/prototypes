@@ -34,5 +34,8 @@
         "prisma@4.3.1": {
             "unplugged": true
         }
+    },
+    "resolutions": {
+        ".prisma": "link:.yarn/unplugged/@prisma-client-virtual-ceedc3b49f/node_modules/.prisma"
     }
 }

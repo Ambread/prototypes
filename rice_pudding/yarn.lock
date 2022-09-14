@@ -5,6 +5,12 @@ __metadata:
   version: 6
   cacheKey: 8
 
+".prisma@link:.yarn/unplugged/@prisma-client-virtual-ceedc3b49f/node_modules/.prisma::locator=rice_pudding%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: ".prisma@link:.yarn/unplugged/@prisma-client-virtual-ceedc3b49f/node_modules/.prisma::locator=rice_pudding%40workspace%3A."
+  languageName: node
+  linkType: soft
+
 "@arcanis/slice-ansi@npm:^1.1.1":
   version: 1.1.1
   resolution: "@arcanis/slice-ansi@npm:1.1.1"
