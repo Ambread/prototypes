@@ -4,7 +4,14 @@ import { commands } from './command';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+    intents: [GatewayIntentBits.Guilds],
+    allowedMentions: {
+        users: [],
+        roles: [],
+        parse: [],
+    },
+});
 
 client.on('ready', () => {
     console.log('Ready!');

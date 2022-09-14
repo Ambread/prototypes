@@ -2,9 +2,14 @@ import { SlashCommandBuilder } from 'discord.js';
 import { Command } from '../command';
 
 export const give: Command = {
-    builder: new SlashCommandBuilder().addUserOption((builder) =>
-        builder.setName('person').setRequired(true),
-    ),
+    builder: new SlashCommandBuilder()
+        .setDescription('Give a rice pudding to someone')
+        .addUserOption((builder) =>
+            builder
+                .setName('person')
+                .setDescription('Person to give a rice pudding to')
+                .setRequired(true),
+        ),
 
     async execute(interaction, prisma) {
         const sender = interaction.user;
@@ -35,5 +40,11 @@ export const give: Command = {
                 data: { pudding: receiverData.pudding + 1 },
             }),
         ]);
+
+        interaction.reply(
+            `You gave <@${receiver.id}> a rice pudding! You have ${
+                senderData.pudding - 1
+            } puddings left.`,
+        );
     },
 };

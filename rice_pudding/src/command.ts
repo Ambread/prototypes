@@ -1,11 +1,8 @@
 import { PrismaClient } from '@prisma/client';
-import {
-    ChatInputCommandInteraction,
-    SharedNameAndDescription,
-} from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 
 export interface Command {
-    builder: SharedNameAndDescription;
+    builder: Pick<SlashCommandBuilder, 'toJSON' | 'setName'>;
     execute(
         interaction: ChatInputCommandInteraction,
         prisma: PrismaClient,
