@@ -9,6 +9,14 @@ export const give: Command = {
                 .setName('person')
                 .setDescription('Person to give a rice pudding to')
                 .setRequired(true),
+        )
+        .addNumberOption((option) =>
+            option
+                .setName('amount')
+                .setDescription('Amount of pudding to give')
+                .setMinValue(1)
+                .setMaxValue(256)
+                .setRequired(true),
         ),
 
     async execute(interaction, prisma) {
@@ -19,8 +27,12 @@ export const give: Command = {
             create: { id: sender.id, username: sender.username },
         });
 
-        if (senderData.pudding === 0) {
-            return interaction.reply('You have no pudding left to give!');
+        const amount = interaction.options.getNumber('amount', true) ?? 1;
+
+        if (senderData.pudding < amount) {
+            return interaction.reply(
+                `You only have ${senderData.pudding} rice pudding!`,
+            );
         }
 
         const receiver = interaction.options.getUser('person', true);
@@ -33,17 +45,19 @@ export const give: Command = {
         await prisma.$transaction([
             prisma.user.update({
                 where: { id: sender.id },
-                data: { pudding: senderData.pudding - 1 },
+                data: { pudding: senderData.pudding - amount },
             }),
             prisma.user.update({
                 where: { id: receiver.id },
-                data: { pudding: receiverData.pudding + 1 },
+                data: { pudding: receiverData.pudding + amount },
             }),
         ]);
 
-        const content = `You gave <@${receiver.id}> a rice pudding! You have ${
-            senderData.pudding - 1
-        } puddings left.`;
+        const content = `You gave <@${
+            receiver.id
+        }> ${amount} rice pudding! You have ${
+            senderData.pudding - amount
+        } pudding left.`;
 
         interaction.reply({
             content,
