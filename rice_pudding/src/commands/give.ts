@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { Command } from '../command';
+import { getUserData } from '../util';
 
 export const give: Command = {
     builder: new SlashCommandBuilder()
@@ -21,11 +22,7 @@ export const give: Command = {
 
     async execute(interaction, prisma) {
         const sender = interaction.user;
-        const senderData = await prisma.user.upsert({
-            where: { id: sender.id },
-            update: { username: sender.username },
-            create: { id: sender.id, username: sender.username },
-        });
+        const senderData = await getUserData(sender);
 
         const amount = interaction.options.getNumber('amount', true) ?? 1;
 
@@ -36,11 +33,7 @@ export const give: Command = {
         }
 
         const receiver = interaction.options.getUser('person', true);
-        const receiverData = await prisma.user.upsert({
-            where: { id: receiver.id },
-            update: { username: receiver.username },
-            create: { id: receiver.id, username: receiver.username },
-        });
+        const receiverData = await getUserData(receiver);
 
         await prisma.$transaction([
             prisma.user.update({

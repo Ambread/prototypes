@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { Command } from '../command';
-import { ordinal } from '../util';
+import { getUserData, ordinal } from '../util';
 
 export const wallet: Command = {
     builder: new SlashCommandBuilder()
@@ -18,11 +18,7 @@ export const wallet: Command = {
         const personOption = interaction.options.getUser('person');
 
         const person = personOption ?? interaction.user;
-        const data = await prisma.user.upsert({
-            where: { id: person.id },
-            update: { username: person.username },
-            create: { id: person.id, username: person.username },
-        });
+        const data = await getUserData(person);
 
         const rankData = await prisma.user.aggregate({
             _count: true,

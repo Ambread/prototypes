@@ -3,7 +3,7 @@ import { config } from '../config';
 import { commands } from './command';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+export const prisma = new PrismaClient();
 const client = new Client({
     intents: [GatewayIntentBits.Guilds],
     allowedMentions: {

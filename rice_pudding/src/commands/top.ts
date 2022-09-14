@@ -1,7 +1,7 @@
 import { User } from '@prisma/client';
 import { SlashCommandBuilder } from 'discord.js';
 import { Command } from '../command';
-import { ordinal } from '../util';
+import { getUserData, ordinal } from '../util';
 
 const format = (data: User, index: number) =>
     `• \`${ordinal(index)}\`  |  <@${data.id}>  (${data.pudding})\n`;
@@ -13,11 +13,7 @@ export const top: Command = {
 
     async execute(interaction, prisma) {
         const sender = interaction.user;
-        await prisma.user.upsert({
-            where: { id: sender.id },
-            update: { username: sender.username },
-            create: { id: sender.id, username: sender.username },
-        });
+        getUserData(sender);
 
         const top = await prisma.user.findMany({
             take: 10,
@@ -30,18 +26,18 @@ export const top: Command = {
             return interaction.reply('No one has any rice pudding!');
         }
 
-        let message = '';
         let previous = Infinity;
         let rank = 0;
-        for (const data of top) {
+
+        const message = top.map((data) => {
             if (data.pudding < previous) {
                 previous = data.pudding;
                 rank += 1;
             }
 
-            message += format(data, rank);
-        }
+            return format(data, rank);
+        });
 
-        interaction.reply(message);
+        interaction.reply(message.join(''));
     },
 };
