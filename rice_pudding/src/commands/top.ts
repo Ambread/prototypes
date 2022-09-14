@@ -12,6 +12,13 @@ export const top: Command = {
     ),
 
     async execute(interaction, prisma) {
+        const sender = interaction.user;
+        await prisma.user.upsert({
+            where: { id: sender.id },
+            update: { username: sender.username },
+            create: { id: sender.id, username: sender.username },
+        });
+
         const top = await prisma.user.findMany({
             take: 10,
             orderBy: {
