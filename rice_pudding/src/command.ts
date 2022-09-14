@@ -9,12 +9,11 @@ export interface Command {
     ): Promise<unknown>;
 }
 
-import { ping } from './commands/ping';
 import { give } from './commands/give';
 import { wallet } from './commands/wallet';
 import { top } from './commands/top';
 
-export const commands: Record<string, Command> = { ping, give, wallet, top };
+export const commands: Record<string, Command> = { give, wallet, top };
 
 for (const [name, command] of Object.entries(commands)) {
     command.builder.setName(name);
