@@ -10,6 +10,3 @@ const suffixes = {
 
 export const ordinal = (value: number) =>
     value + suffixes[englishOrdinalRules.select(value)];
-
-export const plural = (value: number, singular: string, plural: string) =>
-    value === 1 ? singular : plural;

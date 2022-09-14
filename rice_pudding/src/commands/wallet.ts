@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { Command } from '../command';
-import { ordinal, plural } from '../util';
+import { ordinal } from '../util';
 
 export const wallet: Command = {
     builder: new SlashCommandBuilder()
@@ -32,16 +32,14 @@ export const wallet: Command = {
         });
         const rank = ordinal(rankData._count + 1);
 
-        const puddings = plural(data.pudding, 'pudding', 'puddings');
-
         if (person.id === interaction.user.id) {
             return interaction.reply(
-                `You have ${data.pudding} rice ${puddings} and are in ${rank} place.`,
+                `You have ${data.pudding} rice pudding and are in ${rank} place.`,
             );
         }
 
         interaction.reply(
-            `<@${person.id}> has ${data.pudding} rice ${puddings} and is in ${rank} place.`,
+            `<@${person.id}> has ${data.pudding} rice pudding and is in ${rank} place.`,
         );
     },
 };

@@ -8,7 +8,7 @@ const format = (data: User, index: number) =>
 
 export const top: Command = {
     builder: new SlashCommandBuilder().setDescription(
-        'See the people with the highest rice puddings',
+        'See the people with the highest rice pudding',
     ),
 
     async execute(interaction, prisma) {
