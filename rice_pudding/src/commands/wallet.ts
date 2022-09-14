@@ -1,18 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { Command } from '../command';
-
-const englishOrdinalRules = new Intl.PluralRules('en', { type: 'ordinal' });
-const suffixes = {
-    zero: 'th',
-    one: 'st',
-    two: 'nd',
-    few: 'rd',
-    many: 'th',
-    other: 'th',
-};
-
-const ordinal = (value: number) =>
-    value + suffixes[englishOrdinalRules.select(value)];
+import { ordinal, plural } from '../util';
 
 export const wallet: Command = {
     builder: new SlashCommandBuilder()
@@ -44,7 +32,7 @@ export const wallet: Command = {
         });
         const rank = ordinal(rankData._count + 1);
 
-        const puddings = data.pudding === 1 ? 'pudding' : 'puddings';
+        const puddings = plural(data.pudding, 'pudding', 'puddings');
 
         if (person.id === interaction.user.id) {
             return interaction.reply(

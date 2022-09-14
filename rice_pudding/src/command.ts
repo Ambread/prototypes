@@ -12,8 +12,9 @@ export interface Command {
 import { ping } from './commands/ping';
 import { give } from './commands/give';
 import { wallet } from './commands/wallet';
+import { top } from './commands/top';
 
-export const commands: Record<string, Command> = { ping, give, wallet };
+export const commands: Record<string, Command> = { ping, give, wallet, top };
 
 for (const [name, command] of Object.entries(commands)) {
     command.builder.setName(name);
