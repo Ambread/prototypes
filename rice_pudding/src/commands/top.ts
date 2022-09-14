@@ -4,7 +4,7 @@ import { Command } from '../command';
 import { ordinal } from '../util';
 
 const format = (data: User, index: number) =>
-    `• \`${ordinal(index + 1)}\`  |  <@${data.id}>  (${data.pudding})`;
+    `• \`${ordinal(index)}\`  |  <@${data.id}>  (${data.pudding})\n`;
 
 export const top: Command = {
     builder: new SlashCommandBuilder().setDescription(
@@ -30,6 +30,18 @@ export const top: Command = {
             return interaction.reply('No one has any rice pudding!');
         }
 
-        interaction.reply(top.map(format).join('\n'));
+        let message = '';
+        let previous = Infinity;
+        let rank = 0;
+        for (const data of top) {
+            if (data.pudding < previous) {
+                previous = data.pudding;
+                rank += 1;
+            }
+
+            message += format(data, rank);
+        }
+
+        interaction.reply(message);
     },
 };
