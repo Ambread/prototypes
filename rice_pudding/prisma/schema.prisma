@@ -11,8 +11,9 @@ datasource db {
 }
 
 model User {
-    id      String @id
-    pudding Int    @default(3)
+    id       String @id
+    username String
+    pudding  Int    @default(3)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
