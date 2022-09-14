@@ -41,10 +41,15 @@ export const give: Command = {
             }),
         ]);
 
-        interaction.reply(
-            `You gave <@${receiver.id}> a rice pudding! You have ${
-                senderData.pudding - 1
-            } puddings left.`,
-        );
+        const content = `You gave <@${receiver.id}> a rice pudding! You have ${
+            senderData.pudding - 1
+        } puddings left.`;
+
+        interaction.reply({
+            content,
+            allowedMentions: {
+                users: [receiver.id],
+            },
+        });
     },
 };
