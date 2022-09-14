@@ -4,8 +4,8 @@ import { Command } from '../command';
 export const give: Command = {
     builder: new SlashCommandBuilder()
         .setDescription('Give a rice pudding to someone')
-        .addUserOption((builder) =>
-            builder
+        .addUserOption((option) =>
+            option
                 .setName('person')
                 .setDescription('Person to give a rice pudding to')
                 .setRequired(true),
