@@ -24,6 +24,8 @@ if (require.main === module) {
 
         const command = interaction.commandName as keyof typeof commands;
 
+        console.log(`${interaction.user.username} used ${command}`);
+
         commands[command].execute(interaction, prisma);
     });
 
