@@ -22,7 +22,9 @@ if (require.main === module) {
     client.on('interactionCreate', (interaction) => {
         if (!interaction.isChatInputCommand()) return;
 
-        commands[interaction.commandName].execute(interaction, prisma);
+        const command = interaction.commandName as keyof typeof commands;
+
+        commands[command].execute(interaction, prisma);
     });
 
     client.login(config.token);
