@@ -1,11 +1,11 @@
 fn main() {
-    let f = 6.mul(X.pow(2)).add(17.mul(X)).add(12);
-    println!("{}", f.at(5.0));
+    let f = X.neg().neg();
+    println!("{}", f.at(X));
 }
 
 use std::fmt::Display;
 
-use Expr::X;
+use Expr::{Const, X};
 
 #[derive(Debug, Clone)]
 enum Expr {
@@ -16,43 +16,28 @@ enum Expr {
 }
 
 impl Expr {
-    fn at(self, x: impl ToExpr) -> Expr {
-        match self {
-            X => x.to_expr(),
-            Expr::Const(c) => Expr::Const(c),
-            Expr::UnaryOp(op, a) => Expr::UnaryOp(op, Box::new(a.at(x))),
-            Expr::BinaryOp(op, a, b) => {
-                Expr::BinaryOp(op, Box::new(a.at(x.clone())), Box::new(b.at(x)))
-            }
-        }
-        .simplify()
-    }
-
-    fn simplify(self) -> Expr {
+    fn at(self, x: Expr) -> Expr {
         use crate::{BinaryOp::*, Expr::*, UnaryOp::*};
 
         match self {
-            X => X,
+            X => x,
             Const(c) => Const(c),
 
-            UnaryOp(op, a) => match a.simplify() {
-                Const(c) => Const(match op {
-                    Neg => -c,
-                    Sin => c.sin(),
-                    Cos => c.cos(),
-                }),
-                a => UnaryOp(op, a.into()),
+            UnaryOp(op, a) => match (op, a.at(x)) {
+                (Neg, Const(c)) => Const(-c),
+                (Neg, UnaryOp(Neg, a)) => *a,
+                (Sin, Const(c)) => Const(c.sin()),
+                (Cos, Const(c)) => Const(c.cos()),
+                (op, a) => UnaryOp(op, a.into()),
             },
 
-            BinaryOp(op, a, b) => match (a.simplify(), b.simplify()) {
-                (Const(a), Const(b)) => Const(match op {
-                    Add => a + b,
-                    Sub => a - b,
-                    Mul => a * b,
-                    Div => a / b,
-                    Pow => a.powf(b),
-                }),
-                (a, b) => BinaryOp(op, a.into(), b.into()),
+            BinaryOp(op, a, b) => match (op, a.at(x.clone()), b.at(x)) {
+                (Add, Const(a), Const(b)) => Const(a + b),
+                (Sub, Const(a), Const(b)) => Const(a - b),
+                (Mul, Const(a), Const(b)) => Const(a * b),
+                (Div, Const(a), Const(b)) => Const(a / b),
+                (Pow, Const(a), Const(b)) => Const(a.powf(b)),
+                (op, a, b) => BinaryOp(op, a.into(), b.into()),
             },
         }
     }
@@ -66,11 +51,11 @@ impl Display for Expr {
             Expr::UnaryOp(UnaryOp::Neg, a) => write!(f, "-{a}"),
             Expr::UnaryOp(UnaryOp::Sin, a) => write!(f, "sin({a})"),
             Expr::UnaryOp(UnaryOp::Cos, a) => write!(f, "cos({a})"),
-            Expr::BinaryOp(BinaryOp::Add, a, b) => write!(f, "{a} + {b}"),
-            Expr::BinaryOp(BinaryOp::Sub, a, b) => write!(f, "{a} - {b}"),
-            Expr::BinaryOp(BinaryOp::Mul, a, b) => write!(f, "{a} * {b}"),
-            Expr::BinaryOp(BinaryOp::Div, a, b) => write!(f, "{a} / {b}"),
-            Expr::BinaryOp(BinaryOp::Pow, a, b) => write!(f, "{a} ^ {b}"),
+            Expr::BinaryOp(BinaryOp::Add, a, b) => write!(f, "({a} + {b})"),
+            Expr::BinaryOp(BinaryOp::Sub, a, b) => write!(f, "({a} - {b})"),
+            Expr::BinaryOp(BinaryOp::Mul, a, b) => write!(f, "({a} * {b})"),
+            Expr::BinaryOp(BinaryOp::Div, a, b) => write!(f, "({a} / {b})"),
+            Expr::BinaryOp(BinaryOp::Pow, a, b) => write!(f, "({a} ^ {b})"),
         }
     }
 }
@@ -91,8 +76,20 @@ enum BinaryOp {
     Pow,
 }
 
-trait ToExpr: Sized + Clone {
+trait ToExpr: Sized {
     fn to_expr(self) -> Expr;
+
+    fn neg(self) -> Expr {
+        Expr::UnaryOp(UnaryOp::Neg, Box::new(self.to_expr()))
+    }
+
+    fn sin(self) -> Expr {
+        Expr::UnaryOp(UnaryOp::Sin, Box::new(self.to_expr()))
+    }
+
+    fn cos(self) -> Expr {
+        Expr::UnaryOp(UnaryOp::Cos, Box::new(self.to_expr()))
+    }
 
     fn add(self, rhs: impl ToExpr) -> Expr {
         Expr::BinaryOp(
