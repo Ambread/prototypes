@@ -1,7 +1,7 @@
 #![allow(illegal_floating_point_literal_pattern)]
 
 fn main() {
-    let f = X.divided(1);
+    let f = 4.1.divided(2.0);
     println!("{}", f.at(X));
 }
 
@@ -43,7 +43,7 @@ impl Expr {
                 (Mul, expr, Const(1.0)) => expr,
 
                 (Div, _, Const(0.0)) => Error(DivByZero),
-                (Div, Const(a), Const(b)) => Const(a / b),
+                (Div, Const(a), Const(b)) if a % b == 0.0 => Const(a / b),
                 (Div, expr, Const(1.0)) => expr,
 
                 (Pow, Const(a), Const(b)) => Const(a.powf(b)),
