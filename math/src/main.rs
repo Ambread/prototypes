@@ -29,11 +29,31 @@ impl Expr {
     }
 
     fn simplify(self) -> Expr {
+        use crate::{BinaryOp::*, Expr::*, UnaryOp::*};
+
         match self {
             X => X,
-            Expr::Const(c) => Expr::Const(c),
-            Expr::UnaryOp(op, a) => Expr::UnaryOp(op, a),
-            Expr::BinaryOp(op, a, b) => Expr::BinaryOp(op, a, b),
+            Const(c) => Const(c),
+
+            UnaryOp(op, a) => match a.simplify() {
+                Const(c) => Const(match op {
+                    Neg => -c,
+                    Sin => c.sin(),
+                    Cos => c.cos(),
+                }),
+                a => UnaryOp(op, a.into()),
+            },
+
+            BinaryOp(op, a, b) => match (a.simplify(), b.simplify()) {
+                (Const(a), Const(b)) => Const(match op {
+                    Add => a + b,
+                    Sub => a - b,
+                    Mul => a * b,
+                    Div => a / b,
+                    Pow => a.powf(b),
+                }),
+                (a, b) => BinaryOp(op, a.into(), b.into()),
+            },
         }
     }
 }
