@@ -1,3 +1,5 @@
+#![allow(illegal_floating_point_literal_pattern)]
+
 fn main() {
     let f = X.divided(1);
     println!("{}", f.at(X));
@@ -31,21 +33,22 @@ impl Expr {
 
             BinaryOp(op, a, b) => match (op, a.at(x.clone()), b.at(x)) {
                 (Add, Const(a), Const(b)) => Const(a + b),
-                (Add, a, b) if a == Const(0.0) => b,
-                (Add, a, b) if b == Const(0.0) => a,
+                (Add, Const(0.0), expr) => expr,
+                (Add, expr, Const(0.0)) => expr,
 
                 (Mul, Const(a), Const(b)) => Const(a * b),
-                (Mul, a, b) if a == Const(1.0) => b,
-                (Mul, a, b) if b == Const(1.0) => a,
-                (Mul, a, b) if a == Const(0.0) || b == Const(0.0) => Const(0.0),
+                (Mul, Const(0.0), _) => Const(0.0),
+                (Mul, _, Const(0.0)) => Const(0.0),
+                (Mul, Const(1.0), expr) => expr,
+                (Mul, expr, Const(1.0)) => expr,
 
-                (Div, _, b) if b == Const(0.0) => Error(DivByZero),
+                (Div, _, Const(0.0)) => Error(DivByZero),
                 (Div, Const(a), Const(b)) => Const(a / b),
-                (Div, a, b) if b == Const(1.0) => a,
+                (Div, expr, Const(1.0)) => expr,
 
                 (Pow, Const(a), Const(b)) => Const(a.powf(b)),
-                (Pow, a, b) if b == Const(1.0) => a,
-                (Pow, _, b) if b == Const(0.0) => Const(0.0),
+                (Pow, expr, Const(1.0)) => expr,
+                (Pow, _, Const(0.0)) => Const(0.0),
 
                 (op, a, b) => BinaryOp(op, a.into(), b.into()),
             },
