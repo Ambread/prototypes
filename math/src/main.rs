@@ -14,7 +14,7 @@ enum Expr {
     X,
     Const(f64),
     UnaryOp(UnaryOp, Box<Expr>),
-    BiOp(Box<Expr>, BinaryOp, Box<Expr>),
+    BinaryOp(BinaryOp, Box<Expr>, Box<Expr>),
 }
 
 impl Expr {
@@ -23,7 +23,9 @@ impl Expr {
             X => x.to_expr(),
             Expr::Const(c) => Expr::Const(c),
             Expr::UnaryOp(op, a) => Expr::UnaryOp(op, Box::new(a.at(x))),
-            Expr::BiOp(a, op, b) => Expr::BiOp(Box::new(a.at(x.clone())), op, Box::new(b.at(x))),
+            Expr::BinaryOp(op, a, b) => {
+                Expr::BinaryOp(op, Box::new(a.at(x.clone())), Box::new(b.at(x)))
+            }
         }
     }
 
@@ -33,7 +35,7 @@ impl Expr {
             Expr::Const(c) => Expr::Const(c),
             Expr::UnaryOp(UnaryOp::Neg, box Expr::UnaryOp(UnaryOp::Neg, box a)) => a,
             Expr::UnaryOp(op, a) => Expr::UnaryOp(op, a),
-            Expr::BiOp(a, op, b) => Expr::BiOp(a, op, b),
+            Expr::BinaryOp(a, op, b) => Expr::BinaryOp(a, op, b),
         }
     }
 }
@@ -46,11 +48,11 @@ impl Display for Expr {
             Expr::UnaryOp(UnaryOp::Neg, a) => write!(f, "-{a}"),
             Expr::UnaryOp(UnaryOp::Sin, a) => write!(f, "sin({a})"),
             Expr::UnaryOp(UnaryOp::Cos, a) => write!(f, "cos({a})"),
-            Expr::BiOp(a, BinaryOp::Add, b) => write!(f, "{a} + {b}"),
-            Expr::BiOp(a, BinaryOp::Sub, b) => write!(f, "{a} - {b}"),
-            Expr::BiOp(a, BinaryOp::Mul, b) => write!(f, "{a} * {b}"),
-            Expr::BiOp(a, BinaryOp::Div, b) => write!(f, "{a} / {b}"),
-            Expr::BiOp(a, BinaryOp::Pow, b) => write!(f, "{a} ^ {b}"),
+            Expr::BinaryOp(BinaryOp::Add, a, b) => write!(f, "{a} + {b}"),
+            Expr::BinaryOp(BinaryOp::Sub, a, b) => write!(f, "{a} - {b}"),
+            Expr::BinaryOp(BinaryOp::Mul, a, b) => write!(f, "{a} * {b}"),
+            Expr::BinaryOp(BinaryOp::Div, a, b) => write!(f, "{a} / {b}"),
+            Expr::BinaryOp(BinaryOp::Pow, a, b) => write!(f, "{a} ^ {b}"),
         }
     }
 }
@@ -75,41 +77,41 @@ trait ToExpr: Sized + Clone {
     fn to_expr(self) -> Expr;
 
     fn add(self, rhs: impl ToExpr) -> Expr {
-        Expr::BiOp(
-            Box::new(self.to_expr()),
+        Expr::BinaryOp(
             BinaryOp::Add,
+            Box::new(self.to_expr()),
             Box::new(rhs.to_expr()),
         )
     }
 
     fn sub(self, rhs: impl ToExpr) -> Expr {
-        Expr::BiOp(
-            Box::new(self.to_expr()),
+        Expr::BinaryOp(
             BinaryOp::Sub,
+            Box::new(self.to_expr()),
             Box::new(rhs.to_expr()),
         )
     }
 
     fn mul(self, rhs: impl ToExpr) -> Expr {
-        Expr::BiOp(
-            Box::new(self.to_expr()),
+        Expr::BinaryOp(
             BinaryOp::Mul,
+            Box::new(self.to_expr()),
             Box::new(rhs.to_expr()),
         )
     }
 
     fn div(self, rhs: impl ToExpr) -> Expr {
-        Expr::BiOp(
-            Box::new(self.to_expr()),
+        Expr::BinaryOp(
             BinaryOp::Div,
+            Box::new(self.to_expr()),
             Box::new(rhs.to_expr()),
         )
     }
 
     fn pow(self, rhs: impl ToExpr) -> Expr {
-        Expr::BiOp(
-            Box::new(self.to_expr()),
+        Expr::BinaryOp(
             BinaryOp::Pow,
+            Box::new(self.to_expr()),
             Box::new(rhs.to_expr()),
         )
     }
