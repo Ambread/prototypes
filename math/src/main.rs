@@ -1,5 +1,3 @@
-#![feature(box_patterns)]
-
 fn main() {
     let f = 6.mul(X.pow(2)).add(17.mul(X)).add(12);
     println!("{}", f.at(5.0));
@@ -27,15 +25,15 @@ impl Expr {
                 Expr::BinaryOp(op, Box::new(a.at(x.clone())), Box::new(b.at(x)))
             }
         }
+        .simplify()
     }
 
     fn simplify(self) -> Expr {
         match self {
             X => X,
             Expr::Const(c) => Expr::Const(c),
-            Expr::UnaryOp(UnaryOp::Neg, box Expr::UnaryOp(UnaryOp::Neg, box a)) => a,
             Expr::UnaryOp(op, a) => Expr::UnaryOp(op, a),
-            Expr::BinaryOp(a, op, b) => Expr::BinaryOp(a, op, b),
+            Expr::BinaryOp(op, a, b) => Expr::BinaryOp(op, a, b),
         }
     }
 }
