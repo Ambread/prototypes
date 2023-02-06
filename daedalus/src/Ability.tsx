@@ -1,38 +1,38 @@
-import { Component, createMemo, For } from 'solid-js';
+import { Component, createMemo, createSignal, For } from 'solid-js';
 
 type AbilityName = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
 
 type AbilityStyles = {
     [P in AbilityName]: {
         title: string;
-        container: string;
+        header: string;
     };
 };
 
 const abilityStyles: AbilityStyles = {
     str: {
         title: 'Strength',
-        container: 'bg-str-600',
+        header: 'bg-str-600',
     },
     dex: {
         title: 'Dexterity',
-        container: 'bg-dex-600',
+        header: 'bg-dex-600',
     },
     con: {
         title: 'Constitution',
-        container: 'bg-con-600',
+        header: 'bg-con-600',
     },
     int: {
         title: 'Intelligence',
-        container: 'bg-int-600',
+        header: 'bg-int-600',
     },
     wis: {
         title: 'Wisdom',
-        container: 'bg-wis-600',
+        header: 'bg-wis-600',
     },
     cha: {
         title: 'Charisma',
-        container: 'bg-cha-600',
+        header: 'bg-cha-600',
     },
 };
 
@@ -43,19 +43,31 @@ interface Props {
 
 export const Ability: Component<Props> = (props) => {
     const styles = createMemo(() => abilityStyles[props.name]);
-    const modifier = createMemo(() => Math.floor((props.score - 10) / 2));
+
+    const [score, setScore] = createSignal(props.score);
+    const modifier = createMemo(() => Math.floor((score() - 10) / 2));
 
     return (
-        <div class={styles().container + ' p-4 m-5 rounded-xl'}>
-            <h1 class="text-3xl font-bold flex items-center text-white">
-                <span>{styles().title}</span>
-                <span class="bg-slate-700 rounded-full p-3 pr-0 ml-auto">
-                    {props.score}
-                    <span class="bg-slate-600 rounded-full ml-3 p-3">
-                        {modifier()}
-                    </span>
+        <header
+            class={
+                styles().header +
+                ' p-4 m-5 rounded-xl text-3xl font-bold text-white flex'
+            }
+        >
+            <h1 class="flex items-center ">{styles().title}</h1>
+            <span class="bg-slate-800 rounded-full p-3 pr-0 ml-auto flex items-center h-12 w-32">
+                <input
+                    class="w-12 text-center bg-slate-800"
+                    type="number"
+                    min={0}
+                    max={30}
+                    value={score()}
+                    onInput={(e) => setScore(parseInt(e.currentTarget.value))}
+                />
+                <span class="bg-slate-700 rounded-full ml-auto p-3 h-16 w-16 grid place-content-center">
+                    {modifier()}
                 </span>
-            </h1>
-        </div>
+            </span>
+        </header>
     );
 };
