@@ -6,52 +6,54 @@ type AbilityStyles = {
     [P in AbilityName]: {
         title: string;
         container: string;
-        modifiers: string;
     };
 };
 
 const abilityStyles: AbilityStyles = {
     str: {
         title: 'Strength',
-        container: 'border-str-700 text-str-500',
-        modifiers: 'border-str-500',
+        container: 'bg-str-600',
     },
     dex: {
         title: 'Dexterity',
-        container: 'border-dex-700 text-dex-500',
-        modifiers: 'border-dex-500',
+        container: 'bg-dex-600',
     },
     con: {
         title: 'Constitution',
-        container: 'border-con-700 text-con-500',
-        modifiers: 'border-con-500',
+        container: 'bg-con-600',
     },
     int: {
         title: 'Intelligence',
-        container: 'border-int-700 text-int-500',
-        modifiers: 'border-int-500',
+        container: 'bg-int-600',
     },
     wis: {
         title: 'Wisdom',
-        container: 'border-wis-700 text-wis-500',
-        modifiers: 'border-wis-500',
+        container: 'bg-wis-600',
     },
     cha: {
         title: 'Charisma',
-        container: 'border-cha-700 text-cha-500',
-        modifiers: 'border-cha-500',
+        container: 'bg-cha-600',
     },
 };
 
-export const Ability: Component<{ name: AbilityName }> = (props) => {
+interface Props {
+    name: AbilityName;
+    score: number;
+}
+
+export const Ability: Component<Props> = (props) => {
     const styles = createMemo(() => abilityStyles[props.name]);
+    const modifier = createMemo(() => Math.floor((props.score - 10) / 2));
+
     return (
-        <div class={styles().container + ' border-2 p-2 m-5 rounded'}>
-            <h1 class="text-3xl font-bold flex items-center">
+        <div class={styles().container + ' p-4 m-5 rounded-xl'}>
+            <h1 class="text-3xl font-bold flex items-center text-white">
                 <span>{styles().title}</span>
-                <span class="ml-auto mr-2">14 =</span>
-                <span class={styles().modifiers + ' border-2 rounded-full p-2'}>
-                    +2
+                <span class="bg-slate-700 rounded-full p-3 pr-0 ml-auto">
+                    {props.score}
+                    <span class="bg-slate-600 rounded-full ml-3 p-3">
+                        {modifier()}
+                    </span>
                 </span>
             </h1>
         </div>

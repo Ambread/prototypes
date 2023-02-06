@@ -7,12 +7,12 @@ export const App: Component = () => {
             <aside class="col-span-2 bg-slate-800"></aside>
             <section class="col-span-7 bg-slate-600"></section>
             <section class="col-span-3 bg-slate-700">
-                <Ability name="str"></Ability>
-                <Ability name="dex"></Ability>
-                <Ability name="con"></Ability>
-                <Ability name="wis"></Ability>
-                <Ability name="int"></Ability>
-                <Ability name="cha"></Ability>
+                <Ability name="str" score={12}></Ability>
+                <Ability name="dex" score={14}></Ability>
+                <Ability name="con" score={10}></Ability>
+                <Ability name="wis" score={9}></Ability>
+                <Ability name="int" score={14}></Ability>
+                <Ability name="cha" score={8}></Ability>
             </section>
         </div>
     );
