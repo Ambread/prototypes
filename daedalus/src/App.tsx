@@ -6,7 +6,7 @@ export const App: Component = () => {
         <div class="h-screen grid grid-cols-12 grid-rows-1">
             <aside class="col-span-2 bg-slate-800"></aside>
             <section class="col-span-7 bg-slate-600"></section>
-            <section class="col-span-3 bg-slate-700">
+            <section class="col-span-3 bg-slate-700 overflow-y-auto">
                 <Ability name="str" score={16}></Ability>
                 <Ability name="dex" score={14}></Ability>
                 <Ability name="con" score={12}></Ability>
