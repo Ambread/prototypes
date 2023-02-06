@@ -1,4 +1,4 @@
-import { Component, createMemo, createSignal, For } from 'solid-js';
+import { Component, createMemo, createSignal, For, Show } from 'solid-js';
 
 type AbilityName = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
 
@@ -34,7 +34,7 @@ const abilityStyles: AbilityStyles = {
         title: 'Intelligence',
         header: 'bg-int-600',
         border: 'border-int-600',
-        skills: ['Arcana', 'History', 'Investigation', 'Nature', 'religion'],
+        skills: ['Arcana', 'History', 'Investigation', 'Nature', 'Religion'],
     },
     wis: {
         title: 'Wisdom',
@@ -62,6 +62,8 @@ interface Props {
 }
 
 export const Ability: Component<Props> = (props) => {
+    const [open, setOpen] = createSignal(false);
+
     const styles = createMemo(() => abilityStyles[props.name]);
 
     const [score, setScore] = createSignal(props.score);
@@ -76,6 +78,7 @@ export const Ability: Component<Props> = (props) => {
                     styles().header +
                     ' p-3 pl-5 rounded-xl text-2xl font-bold flex'
                 }
+                onClick={() => setOpen((open) => !open)}
             >
                 <h1 class="flex items-center">{styles().title}</h1>
                 <span class="bg-slate-800 rounded-full p-3 pr-0 ml-auto flex items-center h-8 w-28">
@@ -85,41 +88,49 @@ export const Ability: Component<Props> = (props) => {
                         min={0}
                         max={30}
                         value={score()}
-                        onInput={(e) =>
-                            setScore(parseInt(e.currentTarget.value))
-                        }
+                        onInput={(e) => {
+                            setScore(parseInt(e.currentTarget.value));
+                        }}
+                        onClick={(e) => e.stopPropagation()}
                     />
                     <span class="bg-slate-700 rounded-full ml-auto p-3 h-12 w-12 grid place-content-center">
                         {modifier()}
                     </span>
                 </span>
             </header>
-            <section class="p-2 pl-5 rounded-xl text-xl flex">
-                <h1 class="flex items-center ">Saving Throw</h1>
-                <span
-                    class={
-                        styles().border +
-                        ' w-12 ml-auto grid place-content-center'
-                    }
-                >
-                    {modifier()}
-                </span>
-            </section>
-            <For each={styles().skills}>
-                {(skill) => (
-                    <section class="p-2 pl-5 rounded-xl text-xl flex">
-                        <h1 class="flex items-center">{skill}</h1>
-                        <span
-                            class={
-                                styles().border +
-                                '  w-12 ml-auto grid place-content-center'
-                            }
-                        >
-                            {modifier()}
-                        </span>
-                    </section>
-                )}
-            </For>
+            <Show when={open()}>
+                <section class="p-2 pl-5 rounded-xl text-xl flex">
+                    <h1 class="flex items-center ">Saving Throw</h1>
+                    <span
+                        class={
+                            styles().border +
+                            ' w-12 ml-auto grid place-content-center'
+                        }
+                    >
+                        {modifier()}
+                    </span>
+                </section>
+                <Show when={styles().skills.length > 0}>
+                    <div
+                        class={styles().border + ' border-b-2 ml-4 mr-4'}
+                    ></div>
+                </Show>
+                <For each={styles().skills}>
+                    {(skill) => (
+                        <section class="p-2 pl-5 rounded-xl text-xl flex">
+                            <h1 class="flex items-center">{skill}</h1>
+                            <span
+                                class={
+                                    styles().border +
+                                    '  w-12 ml-auto grid place-content-center'
+                                }
+                            >
+                                {modifier()}
+                            </span>
+                        </section>
+                    )}
+                </For>
+            </Show>
         </div>
     );
 };
