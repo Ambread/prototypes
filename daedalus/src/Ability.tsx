@@ -16,11 +16,11 @@ const abilityStyles: AbilityStyles = {
     },
     dex: {
         title: 'Dexterity',
-        header: 'bg-dex-600',
+        header: 'bg-dex-500',
     },
     con: {
         title: 'Constitution',
-        header: 'bg-con-600',
+        header: 'bg-con-500',
     },
     int: {
         title: 'Intelligence',
@@ -57,7 +57,7 @@ export const Ability: Component<Props> = (props) => {
             <h1 class="flex items-center ">{styles().title}</h1>
             <span class="bg-slate-800 rounded-full p-3 pr-0 ml-auto flex items-center h-12 w-32">
                 <input
-                    class="w-12 text-center bg-slate-800"
+                    class="w-12 text-center bg-slate-800 outline-none"
                     type="number"
                     min={0}
                     max={30}
