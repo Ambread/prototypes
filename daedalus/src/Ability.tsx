@@ -2,13 +2,16 @@ import { Component, createMemo, createSignal, For, Show } from 'solid-js';
 
 type AbilityName = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
 
+interface AbilityStyle {
+    title: string;
+    header: string;
+    border: string;
+    skills: string[];
+    spells: boolean;
+}
+
 type AbilityStyles = {
-    [P in AbilityName]: {
-        title: string;
-        header: string;
-        border: string;
-        skills: string[];
-    };
+    [P in AbilityName]: AbilityStyle;
 };
 
 const abilityStyles: AbilityStyles = {
@@ -17,24 +20,28 @@ const abilityStyles: AbilityStyles = {
         header: 'bg-str-600',
         border: 'border-str-600',
         skills: ['Athletics'],
+        spells: false,
     },
     dex: {
         title: 'Dexterity',
         header: 'bg-dex-500',
         border: 'border-dex-500',
         skills: ['Acrobatics', 'Slight of Hand', 'Stealth'],
+        spells: false,
     },
     con: {
         title: 'Constitution',
         header: 'bg-con-500',
         border: 'border-con-500',
         skills: [],
+        spells: false,
     },
     int: {
         title: 'Intelligence',
         header: 'bg-int-600',
         border: 'border-int-600',
         skills: ['Arcana', 'History', 'Investigation', 'Nature', 'Religion'],
+        spells: true,
     },
     wis: {
         title: 'Wisdom',
@@ -47,21 +54,45 @@ const abilityStyles: AbilityStyles = {
             'Perception',
             'Survival',
         ],
+        spells: true,
     },
     cha: {
         title: 'Charisma',
         header: 'bg-cha-600',
         border: 'border-cha-600',
         skills: ['Deception', 'Intimidation', 'Performance', 'Persuasion'],
+        spells: true,
     },
 };
 
-interface Props {
+interface SkillProps {
+    label: string;
+    styles: AbilityStyle;
+    number: number;
+}
+
+const Skill: Component<SkillProps> = (props) => {
+    return (
+        <section class="p-2 pl-5 rounded-xl text-xl flex">
+            <h1 class="flex items-center ">{props.label}</h1>
+            <span
+                class={
+                    props.styles.border +
+                    ' w-12 ml-auto grid place-content-center'
+                }
+            >
+                {props.number}
+            </span>
+        </section>
+    );
+};
+
+interface AbilityProps {
     name: AbilityName;
     score: number;
 }
 
-export const Ability: Component<Props> = (props) => {
+export const Ability: Component<AbilityProps> = (props) => {
     const [open, setOpen] = createSignal(false);
 
     const styles = createMemo(() => abilityStyles[props.name]);
@@ -99,17 +130,23 @@ export const Ability: Component<Props> = (props) => {
                 </span>
             </header>
             <Show when={open()}>
-                <section class="p-2 pl-5 rounded-xl text-xl flex">
-                    <h1 class="flex items-center ">Saving Throw</h1>
-                    <span
-                        class={
-                            styles().border +
-                            ' w-12 ml-auto grid place-content-center'
-                        }
-                    >
-                        {modifier()}
-                    </span>
-                </section>
+                <Skill
+                    label="Saving Throw"
+                    styles={styles()}
+                    number={modifier()}
+                />
+                <Show when={styles().spells}>
+                    <Skill
+                        label="Spell DC"
+                        styles={styles()}
+                        number={modifier()}
+                    />
+                    <Skill
+                        label="Spell Attack"
+                        styles={styles()}
+                        number={modifier()}
+                    />
+                </Show>
                 <Show when={styles().skills.length > 0}>
                     <div
                         class={styles().border + ' border-b-2 ml-4 mr-4'}
@@ -117,17 +154,11 @@ export const Ability: Component<Props> = (props) => {
                 </Show>
                 <For each={styles().skills}>
                     {(skill) => (
-                        <section class="p-2 pl-5 rounded-xl text-xl flex">
-                            <h1 class="flex items-center">{skill}</h1>
-                            <span
-                                class={
-                                    styles().border +
-                                    '  w-12 ml-auto grid place-content-center'
-                                }
-                            >
-                                {modifier()}
-                            </span>
-                        </section>
+                        <Skill
+                            label={skill}
+                            styles={styles()}
+                            number={modifier()}
+                        />
                     )}
                 </For>
             </Show>
