@@ -14,5 +14,5 @@
     },
     "[typescript][typescriptreact][javascript][javascriptreact][json][jsonc][css]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
+    }
 }

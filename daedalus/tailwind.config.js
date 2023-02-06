@@ -1,3 +1,5 @@
+const colors = require('tailwindcss/colors');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     content: [
@@ -7,19 +9,14 @@ module.exports = {
     darkMode: 'class',
     theme: {
         extend: {
-            keyframes: {
-                popup: {
-                    '0%': { opacity: 0, transform: 'scale(0.5)' },
-                    '100%': { opacity: 1, transform: 'scale(1)' },
-                },
-                zoom: {
-                    '0%': { transform: 'scale(1)' },
-                    '20%': { transform: 'scale(2)' },
-                    '80%': { transform: 'scale(2)' },
-                    '100%': { transform: 'scale(1)' },
-                },
+            colors: {
+                str: colors.red,
+                dex: colors.orange,
+                con: colors.yellow,
+                int: colors.blue,
+                wis: colors.green,
+                cha: colors.purple,
             },
-            animation: { popup: 'popup 200ms', zoom: 'zoom 10000ms' },
         },
     },
     plugins: [],
