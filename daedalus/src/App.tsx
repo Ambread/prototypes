@@ -8,7 +8,7 @@ export const formatNumber = (number: number) => {
 };
 
 export const modifierFromAbility = (ability: number) => {
-    return Math.floor((ability - 10) / 2);
+    return Math.floor(ability / 2) - 5;
 };
 
 export const App: Component = () => {

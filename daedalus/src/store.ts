@@ -1,6 +1,20 @@
 import { createStore } from 'solid-js/store';
+import { AbilityName } from './Ability';
+import { SkillName } from './SkillEntry';
 
-const initialState = {
+interface Store {
+    abilities: {
+        [K in AbilityName]: number;
+    };
+    skills: {
+        [K in SkillName]?: number;
+    };
+    savingThrows: {
+        [K in AbilityName]?: number;
+    };
+}
+
+const initialStore: Store = {
     abilities: {
         str: 10,
         dex: 12,
@@ -13,9 +27,10 @@ const initialState = {
         Stealth: 1,
         Insight: 2,
     },
+    savingThrows: {},
 };
 
-export const [store, setStore] = createStore(initialState);
+export const [store, setStore] = createStore(initialStore);
 
 //@ts-ignore
 window.store = store;

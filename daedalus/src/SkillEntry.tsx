@@ -102,8 +102,10 @@ const skillEntryData = {
     },
 } as const;
 
+export type SkillName = keyof typeof skillEntryData;
+
 export const SkillEntry: VoidComponent<{
-    skill: keyof typeof skillEntryData;
+    skill: SkillName;
 }> = (props) => {
     const data = createMemo(() => skillEntryData[props.skill]);
     return (
