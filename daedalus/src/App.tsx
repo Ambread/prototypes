@@ -1,7 +1,15 @@
 import { Component } from 'solid-js';
-import { Ability } from './Ability';
 import { EntryList, SavingThrowEntry } from './Entry';
 import { SkillEntry } from './SkillEntry';
+
+export const formatNumber = (number: number) => {
+    if (number < 0) return '' + number;
+    return '+' + number;
+};
+
+export const modifierFromAbility = (ability: number) => {
+    return Math.floor((ability - 10) / 2);
+};
 
 export const App: Component = () => {
     return (
@@ -35,7 +43,7 @@ export const App: Component = () => {
                     <SkillEntry skill="Persuasion" />
                 </EntryList>
             </section>
-            <section class="col-span-4 bg-slate-700">
+            <section class="col-span-4 bg-slate-700 grid place-items-center">
                 <EntryList>
                     <SavingThrowEntry ability="str" />
                     <SkillEntry skill="Athletics" />

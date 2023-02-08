@@ -24,6 +24,8 @@ import { TbYoga } from 'solid-icons/tb';
 import { BiSolidCat } from 'solid-icons/bi';
 import { RiSystemEyeCloseFill } from 'solid-icons/ri';
 import { ImBubbles } from 'solid-icons/im';
+import { formatNumber, modifierFromAbility } from './App';
+import { store } from './store';
 
 const skillEntryData = {
     Athletics: {
@@ -110,7 +112,9 @@ export const SkillEntry: VoidComponent<{
             label={props.skill}
             icon={data().icon}
             base={'1d20'}
-            modifier={'+2'}
+            modifier={formatNumber(
+                modifierFromAbility(store.abilities[data().ability]),
+            )}
         />
     );
 };

@@ -42,6 +42,7 @@ interface EntryProps {
     label: string;
     base: string;
     modifier: string;
+    prof?: string;
 }
 
 export const Entry: VoidComponent<EntryProps> = (props) => {
@@ -51,7 +52,7 @@ export const Entry: VoidComponent<EntryProps> = (props) => {
         <div
             class={
                 styles().border +
-                ' rounded bg-slate-800 p-4 flex w-10/12 justify-between items-center shadow shadow-black/50 border-2 border-solid'
+                ' rounded bg-slate-800 p-4 flex justify-between items-center shadow shadow-black/50 border-2 border-solid'
             }
         >
             <span
@@ -74,13 +75,15 @@ export const Entry: VoidComponent<EntryProps> = (props) => {
 
 export const EntryList: ParentComponent = (props) => {
     return (
-        <div class="w-6/12 flex flex-col gap-4 overflow-y-scroll h-full">
+        <div class="w-full p-24 flex flex-col gap-4 overflow-y-scroll h-full">
             {props.children}
         </div>
     );
 };
 
 import { FiCrosshair } from 'solid-icons/fi';
+import { formatNumber, modifierFromAbility } from './App';
+import { store } from './store';
 
 export const SavingThrowEntry: VoidComponent<{ ability: AbilityName }> = (
     props,
@@ -91,7 +94,9 @@ export const SavingThrowEntry: VoidComponent<{ ability: AbilityName }> = (
             label={abilityTitles[props.ability] + ' Saving Throw'}
             icon={<FiCrosshair size={20} />}
             base={'1d20'}
-            modifier={'+2'}
+            modifier={formatNumber(
+                modifierFromAbility(store.abilities[props.ability]),
+            )}
         />
     );
 };
