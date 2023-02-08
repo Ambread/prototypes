@@ -1,6 +1,8 @@
 import { Component, createMemo, createSignal, For, Show } from 'solid-js';
 
-type AbilityName = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
+export type AbilityName = 'str' | 'dex' | 'con' | 'wis' | 'int' | 'cha';
+
+export const abilityNames = ['str', 'dex', 'con', 'wis', 'int', 'cha'] as const;
 
 interface AbilityStyle {
     title: string;
