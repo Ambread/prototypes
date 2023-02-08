@@ -4,6 +4,15 @@ export type AbilityName = 'str' | 'dex' | 'con' | 'wis' | 'int' | 'cha';
 
 export const abilityNames = ['str', 'dex', 'con', 'wis', 'int', 'cha'] as const;
 
+export const abilityTitles = {
+    str: 'Strength',
+    dex: 'Dexterity',
+    con: 'Constitution',
+    wis: 'Wisdom',
+    int: 'Intelligence',
+    cha: 'Charisma',
+};
+
 interface AbilityStyle {
     title: string;
     header: string;
