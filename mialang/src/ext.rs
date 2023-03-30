@@ -5,18 +5,6 @@ pub trait SelfExt: Sized {
         body(self)
     }
 
-    fn wrap_some(self) -> Option<Self> {
-        Some(self)
-    }
-
-    fn wrap_ok<E>(self) -> Result<Self, E> {
-        Ok(self)
-    }
-
-    fn wrap_err<T>(self) -> Result<T, Self> {
-        Err(self)
-    }
-
     fn spanned(self, start: usize, end: usize) -> Spanned<Self> {
         Spanned(Span { start, end }, self)
     }
