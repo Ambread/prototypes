@@ -1,12 +1,18 @@
 use crate::ext::Spanned;
 
 use super::ext::SelfExt;
-use itertools::Itertools;
+use itertools::{Itertools, PeekingNext};
 use thiserror::Error;
 
 #[derive(Debug)]
 pub enum Token {
     Number(f64),
+    OpenParen,
+    CloseParen,
+    OpenBrace,
+    CloseBrace,
+    Dot,
+    Semicolon,
 }
 
 #[derive(Debug, Error)]
@@ -22,8 +28,31 @@ pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenEr
         .batching(|input| {
             let (start, char) = input.next()?;
 
+            'single: {
+                return match char {
+                    '(' => Token::OpenParen,
+                    ')' => Token::CloseParen,
+                    '{' => Token::OpenBrace,
+                    '}' => Token::CloseBrace,
+                    '.' => Token::Dot,
+                    ';' => Token::Semicolon,
+                    _ => break 'single,
+                }
+                .map_self(Ok)
+                .spanned(start, start)
+                .map_self(Some);
+            }
+
             if char.is_numeric() {
-                let end = start + input.peeking_take_while(|c| c.1.is_numeric()).count();
+                let whole = input.peeking_take_while(|c| c.1.is_numeric()).count();
+
+                let decimal = input
+                    .peeking_next(|c| c.1 == '.')
+                    .map(|_| 1 + input.peeking_take_while(|c| c.1.is_numeric()).count())
+                    .unwrap_or(0);
+
+                let end = start + whole + decimal;
+
                 return source[start..end]
                     .parse::<f64>()
                     .unwrap()
