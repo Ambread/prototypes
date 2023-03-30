@@ -5,7 +5,7 @@ use crate::ext::{Span, Spanned};
 use itertools::{Itertools, PeekingNext};
 use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token<'a> {
     Number(f64),
     Ident(&'a str),
@@ -17,7 +17,7 @@ pub enum Token<'a> {
     Semicolon,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Clone, Error)]
 pub enum TokenError<'a> {
     #[error("Unexpected token \"{0}\"")]
     UnexpectedToken(&'a str),
@@ -29,7 +29,63 @@ pub struct Lexer<'a> {
     source: &'a str,
     input: Peekable<CharIndices<'a>>,
     span: Span,
+    error_state: ErrorState<'a>,
 }
+
+#[derive(Debug, Clone, Default)]
+enum ErrorState<'a> {
+    #[default]
+    None,
+    UnexpectedToken(Span),
+    SavedItem(Item<'a>),
+}
+
+impl<'a> ErrorState<'a> {
+    fn take_saved(&mut self) -> Option<Item<'a>> {
+        match std::mem::take(self) {
+            ErrorState::SavedItem(item) => Some(item),
+            state => {
+                *self = state;
+                None
+            }
+        }
+    }
+
+    fn take_any(&mut self, source: &'a str) -> Option<Item<'a>> {
+        match std::mem::take(self) {
+            ErrorState::None => None,
+            ErrorState::UnexpectedToken(span) => Some(Spanned(
+                span,
+                Err(TokenError::UnexpectedToken(&source[span])),
+            )),
+            ErrorState::SavedItem(item) => Some(item),
+        }
+    }
+
+    fn save_if_needed(&mut self, item: Item<'a>, source: &'a str) -> Option<Item<'a>> {
+        match std::mem::take(self) {
+            ErrorState::None => Some(item),
+            ErrorState::SavedItem(_) => unreachable!("item already saved"),
+            ErrorState::UnexpectedToken(span) => {
+                *self = ErrorState::SavedItem(item);
+                Some(Spanned(
+                    span,
+                    Err(TokenError::UnexpectedToken(&source[span])),
+                ))
+            }
+        }
+    }
+
+    fn update(&mut self, span: Span) {
+        match self {
+            ErrorState::None => *self = ErrorState::UnexpectedToken(span),
+            ErrorState::UnexpectedToken(err) => err.end = span.end,
+            ErrorState::SavedItem(_) => unreachable!("should have return saved item earlier"),
+        }
+    }
+}
+
+type Item<'a> = Spanned<Result<Token<'a>, TokenError<'a>>>;
 
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
@@ -37,6 +93,7 @@ impl<'a> Lexer<'a> {
             source,
             input: source.char_indices().peekable(),
             span: Span { start: 0, end: 0 },
+            error_state: ErrorState::None,
         }
     }
 
@@ -55,21 +112,34 @@ impl<'a> Lexer<'a> {
         })
     }
 
-    fn ok(&self, token: Token<'a>) -> Option<Spanned<Result<Token<'a>, TokenError<'a>>>> {
-        Some(Spanned(self.span, Ok(token)))
+    fn ok(&mut self, token: Token<'a>) -> Option<Item<'a>> {
+        let item = Spanned(self.span, Ok(token));
+        self.error_state.save_if_needed(item, self.source)
     }
 
-    fn err(&self, err: TokenError<'a>) -> Option<Spanned<Result<Token<'a>, TokenError<'a>>>> {
-        Some(Spanned(self.span, Err(err)))
+    fn err(&mut self, err: TokenError<'a>) -> Option<Item<'a>> {
+        let item = Spanned(self.span, Err(err));
+        self.error_state.save_if_needed(item, self.source)
     }
 }
 
 impl<'a> Iterator for Lexer<'a> {
-    type Item = Spanned<Result<Token<'a>, TokenError<'a>>>;
+    type Item = Item<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let (start, char) = self.input.next()?;
-        self.span = Span::new(start, start);
+        let char = {
+            let saved = self.error_state.take_saved();
+            if saved.is_some() {
+                return saved;
+            }
+
+            let Some((start, char)) = self.input.next() else {
+                return self.error_state.take_any(self.source);
+            };
+
+            self.span = Span::new(start, start);
+            char
+        };
 
         if char.is_whitespace() {
             self.munch(|c| c.is_whitespace());
@@ -115,6 +185,7 @@ impl<'a> Iterator for Lexer<'a> {
             return self.ok(Token::Ident(&self.source[self.span]));
         }
 
-        self.err(TokenError::UnexpectedToken(&self.source[self.span]))
+        self.error_state.update(self.span);
+        self.next()
     }
 }
