@@ -2,7 +2,6 @@ use std::{iter::Peekable, str::CharIndices};
 
 use crate::ext::{Span, Spanned};
 
-use super::ext::SelfExt;
 use itertools::{Itertools, PeekingNext};
 use thiserror::Error;
 
@@ -50,6 +49,13 @@ impl<'a> Lexer<'a> {
             .map_or(self.span.start, |c| c.0);
     }
 
+    fn munch_one(&mut self, accept: impl FnOnce(char) -> bool) -> bool {
+        self.input.peeking_next(|c| accept(c.1)).map_or(false, |c| {
+            self.span.end = c.0;
+            true
+        })
+    }
+
     fn ok(&self, token: Token<'a>) -> Option<Spanned<Result<Token<'a>, TokenError<'a>>>> {
         Some(Spanned(self.span, Ok(token)))
     }
@@ -84,49 +90,23 @@ impl<'a> Iterator for Lexer<'a> {
             });
         }
 
-        if char.is_numeric()
-            || ("+-".contains(char) && self.input.peek().map(|c| c.1.is_numeric()).unwrap_or(false))
-        {
-            let mut end = self
-                .input
-                .peeking_take_while(|c| c.1.is_numeric())
-                .last()
-                .map_or(start, |c| c.0);
+        if char.is_numeric() || ("+-".contains(char) && self.munch_one(|c| c.is_numeric())) {
+            self.munch(|c| c.is_numeric());
 
-            if self.input.peeking_next(|c| c.1 == '.').is_some() {
-                end = self
-                    .input
-                    .peeking_take_while(|c| c.1.is_numeric())
-                    .last()
-                    .map_or(start, |c| c.0);
+            if self.munch_one(|c| c == '.') {
+                self.munch(|c| c.is_numeric());
             }
 
-            if self.input.peeking_next(|c| "eE".contains(c.1)).is_some() {
-                if self
-                    .input
-                    .peeking_next(|c| "+-".contains(c.1) || c.1.is_numeric())
-                    .is_none()
-                {
-                    return TokenError::MissingDigitsAfterExponentSymbol
-                        .map_self(Err)
-                        .spanned(start, 1 + end)
-                        .map_self(Some);
+            if self.munch_one(|c| "eE".contains(c)) {
+                if !self.munch_one(|c| "+-".contains(c) || c.is_numeric()) {
+                    return self.err(TokenError::MissingDigitsAfterExponentSymbol);
                 }
 
-                end = self
-                    .input
-                    .peeking_take_while(|c| c.1.is_numeric())
-                    .last()
-                    .map_or(start, |c| c.0);
+                self.munch(|c| c.is_numeric());
             }
 
-            return self.source[start..=end]
-                .parse::<f64>()
-                .unwrap()
-                .map_self(Token::Number)
-                .map_self(Ok)
-                .spanned(start, end)
-                .map_self(Some);
+            let number = self.source[self.span].parse().unwrap();
+            return self.ok(Token::Number(number));
         }
 
         let symbols = "!@#$%^&*<>?|~-+";
