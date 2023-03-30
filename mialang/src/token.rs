@@ -5,8 +5,9 @@ use itertools::{Itertools, PeekingNext};
 use thiserror::Error;
 
 #[derive(Debug)]
-pub enum Token {
+pub enum Token<'a> {
     Number(f64),
+    Ident(&'a str),
     OpenParen,
     CloseParen,
     OpenBrace,
@@ -21,7 +22,7 @@ pub enum TokenError<'a> {
     UnexpectedChar(&'a str),
 }
 
-pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenError<'_>>>> + '_ {
+pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenError>>> {
     source
         .char_indices()
         .peekable()
@@ -53,7 +54,7 @@ pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenEr
 
                 let end = start + whole + decimal;
 
-                return source[start..end]
+                return source[start..=end]
                     .parse::<f64>()
                     .unwrap()
                     .map_self(Token::Number)
@@ -62,7 +63,21 @@ pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenEr
                     .map_self(Some);
             }
 
-            source[start..start]
+            let symbols = "!@#$%^&*<>?|~-+";
+            if char.is_alphabetic() || symbols.contains(char) {
+                let end = input
+                    .peeking_take_while(|c| c.1.is_alphanumeric() || symbols.contains(c.1))
+                    .count()
+                    + start;
+
+                return source[start..=end]
+                    .map_self(Token::Ident)
+                    .map_self(Ok)
+                    .spanned(start, end)
+                    .map_self(Some);
+            }
+
+            source[start..=start]
                 .map_self(TokenError::UnexpectedChar)
                 .map_self(Err)
                 .spanned(start, start)
@@ -74,7 +89,7 @@ pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenEr
                 Spanned(y_span, Err(TokenError::UnexpectedChar(_))),
             ) = (&x, &y)
             {
-                source[x_span.start..y_span.end]
+                source[x_span.start..=y_span.end]
                     .map_self(TokenError::UnexpectedChar)
                     .map_self(Err)
                     .spanned(x_span.start, y_span.end)
