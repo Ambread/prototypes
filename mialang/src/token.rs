@@ -15,6 +15,8 @@ pub enum Token<'a> {
     CloseBrace,
     Dot,
     Semicolon,
+    Func,
+    Return,
 }
 
 #[derive(Debug, Clone, Error)]
@@ -182,7 +184,11 @@ impl<'a> Iterator for Lexer<'a> {
         if char.is_alphabetic() || symbols.contains(char) {
             self.munch(|c| c.is_alphanumeric() || symbols.contains(c));
 
-            return self.ok(Token::Ident(&self.source[self.span]));
+            return self.ok(match &self.source[self.span] {
+                "func" => Token::Func,
+                "return" => Token::Return,
+                ident => Token::Ident(ident),
+            });
         }
 
         self.error_state.update(self.span);
