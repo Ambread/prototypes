@@ -33,7 +33,11 @@ pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenEr
             let (start, char) = input.next()?;
 
             if char.is_whitespace() {
-                let end = start + input.peeking_take_while(|c| c.1.is_whitespace()).count();
+                let end = input
+                    .peeking_take_while(|c| c.1.is_whitespace())
+                    .last()
+                    .map_or(start, |c| c.0);
+
                 return Token::Whitespace
                     .map_self(Ok)
                     .spanned(start, end)
@@ -58,10 +62,16 @@ pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenEr
             if char.is_numeric()
                 || ("+-".contains(char) && input.peek().map(|c| c.1.is_numeric()).unwrap_or(false))
             {
-                let mut end = start + input.peeking_take_while(|c| c.1.is_numeric()).count();
+                let mut end = input
+                    .peeking_take_while(|c| c.1.is_numeric())
+                    .last()
+                    .map_or(start, |c| c.0);
 
                 if input.peeking_next(|c| c.1 == '.').is_some() {
-                    end += 1 + input.peeking_take_while(|c| c.1.is_numeric()).count()
+                    end = input
+                        .peeking_take_while(|c| c.1.is_numeric())
+                        .last()
+                        .map_or(start, |c| c.0);
                 }
 
                 if input.peeking_next(|c| "eE".contains(c.1)).is_some() {
@@ -75,7 +85,10 @@ pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenEr
                             .map_self(Some);
                     }
 
-                    end += 2 + input.peeking_take_while(|c| c.1.is_numeric()).count()
+                    end = input
+                        .peeking_take_while(|c| c.1.is_numeric())
+                        .last()
+                        .map_or(start, |c| c.0);
                 }
 
                 return source[start..=end]
@@ -91,8 +104,8 @@ pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenEr
             if char.is_alphabetic() || symbols.contains(char) {
                 let end = input
                     .peeking_take_while(|c| c.1.is_alphanumeric() || symbols.contains(c.1))
-                    .count()
-                    + start;
+                    .last()
+                    .map_or(start, |c| c.0);
 
                 return source[start..=end]
                     .map_self(Token::Ident)
