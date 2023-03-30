@@ -6,6 +6,7 @@ use thiserror::Error;
 
 #[derive(Debug)]
 pub enum Token<'a> {
+    Whitespace,
     Number(f64),
     Ident(&'a str),
     OpenParen,
@@ -28,6 +29,14 @@ pub fn parse(source: &str) -> impl Iterator<Item = Spanned<Result<Token, TokenEr
         .peekable()
         .batching(|input| {
             let (start, char) = input.next()?;
+
+            if char.is_whitespace() {
+                let end = start + input.peeking_take_while(|c| c.1.is_whitespace()).count();
+                return Token::Whitespace
+                    .map_self(Ok)
+                    .spanned(start, end)
+                    .map_self(Some);
+            }
 
             'single: {
                 return match char {
