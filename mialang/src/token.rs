@@ -7,7 +7,6 @@ use thiserror::Error;
 
 #[derive(Debug)]
 pub enum Token<'a> {
-    Whitespace,
     Number(f64),
     Ident(&'a str),
     OpenParen,
@@ -75,7 +74,7 @@ impl<'a> Iterator for Lexer<'a> {
         if char.is_whitespace() {
             self.munch(|c| c.is_whitespace());
 
-            return self.ok(Token::Whitespace);
+            return self.next();
         }
 
         'single: {
