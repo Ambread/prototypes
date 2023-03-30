@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, ops::Index};
 
 pub trait SelfExt: Sized {
     fn map_self<T>(self, body: impl FnOnce(Self) -> T) -> T {
@@ -18,9 +18,23 @@ pub struct Span {
     pub end: usize,
 }
 
+impl Span {
+    pub fn new(start: usize, end: usize) -> Self {
+        Self { start, end }
+    }
+}
+
 impl Debug for Span {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}..{}", self.start, self.end)
+    }
+}
+
+impl Index<Span> for str {
+    type Output = str;
+
+    fn index(&self, span: Span) -> &Self::Output {
+        &self[span.start..=span.end]
     }
 }
 

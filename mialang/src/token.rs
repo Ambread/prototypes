@@ -1,6 +1,6 @@
 use std::{iter::Peekable, str::CharIndices};
 
-use crate::ext::Spanned;
+use crate::ext::{Span, Spanned};
 
 use super::ext::SelfExt;
 use itertools::{Itertools, PeekingNext};
@@ -30,6 +30,7 @@ pub enum TokenError<'a> {
 pub struct Lexer<'a> {
     source: &'a str,
     input: Peekable<CharIndices<'a>>,
+    span: Span,
 }
 
 impl<'a> Lexer<'a> {
@@ -37,7 +38,24 @@ impl<'a> Lexer<'a> {
         Self {
             source,
             input: source.char_indices().peekable(),
+            span: Span { start: 0, end: 0 },
         }
+    }
+
+    fn munch(&mut self, mut accept: impl FnMut(char) -> bool) {
+        self.span.end = self
+            .input
+            .peeking_take_while(|c| accept(c.1))
+            .last()
+            .map_or(self.span.start, |c| c.0);
+    }
+
+    fn ok(&self, token: Token<'a>) -> Option<Spanned<Result<Token<'a>, TokenError<'a>>>> {
+        Some(Spanned(self.span, Ok(token)))
+    }
+
+    fn err(&self, err: TokenError<'a>) -> Option<Spanned<Result<Token<'a>, TokenError<'a>>>> {
+        Some(Spanned(self.span, Err(err)))
     }
 }
 
@@ -46,22 +64,16 @@ impl<'a> Iterator for Lexer<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let (start, char) = self.input.next()?;
+        self.span = Span::new(start, start);
 
         if char.is_whitespace() {
-            let end = self
-                .input
-                .peeking_take_while(|c| c.1.is_whitespace())
-                .last()
-                .map_or(start, |c| c.0);
+            self.munch(|c| c.is_whitespace());
 
-            return Token::Whitespace
-                .map_self(Ok)
-                .spanned(start, end)
-                .map_self(Some);
+            return self.ok(Token::Whitespace);
         }
 
         'single: {
-            return match char {
+            return self.ok(match char {
                 '(' => Token::OpenParen,
                 ')' => Token::CloseParen,
                 '{' => Token::OpenBrace,
@@ -69,10 +81,7 @@ impl<'a> Iterator for Lexer<'a> {
                 '.' => Token::Dot,
                 ';' => Token::Semicolon,
                 _ => break 'single,
-            }
-            .map_self(Ok)
-            .spanned(start, start)
-            .map_self(Some);
+            });
         }
 
         if char.is_numeric()
@@ -122,23 +131,11 @@ impl<'a> Iterator for Lexer<'a> {
 
         let symbols = "!@#$%^&*<>?|~-+";
         if char.is_alphabetic() || symbols.contains(char) {
-            let end = self
-                .input
-                .peeking_take_while(|c| c.1.is_alphanumeric() || symbols.contains(c.1))
-                .last()
-                .map_or(start, |c| c.0);
+            self.munch(|c| c.is_alphanumeric() || symbols.contains(c));
 
-            return self.source[start..=end]
-                .map_self(Token::Ident)
-                .map_self(Ok)
-                .spanned(start, end)
-                .map_self(Some);
+            return self.ok(Token::Ident(&self.source[self.span]));
         }
 
-        self.source[start..=start]
-            .map_self(TokenError::UnexpectedToken)
-            .map_self(Err)
-            .spanned(start, start)
-            .map_self(Some)
+        self.err(TokenError::UnexpectedToken(&self.source[self.span]))
     }
 }
