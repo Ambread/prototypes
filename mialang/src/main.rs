@@ -5,7 +5,7 @@ use std::io::stdin;
 
 use itertools::Itertools;
 
-use crate::ext::Spanned;
+use crate::{ext::Spanned, token::Token};
 
 fn main() {
     let mut buffer = String::new();
@@ -15,7 +15,10 @@ fn main() {
         stdin().read_line(&mut buffer).unwrap();
         let input = buffer.trim();
 
-        let tokens = token::parse(input).collect_vec();
+        let tokens = token::parse(input)
+            .filter(|t| !matches!(t, Spanned(_, Ok(Token::Whitespace))))
+            .collect_vec();
+
         for Spanned(span, token) in tokens {
             print!(
                 "{}{}{} {:?} ",
